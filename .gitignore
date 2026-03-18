@@ -1,0 +1,9 @@
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.venv/
+uv.lock
+src/client/dist/
+.superpowers/
+*.egg-info/
