@@ -35,12 +35,14 @@ class ScannerService:
             if not skill_md.exists():
                 continue
             meta = parse_skill_md(skill_md)
+            # symlink → installed(외부에서 설치된 스킬), 실제 디렉토리 → custom(직접 만든 스킬)
+            source = "custom" if not entry.is_symlink() else "installed"
             results.append(
                 SkillSummary(
                     name=meta.name,
                     description=meta.description,
-                    source="local",
-                    invoke_command=f"/skill:{meta.name}",
+                    source=source,
+                    invoke_command=f"/{meta.name}",
                     path=str(skill_md),
                 )
             )
@@ -221,7 +223,7 @@ class ScannerService:
         hooks = self.read_hooks()
         hook_count = sum(len(groups) for groups in hooks.values())
         return {
-            "skills": {"total": len(skills), "custom": sum(1 for s in skills if s.source == "local"), "plugin": sum(1 for s in skills if s.source != "local")},
+            "skills": {"total": len(skills), "custom": sum(1 for s in skills if s.source == "custom"), "installed": sum(1 for s in skills if s.source == "installed")},
             "plugins": {"total": len(plugins), "enabled": sum(1 for p in plugins if p.enabled)},
             "hooks": {"total": hook_count},
             "mcp_servers": {"total": len(self.read_mcp_servers())},

@@ -17,8 +17,8 @@ def test_scan_skills_returns_skill_summary(scanner):
     skill = skills[0]
     assert skill.name == "gen-pr"
     assert skill.description == "PR 생성"
-    assert skill.invoke_command == "/skill:gen-pr"
-    assert skill.source == "local"
+    assert skill.invoke_command == "/gen-pr"
+    assert skill.source == "custom"
 
 
 def test_scan_skills_empty_when_no_skills_dir(tmp_path):
