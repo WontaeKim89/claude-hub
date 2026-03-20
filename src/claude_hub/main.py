@@ -52,7 +52,18 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
 
     static_dir = Path(__file__).parent / "static"
     if static_dir.exists():
-        app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+        from fastapi.responses import FileResponse
+
+        # 정적 파일 서빙 (assets/, favicon 등)
+        app.mount("/assets", StaticFiles(directory=static_dir / "assets"), name="assets")
+
+        # SPA fallback: API가 아닌 모든 경로에서 index.html 반환
+        @app.get("/{path:path}")
+        async def spa_fallback(path: str):
+            file_path = static_dir / path
+            if file_path.is_file():
+                return FileResponse(file_path)
+            return FileResponse(static_dir / "index.html")
 
     return app
 
