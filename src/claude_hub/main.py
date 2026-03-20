@@ -52,18 +52,29 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
 
     static_dir = Path(__file__).parent / "static"
     if static_dir.exists():
-        from fastapi.responses import FileResponse
+        from starlette.middleware import Middleware
+        from starlette.responses import FileResponse as StarletteFileResponse
 
-        # 정적 파일 서빙 (assets/, favicon 등)
-        app.mount("/assets", StaticFiles(directory=static_dir / "assets"), name="assets")
+        # SPA 미들웨어: /api 이외의 요청은 정적 파일 또는 index.html로 처리
+        @app.middleware("http")
+        async def spa_middleware(request, call_next):
+            path = request.url.path
 
-        # SPA fallback: API가 아닌 모든 경로에서 index.html 반환
-        @app.get("/{path:path}")
-        async def spa_fallback(path: str):
-            file_path = static_dir / path
+            # /api, /docs, /openapi.json은 FastAPI가 처리
+            if path.startswith("/api") or path.startswith("/docs") or path.startswith("/openapi") or path.startswith("/redoc"):
+                return await call_next(request)
+
+            # 정적 파일이 존재하면 직접 서빙
+            file_path = static_dir / path.lstrip("/")
             if file_path.is_file():
-                return FileResponse(file_path)
-            return FileResponse(static_dir / "index.html")
+                return StarletteFileResponse(file_path)
+
+            # 그 외 모든 경로 → index.html (SPA fallback)
+            index_path = static_dir / "index.html"
+            if index_path.is_file():
+                return StarletteFileResponse(index_path)
+
+            return await call_next(request)
 
     return app
 
