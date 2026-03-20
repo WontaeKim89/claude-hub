@@ -116,6 +116,9 @@ def cli():
     app = create_app(config)
     url = f"http://localhost:{config.port}"
 
+    # 시작 시 항상 tracker 자동 설정 (hook 설치 + 과거 로그 sync)
+    _auto_setup_tracker(config)
+
     if args.app:
         _run_as_app(app, config, url)
     else:
@@ -124,6 +127,40 @@ def cli():
         if config.auto_open:
             webbrowser.open(url)
         uvicorn.run(app, host=config.host, port=config.port, log_level="warning")
+
+
+def _auto_setup_tracker(config: AppConfig):
+    """시작 시 자동으로 tracker hook 설치 + 과거 로그 sync."""
+    import json as _json
+    from claude_hub.services.usage_db import UsageDB
+    from claude_hub.services.log_parser import parse_session_logs
+
+    db = UsageDB(db_path=config.backup_dir / "usage.db")
+    settings_path = config.paths.settings_path
+
+    # 1. Hook 자동 설치 (미설치 시)
+    if settings_path.exists():
+        data = _json.loads(settings_path.read_text(encoding="utf-8"))
+        post_hooks = data.get("hooks", {}).get("PostToolUse", [])
+        already = any(
+            any(h.get("command") == "claude-hub-tracker record" for h in g.get("hooks", []))
+            for g in post_hooks
+        )
+        if not already:
+            hooks = data.setdefault("hooks", {})
+            hooks.setdefault("PostToolUse", []).append(
+                {"hooks": [{"type": "command", "command": "claude-hub-tracker record"}]}
+            )
+            settings_path.write_text(_json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+            print("[claude-hub] Tracker hook installed.")
+
+    # 2. 과거 로그 sync (DB가 비어있을 때만)
+    overview = db.get_overview()
+    if overview["total_events"] == 0:
+        print("[claude-hub] Syncing session logs...")
+        result = parse_session_logs(config.paths, db)
+        if result["files_parsed"] > 0:
+            print(f"[claude-hub] Synced: {result['files_parsed']} files, {result['events_found']} events")
 
 
 def _run_as_app(app, config: AppConfig, url: str):
