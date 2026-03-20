@@ -11,6 +11,7 @@ import Commands from './pages/Commands'
 import Hooks from './pages/Hooks'
 import Mcp from './pages/Mcp'
 import Keybindings from './pages/Keybindings'
+import Marketplace from './pages/Marketplace'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -34,6 +35,7 @@ export default function App() {
               <Route path="/hooks" element={<Hooks />} />
               <Route path="/mcp" element={<Mcp />} />
               <Route path="/keybindings" element={<Keybindings />} />
+              <Route path="/marketplace" element={<Marketplace />} />
             </Routes>
           </main>
         </div>

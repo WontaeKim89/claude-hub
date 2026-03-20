@@ -94,6 +94,20 @@ export interface KeybindingsData {
   last_mtime: number
 }
 
+export interface MarketplaceSource {
+  name: string
+  source?: { type: string; repo: string }
+}
+
+export interface MarketplacePlugin {
+  name: string
+  description: string
+  version: string
+  category: string
+  marketplace: string
+  installed: boolean
+}
+
 export type HookEventType =
   | 'SessionStart'
   | 'SessionEnd'
@@ -121,4 +135,31 @@ export interface HookEntry {
 export interface HooksData {
   hooks: Record<string, HookEntry[]>
   last_mtime: number
+}
+
+export interface MemoryProject {
+  encoded: string
+  decoded: string
+  memory_dir: string
+}
+
+export interface MemoryFileSummary {
+  name: string
+  size: number
+}
+
+export interface MemoryFileList {
+  project: string
+  files: MemoryFileSummary[]
+}
+
+export interface MemoryFileDetail {
+  project: string
+  file: string
+  content: string
+}
+
+export interface TeamSummary {
+  name: string
+  path: string
 }

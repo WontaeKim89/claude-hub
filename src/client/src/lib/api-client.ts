@@ -1,4 +1,4 @@
-import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData } from './types'
+import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary } from './types'
 
 const BASE = '/api'
 
@@ -115,5 +115,44 @@ export const api = {
     get: () => request<KeybindingsData>('/keybindings'),
     update: (data: { data: Record<string, string>; last_mtime: number }) =>
       request<{ ok: boolean }>('/keybindings', { method: 'PUT', body: JSON.stringify(data) }),
+  },
+
+  marketplace: {
+    sources: () => request<MarketplaceSource[]>('/marketplace/sources'),
+    browse: (params?: { source?: string; q?: string; category?: string }) => {
+      const qs = new URLSearchParams()
+      if (params?.source) qs.set('source', params.source)
+      if (params?.q) qs.set('q', params.q)
+      if (params?.category) qs.set('category', params.category)
+      const query = qs.toString()
+      return request<MarketplacePlugin[]>(`/marketplace/browse${query ? `?${query}` : ''}`)
+    },
+  },
+
+  memory: {
+    projects: () => request<MemoryProject[]>('/memory/projects'),
+    list: (project: string) => request<MemoryFileList>(`/memory/${encodeURIComponent(project)}`),
+    get: (project: string, file: string) =>
+      request<MemoryFileDetail>(`/memory/${encodeURIComponent(project)}/${encodeURIComponent(file)}`),
+    update: (project: string, file: string, content: string) =>
+      request<{ ok: boolean }>(`/memory/${encodeURIComponent(project)}/${encodeURIComponent(file)}`, {
+        method: 'PUT',
+        body: JSON.stringify({ content }),
+      }),
+    create: (project: string, name: string, content: string) =>
+      request<{ project: string; file: string }>(`/memory/${encodeURIComponent(project)}`, {
+        method: 'POST',
+        body: JSON.stringify({ name, content }),
+      }),
+    delete: (project: string, file: string) =>
+      request<{ ok: boolean }>(`/memory/${encodeURIComponent(project)}/${encodeURIComponent(file)}`, {
+        method: 'DELETE',
+      }),
+  },
+
+  teams: {
+    list: () => request<TeamSummary[]>('/teams'),
+    delete: (name: string) =>
+      request<{ ok: boolean }>(`/teams/${encodeURIComponent(name)}`, { method: 'DELETE' }),
   },
 }

@@ -91,4 +91,15 @@ def fake_claude_dir(tmp_path: Path) -> Path:
     teams_dir = claude_dir / "teams" / "test-team"
     teams_dir.mkdir(parents=True)
 
+    # marketplace
+    mp_dir = plugins_dir / "marketplaces" / "test-marketplace" / ".claude-plugin"
+    mp_dir.mkdir(parents=True)
+    (mp_dir / "marketplace.json").write_text(json.dumps({
+        "name": "test-marketplace",
+        "plugins": [
+            {"name": "test-plugin", "description": "A test plugin", "version": "1.0.0", "category": "development"},
+            {"name": "another-plugin", "description": "Another plugin", "version": "2.0.0", "category": "productivity"},
+        ]
+    }))
+
     return claude_dir

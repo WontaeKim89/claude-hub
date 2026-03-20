@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from claude_hub.config import AppConfig
 from claude_hub.services.backup import BackupService
 from claude_hub.services.editor import EditorService
+from claude_hub.services.marketplace import MarketplaceService
 from claude_hub.services.scanner import ScannerService
 from claude_hub.services.validator import ValidatorService
 
@@ -24,14 +25,16 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     scanner = ScannerService(claude_dir=config.claude_dir)
     editor = EditorService(backup_service=backup)
     validator = ValidatorService()
+    marketplace = MarketplaceService(paths=config.paths)
 
     app.state.config = config
     app.state.scanner = scanner
     app.state.editor = editor
     app.state.validator = validator
     app.state.backup = backup
+    app.state.marketplace = marketplace
 
-    from claude_hub.routers import dashboard, skills, settings, claude_md, plugins, agents, commands, hooks, mcp, keybindings
+    from claude_hub.routers import dashboard, skills, settings, claude_md, plugins, agents, commands, hooks, mcp, keybindings, marketplace as marketplace_router, memory, teams
     app.include_router(dashboard.router, prefix="/api")
     app.include_router(skills.router, prefix="/api")
     app.include_router(settings.router, prefix="/api")
@@ -42,6 +45,9 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.include_router(hooks.router, prefix="/api")
     app.include_router(mcp.router, prefix="/api")
     app.include_router(keybindings.router, prefix="/api")
+    app.include_router(marketplace_router.router, prefix="/api")
+    app.include_router(memory.router, prefix="/api")
+    app.include_router(teams.router, prefix="/api")
 
     static_dir = Path(__file__).parent / "static"
     if static_dir.exists():

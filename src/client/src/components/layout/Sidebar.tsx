@@ -44,7 +44,7 @@ const navGroups: NavGroup[] = [
   },
   {
     title: 'Store',
-    items: [{ label: 'Marketplace', disabled: true }],
+    items: [{ label: 'Marketplace', to: '/marketplace' }],
   },
 ]
 
