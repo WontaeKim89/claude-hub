@@ -19,17 +19,29 @@ def fake_claude_dir(tmp_path: Path) -> Path:
     # plugins
     plugins_dir = claude_dir / "plugins"
     plugins_dir.mkdir()
+    # version 2 형식 (실제 Claude Code 형식과 동일)
+    cache_dir = plugins_dir / "cache" / "claude-plugins-official" / "superpowers" / "5.0.2"
+    cache_plugin_dir = cache_dir / ".claude-plugin"
+    cache_plugin_dir.mkdir(parents=True)
+    (cache_plugin_dir / "plugin.json").write_text(json.dumps({
+        "name": "superpowers", "description": "Agent skills framework", "version": "5.0.2"
+    }))
+    (cache_dir / "skills").mkdir()
     (plugins_dir / "installed_plugins.json").write_text(
-        json.dumps(
-            [
-                {
-                    "name": "superpowers",
-                    "marketplace": "claude-plugins-official",
-                    "version": "5.0.2",
-                    "installedAt": "2026-03-01T00:00:00Z",
-                }
-            ]
-        )
+        json.dumps({
+            "version": 2,
+            "plugins": {
+                "superpowers@claude-plugins-official": [
+                    {
+                        "scope": "user",
+                        "installPath": str(cache_dir),
+                        "version": "5.0.2",
+                        "installedAt": "2026-03-01T00:00:00Z",
+                        "lastUpdated": "2026-03-01T00:00:00Z",
+                    }
+                ]
+            }
+        })
     )
     (plugins_dir / "known_marketplaces.json").write_text(
         json.dumps(

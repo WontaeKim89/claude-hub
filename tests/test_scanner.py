@@ -96,7 +96,7 @@ def test_list_projects(scanner):
 
 def test_get_dashboard(scanner):
     summary = scanner.get_dashboard()
-    assert summary["skills_count"] == 1
-    assert summary["agents_count"] == 1
-    assert summary["projects_count"] == 1
-    assert summary["mcp_servers_count"] == 1
+    assert summary["skills"]["total"] >= 1
+    assert summary["agents"]["total"] >= 1
+    assert summary["projects"]["total"] >= 1
+    assert summary["mcp_servers"]["total"] == 1

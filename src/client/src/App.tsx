@@ -12,6 +12,8 @@ import Hooks from './pages/Hooks'
 import Mcp from './pages/Mcp'
 import Keybindings from './pages/Keybindings'
 import Marketplace from './pages/Marketplace'
+import Memory from './pages/Memory'
+import Teams from './pages/Teams'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -36,6 +38,8 @@ export default function App() {
               <Route path="/mcp" element={<Mcp />} />
               <Route path="/keybindings" element={<Keybindings />} />
               <Route path="/marketplace" element={<Marketplace />} />
+              <Route path="/memory" element={<Memory />} />
+              <Route path="/teams" element={<Teams />} />
             </Routes>
           </main>
         </div>

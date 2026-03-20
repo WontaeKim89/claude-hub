@@ -35,14 +35,17 @@ async def toggle_plugin(name: str, body: PluginToggle, request: Request):
     last_mtime = settings_path.stat().st_mtime
     settings = json.loads(settings_path.read_text())
 
-    # installed_plugins.json 에서 플러그인의 marketplace 정보 조회
+    # installed_plugins.json (v2) 에서 플러그인의 marketplace 정보 조회
     installed_path = config.paths.installed_plugins_path
     marketplace = None
     if installed_path.exists():
-        installed = json.loads(installed_path.read_text())
-        entry = next((p for p in installed if p["name"] == name), None)
-        if entry:
-            marketplace = entry.get("marketplace")
+        raw = json.loads(installed_path.read_text())
+        plugins_dict = raw.get("plugins", {}) if isinstance(raw, dict) else {}
+        for key in plugins_dict:
+            plugin_name = key.split("@", 1)[0]
+            if plugin_name == name:
+                marketplace = key.split("@", 1)[1] if "@" in key else ""
+                break
 
     if marketplace is None:
         raise HTTPException(status_code=404, detail=f"플러그인 없음: {name}")

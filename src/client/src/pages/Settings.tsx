@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
-import type { SettingsData } from '../lib/types'
+import { DiffModal } from '../components/shared/DiffModal'
+import type { SettingsData, DiffResult } from '../lib/types'
 
 type Tab = 'global' | 'local' | 'raw'
 
@@ -24,6 +25,7 @@ export default function Settings() {
   const [rawJson, setRawJson] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [diffResult, setDiffResult] = useState<DiffResult | null>(null)
 
   const { data, isLoading } = useQuery<SettingsData>({
     queryKey: ['settings'],
@@ -64,6 +66,17 @@ export default function Settings() {
       mutation.mutate({ global_settings: parsed, last_mtime: data.last_mtime })
     } catch {
       setError('Invalid JSON')
+    }
+  }
+
+  const handlePreviewDiff = async () => {
+    if (!data) return
+    try {
+      const parsed = JSON.parse(rawJson) as Record<string, unknown>
+      const result = await api.previewDiff({ target: 'settings', scope: 'global', content: parsed })
+      setDiffResult(result)
+    } catch {
+      setError('Invalid JSON - cannot preview diff')
     }
   }
 
@@ -143,6 +156,13 @@ export default function Settings() {
           <MonacoWrapper value={rawJson} onChange={setRawJson} language="json" height="500px" />
           <div className="flex justify-end gap-2 px-4 py-3 border-t border-zinc-800">
             <button
+              onClick={handlePreviewDiff}
+              disabled={mutation.isPending}
+              className="px-3 py-1.5 text-sm text-zinc-300 border border-zinc-600 hover:border-zinc-400 rounded-md disabled:opacity-50"
+            >
+              Preview Diff
+            </button>
+            <button
               onClick={handleRawSave}
               disabled={mutation.isPending}
               className="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-md disabled:opacity-50"
@@ -151,6 +171,14 @@ export default function Settings() {
             </button>
           </div>
         </div>
+      )}
+
+      {diffResult && (
+        <DiffModal
+          diff={diffResult.diff}
+          targetPath={diffResult.target_path}
+          onClose={() => setDiffResult(null)}
+        />
       )}
     </div>
   )

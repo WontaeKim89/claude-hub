@@ -38,8 +38,8 @@ const navGroups: NavGroup[] = [
     title: 'Content',
     items: [
       { label: 'CLAUDE.md', to: '/claude-md' },
-      { label: 'Memory', disabled: true },
-      { label: 'Teams', disabled: true },
+      { label: 'Memory', to: '/memory' },
+      { label: 'Teams', to: '/teams' },
     ],
   },
   {

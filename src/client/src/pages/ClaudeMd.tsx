@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
-import type { ClaudeMdEntry } from '../lib/types'
+import { DiffModal } from '../components/shared/DiffModal'
+import type { ClaudeMdEntry, DiffResult } from '../lib/types'
 
 export default function ClaudeMd() {
   const qc = useQueryClient()
@@ -11,6 +12,7 @@ export default function ClaudeMd() {
   const [content, setContent] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [diffResult, setDiffResult] = useState<DiffResult | null>(null)
 
   const { data: entries = [], isLoading } = useQuery<ClaudeMdEntry[]>({
     queryKey: ['claude-md'],
@@ -52,6 +54,12 @@ export default function ClaudeMd() {
     setActiveScope(scope)
     setContent('')
     setError('')
+  }
+
+  const handlePreviewDiff = async () => {
+    if (!activeScope) return
+    const result = await api.previewDiff({ target: 'claude-md', scope: activeScope, content })
+    setDiffResult(result)
   }
 
   if (isLoading) {
@@ -104,6 +112,13 @@ export default function ClaudeMd() {
 
           <div className="flex justify-end gap-2 px-4 py-3 border-t border-zinc-800">
             <button
+              onClick={handlePreviewDiff}
+              disabled={mutation.isPending || contentLoading}
+              className="px-3 py-1.5 text-sm text-zinc-300 border border-zinc-600 hover:border-zinc-400 rounded-md disabled:opacity-50"
+            >
+              Preview Diff
+            </button>
+            <button
               onClick={() => mutation.mutate()}
               disabled={mutation.isPending || contentLoading}
               className="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-md disabled:opacity-50"
@@ -118,6 +133,14 @@ export default function ClaudeMd() {
         <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 text-center">
           <p className="text-sm text-zinc-500">No CLAUDE.md files found.</p>
         </div>
+      )}
+
+      {diffResult && (
+        <DiffModal
+          diff={diffResult.diff}
+          targetPath={diffResult.target_path}
+          onClose={() => setDiffResult(null)}
+        />
       )}
     </div>
   )

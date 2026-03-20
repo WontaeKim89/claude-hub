@@ -163,3 +163,25 @@ export interface TeamSummary {
   name: string
   path: string
 }
+
+export interface BackupEntry {
+  id: string
+  target_path: string
+  backup_path: string
+  timestamp: number
+}
+
+export interface BackupHistory {
+  history: BackupEntry[]
+}
+
+export interface DiffResult {
+  diff: string
+  target_path: string
+}
+
+export interface DiffRequest {
+  target: string
+  scope: string
+  content: string | Record<string, unknown>
+}

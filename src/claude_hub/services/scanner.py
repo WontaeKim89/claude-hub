@@ -149,7 +149,16 @@ class ScannerService:
         if not installed_path.exists():
             return []
 
-        installed: list[dict] = json.loads(installed_path.read_text())
+        raw = json.loads(installed_path.read_text())
+
+        # version 2 형식: {"version": 2, "plugins": {"name@mp": [...]}}
+        if isinstance(raw, dict) and "plugins" in raw:
+            plugins_dict = raw["plugins"]
+        elif isinstance(raw, list):
+            # version 1 형식 (하위 호환)
+            plugins_dict = {f"{p['name']}@{p.get('marketplace','')}": [p] for p in raw}
+        else:
+            return []
 
         # settings.json 에서 enabledPlugins 상태 조회
         enabled_map: dict[str, bool] = {}
@@ -160,15 +169,21 @@ class ScannerService:
         results = []
         cache_root = paths.plugins_dir / "cache"
 
-        for entry in installed:
-            name = entry["name"]
-            marketplace = entry.get("marketplace", "")
+        for plugin_key, entries in plugins_dict.items():
+            # plugin_key: "name@marketplace"
+            parts = plugin_key.split("@", 1)
+            name = parts[0]
+            marketplace = parts[1] if len(parts) > 1 else ""
+            # 가장 최근 설치된 엔트리 사용
+            entry = entries[-1] if entries else {}
             version = entry.get("version", "")
 
             description = ""
             assets = PluginAssets()
 
-            cache_dir = cache_root / marketplace / name / version
+            # installPath가 있으면 직접 사용, 없으면 추정
+            install_path = entry.get("installPath", "")
+            cache_dir = Path(install_path) if install_path else cache_root / marketplace / name / version
             if cache_dir.exists():
                 plugin_json = cache_dir / ".claude-plugin" / "plugin.json"
                 if plugin_json.exists():
@@ -201,9 +216,15 @@ class ScannerService:
         return results
 
     def get_dashboard(self) -> dict:
+        skills = self.scan_skills()
+        plugins = self.scan_plugins()
+        hooks = self.read_hooks()
+        hook_count = sum(len(groups) for groups in hooks.values())
         return {
-            "skills_count": len(self.scan_skills()),
-            "agents_count": len(self.scan_agents()),
-            "projects_count": len(self.list_projects()),
-            "mcp_servers_count": len(self.read_mcp_servers()),
+            "skills": {"total": len(skills), "custom": sum(1 for s in skills if s.source == "local"), "plugin": sum(1 for s in skills if s.source != "local")},
+            "plugins": {"total": len(plugins), "enabled": sum(1 for p in plugins if p.enabled)},
+            "hooks": {"total": hook_count},
+            "mcp_servers": {"total": len(self.read_mcp_servers())},
+            "agents": {"total": len(self.scan_agents())},
+            "projects": {"total": len(self.list_projects())},
         }

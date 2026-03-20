@@ -1,4 +1,4 @@
-import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary } from './types'
+import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary, BackupHistory, DiffResult, DiffRequest } from './types'
 
 const BASE = '/api'
 
@@ -155,4 +155,18 @@ export const api = {
     delete: (name: string) =>
       request<{ ok: boolean }>(`/teams/${encodeURIComponent(name)}`, { method: 'DELETE' }),
   },
+
+  backups: {
+    list: () => request<BackupHistory>('/backups'),
+    restore: (backupId: string) =>
+      request<{ restored: boolean; backup_id: string }>(`/backups/${encodeURIComponent(backupId)}/restore`, {
+        method: 'POST',
+      }),
+  },
+
+  previewDiff: (body: DiffRequest) =>
+    request<DiffResult>('/preview-diff', {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
 }
