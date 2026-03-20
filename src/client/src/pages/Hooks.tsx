@@ -1,7 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Plus, Edit2, Trash2, X } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
+import { Badge } from '../components/shared/Badge'
 import type { HooksData, HookEntry, HookEventType } from '../lib/types'
 
 const EVENT_TYPES: HookEventType[] = [
@@ -27,7 +29,6 @@ interface FlatHook {
   timeout: number
 }
 
-// hooks dict를 평탄한 행 목록으로 변환
 function flattenHooks(hooks: Record<string, HookEntry[]>): FlatHook[] {
   const rows: FlatHook[] = []
   for (const [eventType, entries] of Object.entries(hooks)) {
@@ -47,14 +48,10 @@ function flattenHooks(hooks: Record<string, HookEntry[]>): FlatHook[] {
   return rows
 }
 
-// 평탄한 행 목록에서 hooks dict 재구성
 function buildHooksDict(rows: FlatHook[]): Record<string, HookEntry[]> {
   const result: Record<string, HookEntry[]> = {}
   for (const row of rows) {
-    if (!result[row.eventType]) {
-      result[row.eventType] = []
-    }
-    // entryIndex 기준으로 entry 찾거나 새로 생성
+    if (!result[row.eventType]) result[row.eventType] = []
     let entry = result[row.eventType][row.entryIndex]
     if (!entry) {
       entry = { hooks: [] }
@@ -67,7 +64,6 @@ function buildHooksDict(rows: FlatHook[]): Record<string, HookEntry[]> {
       ...(row.timeout > 0 ? { timeout: row.timeout } : {}),
     })
   }
-  // undefined 슬롯 제거
   for (const key of Object.keys(result)) {
     result[key] = result[key].filter(Boolean)
   }
@@ -102,70 +98,68 @@ function HookFormModal({
   const [form, setForm] = useState<HookFormState>(initial)
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg w-[480px]">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
-          <h3 className="text-sm font-medium text-zinc-100">{title}</h3>
-          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300 text-lg leading-none">
-            &times;
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[480px]">
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800">
+          <span className="text-sm font-medium text-zinc-100">{title}</span>
+          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">
+            <X size={16} />
           </button>
         </div>
         <div className="p-5 space-y-4">
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Event Type</label>
+            <label className="block font-mono text-xs text-zinc-500 mb-1.5">event_type</label>
             <select
               value={form.eventType}
               onChange={(e) => setForm({ ...form, eventType: e.target.value as HookEventType })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
             >
               {EVENT_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
+                <option key={t} value={t}>{t}</option>
               ))}
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">
-              Matcher <span className="text-zinc-600">(optional regex)</span>
+            <label className="block font-mono text-xs text-zinc-500 mb-1.5">
+              matcher <span className="text-zinc-700">(optional regex)</span>
             </label>
             <input
               value={form.matcher}
               onChange={(e) => setForm({ ...form, matcher: e.target.value })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500"
-              placeholder="e.g. Bash|Edit"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              placeholder="Bash|Edit"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Command</label>
+            <label className="block font-mono text-xs text-zinc-500 mb-1.5">command</label>
             <input
               value={form.command}
               onChange={(e) => setForm({ ...form, command: e.target.value })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:border-indigo-500"
-              placeholder="e.g. echo hello"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:border-emerald-500/50"
+              placeholder="echo hello"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">
-              Timeout (ms) <span className="text-zinc-600">(optional)</span>
+            <label className="block font-mono text-xs text-zinc-500 mb-1.5">
+              timeout_ms <span className="text-zinc-700">(optional)</span>
             </label>
             <input
               type="number"
               value={form.timeout}
               onChange={(e) => setForm({ ...form, timeout: e.target.value })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500"
-              placeholder="e.g. 2000"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:border-emerald-500/50"
+              placeholder="2000"
             />
           </div>
         </div>
-        <div className="flex justify-end gap-2 px-5 py-4 border-t border-zinc-800">
-          <button onClick={onClose} className="px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-200">
+        <div className="flex justify-end gap-2 px-5 py-3.5 border-t border-zinc-800">
+          <button onClick={onClose} className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300">
             Cancel
           </button>
           <button
             onClick={() => onSave(form)}
             disabled={!form.command.trim()}
-            className="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-md disabled:opacity-50"
+            className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
           >
             Save
           </button>
@@ -206,8 +200,7 @@ export default function Hooks() {
       command: form.command,
       timeout: form.timeout ? parseInt(form.timeout, 10) : 0,
     }
-    const updated = buildHooksDict([...rows, newRow])
-    saveMutation.mutate(updated as Record<string, HookEntry[]>)
+    saveMutation.mutate(buildHooksDict([...rows, newRow]) as Record<string, HookEntry[]>)
     setShowAdd(false)
   }
 
@@ -250,70 +243,63 @@ export default function Hooks() {
       <PageHeader title="Hooks" subtitle="Event-driven shell commands for Claude lifecycle events">
         <button
           onClick={() => setShowAdd(true)}
-          className="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-md"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
         >
-          + Add Hook
+          <Plus size={13} strokeWidth={2} />
+          Add Hook
         </button>
       </PageHeader>
 
       {isLoading ? (
-        <p className="text-sm text-zinc-500">Loading...</p>
+        <p className="text-xs text-zinc-600 font-mono">loading...</p>
       ) : rows.length === 0 ? (
-        <p className="text-sm text-zinc-500">No hooks configured.</p>
+        <p className="text-xs text-zinc-600">No hooks configured.</p>
       ) : (
-        <div className="border border-zinc-800 rounded-lg overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="border border-zinc-800 rounded-md overflow-hidden">
+          <table className="w-full text-xs">
             <thead>
-              <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                  Event Type
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                  Matcher
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                  Command
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                  Timeout (ms)
-                </th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-zinc-400 uppercase tracking-wider">
-                  Actions
-                </th>
+              <tr className="border-b border-zinc-800 bg-zinc-900/60">
+                <th className="text-left px-4 py-2.5 font-mono text-zinc-600 uppercase tracking-wider font-medium">Event</th>
+                <th className="text-left px-4 py-2.5 font-mono text-zinc-600 uppercase tracking-wider font-medium">Matcher</th>
+                <th className="text-left px-4 py-2.5 font-mono text-zinc-600 uppercase tracking-wider font-medium">Command</th>
+                <th className="text-left px-4 py-2.5 font-mono text-zinc-600 uppercase tracking-wider font-medium">Timeout</th>
+                <th className="px-4 py-2.5 w-20"></th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row, i) => (
+              {rows.map((row) => (
                 <tr
                   key={`${row.eventType}-${row.entryIndex}-${row.hookIndex}`}
-                  className={i % 2 === 0 ? 'bg-zinc-950' : 'bg-zinc-900/30'}
+                  className={`border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/20 transition-colors`}
                 >
                   <td className="px-4 py-3">
-                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-400">
-                      {row.eventType}
-                    </span>
+                    <Badge variant="zinc">{row.eventType}</Badge>
                   </td>
-                  <td className="px-4 py-3 text-zinc-400 font-mono text-xs">
-                    {row.matcher || <span className="text-zinc-600">—</span>}
+                  <td className="px-4 py-3 font-mono text-zinc-500">
+                    {row.matcher || <span className="text-zinc-700">—</span>}
                   </td>
-                  <td className="px-4 py-3 text-zinc-100 font-mono text-xs">{row.command}</td>
-                  <td className="px-4 py-3 text-zinc-400 text-xs">
-                    {row.timeout > 0 ? row.timeout : <span className="text-zinc-600">—</span>}
+                  <td className="px-4 py-3 font-mono text-zinc-300 max-w-xs truncate">
+                    {row.command}
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex justify-end gap-2">
+                  <td className="px-4 py-3 font-mono text-zinc-500">
+                    {row.timeout > 0 ? row.timeout : <span className="text-zinc-700">—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1.5">
                       <button
                         onClick={() => setEditTarget(row)}
-                        className="px-2.5 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-md"
+                        className="p-1 text-zinc-600 hover:text-zinc-300 transition-colors"
+                        title="Edit"
                       >
-                        Edit
+                        <Edit2 size={13} strokeWidth={1.5} />
                       </button>
                       <button
                         onClick={() => handleDelete(row)}
                         disabled={saveMutation.isPending}
-                        className="px-2.5 py-1 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-md disabled:opacity-50"
+                        className="p-1 text-zinc-600 hover:text-red-400 transition-colors disabled:opacity-50"
+                        title="Delete"
                       >
-                        Delete
+                        <Trash2 size={13} strokeWidth={1.5} />
                       </button>
                     </div>
                   </td>

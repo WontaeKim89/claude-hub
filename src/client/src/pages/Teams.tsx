@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { Trash2 } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import type { TeamSummary } from '../lib/types'
@@ -27,57 +28,69 @@ export default function Teams() {
     <div>
       <PageHeader title="Teams" subtitle="Shared team configurations at ~/.claude/teams/" />
 
-      {error && <p className="text-sm text-red-400 bg-red-400/10 rounded p-2 mb-4">{error}</p>}
+      {error && <p className="text-xs text-red-400 bg-red-400/10 rounded px-3 py-2 mb-4">{error}</p>}
 
       {isLoading ? (
-        <p className="text-sm text-zinc-500">Loading...</p>
+        <p className="text-xs text-zinc-600 font-mono">loading...</p>
       ) : teams.length === 0 ? (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 text-center">
-          <p className="text-sm text-zinc-500">No teams found.</p>
-          <p className="text-xs text-zinc-600 mt-1">Teams are directories under ~/.claude/teams/</p>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-8 text-center">
+          <p className="text-xs text-zinc-600">No teams found.</p>
+          <p className="font-mono text-xs text-zinc-700 mt-1">~/.claude/teams/</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
-          {teams.map((team) => (
-            <div
-              key={team.name}
-              className="bg-zinc-900 border border-zinc-800 rounded-lg p-4"
-            >
-              <div className="mb-2">
-                <span className="text-sm font-medium text-zinc-100">{team.name}</span>
-              </div>
-              <p className="text-xs font-mono text-zinc-500 mb-3 truncate">{team.path}</p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setDeleteTarget(team)}
-                  className="px-2.5 py-1 text-xs bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-md"
+        <div className="border border-zinc-800 rounded-md overflow-hidden max-w-2xl">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-zinc-800 bg-zinc-900/60">
+                <th className="text-left px-4 py-2.5 font-mono text-zinc-600 uppercase tracking-wider font-medium">Name</th>
+                <th className="text-left px-4 py-2.5 font-mono text-zinc-600 uppercase tracking-wider font-medium">Path</th>
+                <th className="px-4 py-2.5 w-16"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {teams.map((team) => (
+                <tr
+                  key={team.name}
+                  className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/20 transition-colors"
                 >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
+                  <td className="px-4 py-3">
+                    <span className="font-mono text-zinc-200">{team.name}</span>
+                  </td>
+                  <td className="px-4 py-3 font-mono text-zinc-600 truncate max-w-xs">{team.path}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      onClick={() => setDeleteTarget(team)}
+                      className="p-1 text-zinc-600 hover:text-red-400 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 size={13} strokeWidth={1.5} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
       {deleteTarget && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 w-80">
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 w-80">
             <h3 className="text-sm font-medium text-zinc-100 mb-2">Delete team</h3>
-            <p className="text-sm text-zinc-400 mb-4">
-              Delete team <span className="text-zinc-100">"{deleteTarget.name}"</span>? This cannot be undone.
+            <p className="text-xs text-zinc-400 mb-4">
+              Delete <span className="font-mono text-zinc-200">"{deleteTarget.name}"</span>? This cannot be undone.
             </p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setDeleteTarget(null)}
-                className="px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-200"
+                className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300"
               >
                 Cancel
               </button>
               <button
                 onClick={() => deleteMutation.mutate(deleteTarget.name)}
                 disabled={deleteMutation.isPending}
-                className="px-3 py-1.5 text-sm bg-red-600 hover:bg-red-500 text-white rounded-md disabled:opacity-50"
+                className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-50"
               >
                 {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
               </button>

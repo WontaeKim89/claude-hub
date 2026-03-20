@@ -1,9 +1,24 @@
 import { NavLink } from 'react-router-dom'
+import {
+  LayoutDashboard,
+  Sparkles,
+  Puzzle,
+  Bot,
+  Terminal,
+  Settings,
+  Webhook,
+  Server,
+  Keyboard,
+  FileText,
+  Brain,
+  Users,
+  Store,
+} from 'lucide-react'
 
 interface NavItem {
   label: string
-  to?: string
-  disabled?: boolean
+  to: string
+  icon: React.ElementType
 }
 
 interface NavGroup {
@@ -14,67 +29,60 @@ interface NavGroup {
 const navGroups: NavGroup[] = [
   {
     title: 'Overview',
-    items: [{ label: 'Dashboard', to: '/' }],
+    items: [{ label: 'Dashboard', to: '/', icon: LayoutDashboard }],
   },
   {
     title: 'Extensions',
     items: [
-      { label: 'Skills', to: '/skills' },
-      { label: 'Plugins', to: '/plugins' },
-      { label: 'Agents', to: '/agents' },
-      { label: 'Commands', to: '/commands' },
+      { label: 'Skills', to: '/skills', icon: Sparkles },
+      { label: 'Plugins', to: '/plugins', icon: Puzzle },
+      { label: 'Agents', to: '/agents', icon: Bot },
+      { label: 'Commands', to: '/commands', icon: Terminal },
     ],
   },
   {
     title: 'Configuration',
     items: [
-      { label: 'Settings', to: '/settings' },
-      { label: 'Hooks', to: '/hooks' },
-      { label: 'MCP Servers', to: '/mcp' },
-      { label: 'Keybindings', to: '/keybindings' },
+      { label: 'Settings', to: '/settings', icon: Settings },
+      { label: 'Hooks', to: '/hooks', icon: Webhook },
+      { label: 'MCP Servers', to: '/mcp', icon: Server },
+      { label: 'Keybindings', to: '/keybindings', icon: Keyboard },
     ],
   },
   {
     title: 'Content',
     items: [
-      { label: 'CLAUDE.md', to: '/claude-md' },
-      { label: 'Memory', to: '/memory' },
-      { label: 'Teams', to: '/teams' },
+      { label: 'CLAUDE.md', to: '/claude-md', icon: FileText },
+      { label: 'Memory', to: '/memory', icon: Brain },
+      { label: 'Teams', to: '/teams', icon: Users },
     ],
   },
   {
     title: 'Store',
-    items: [{ label: 'Marketplace', to: '/marketplace' }],
+    items: [{ label: 'Marketplace', to: '/marketplace', icon: Store }],
   },
 ]
 
 export function Sidebar() {
   return (
-    <aside className="w-60 bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0">
+    <aside className="w-56 bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0">
       {/* Logo */}
-      <div className="px-4 py-5 border-b border-zinc-800">
-        <span className="text-zinc-100 font-semibold text-sm">claude-hub</span>
-        <span className="ml-2 text-zinc-500 text-xs">v0.1.0</span>
+      <div className="px-4 py-4 border-b border-zinc-800">
+        <div className="flex items-center gap-2">
+          <span className="text-zinc-100 font-semibold text-sm tracking-tight">claude-hub</span>
+          <span className="font-mono text-zinc-600 text-xs">v0.1.0</span>
+        </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3">
+      <nav className="flex-1 overflow-y-auto py-2">
         {navGroups.map((group) => (
-          <div key={group.title} className="mb-4">
-            <p className="px-4 py-1 text-xs font-medium uppercase tracking-wider text-zinc-500">
+          <div key={group.title} className="mb-3">
+            <p className="px-3 py-1 text-[10px] font-mono font-medium uppercase tracking-widest text-zinc-600">
               {group.title}
             </p>
             {group.items.map((item) => {
-              if (item.disabled || !item.to) {
-                return (
-                  <span
-                    key={item.label}
-                    className="flex items-center px-4 py-1.5 text-sm text-zinc-600 cursor-not-allowed"
-                  >
-                    {item.label}
-                  </span>
-                )
-              }
+              const Icon = item.icon
               return (
                 <NavLink
                   key={item.label}
@@ -82,10 +90,11 @@ export function Sidebar() {
                   end={item.to === '/'}
                   className={({ isActive }) =>
                     isActive
-                      ? 'flex items-center px-4 py-1.5 text-sm text-indigo-400 bg-indigo-500/10 border-l-2 border-indigo-500'
-                      : 'flex items-center px-4 py-1.5 text-sm text-zinc-300 hover:text-zinc-100 hover:bg-zinc-800 border-l-2 border-transparent'
+                      ? 'flex items-center gap-2.5 px-3 py-1.5 text-xs text-emerald-400 bg-emerald-400/8 border-l-2 border-emerald-400'
+                      : 'flex items-center gap-2.5 px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border-l-2 border-transparent transition-colors'
                   }
                 >
+                  <Icon size={14} strokeWidth={1.5} />
                   {item.label}
                 </NavLink>
               )
@@ -93,6 +102,14 @@ export function Sidebar() {
           </div>
         ))}
       </nav>
+
+      {/* Status footer */}
+      <div className="px-3 py-3 border-t border-zinc-800">
+        <div className="flex items-center gap-1.5">
+          <span className="text-emerald-400 text-xs leading-none">●</span>
+          <span className="font-mono text-xs text-zinc-500">Connected</span>
+        </div>
+      </div>
     </aside>
   )
 }

@@ -3,6 +3,8 @@ export interface DashboardData {
   plugins: number
   hooks: number
   mcp_servers: number
+  agents?: number
+  projects?: number
 }
 
 export interface HealthResult {

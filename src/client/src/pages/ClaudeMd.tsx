@@ -19,7 +19,6 @@ export default function ClaudeMd() {
     queryFn: () => api.claudeMd.list(),
   })
 
-  // 첫 번째 항목을 기본 탭으로 설정
   useEffect(() => {
     if (entries.length > 0 && activeScope === null) {
       setActiveScope(entries[0].scope)
@@ -32,7 +31,6 @@ export default function ClaudeMd() {
     enabled: activeScope !== null,
   })
 
-  // 탭 전환 시 콘텐츠 동기화
   useEffect(() => {
     if (scopeData) {
       setContent(scopeData.content)
@@ -63,7 +61,11 @@ export default function ClaudeMd() {
   }
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-40"><span className="text-zinc-500 text-sm">Loading...</span></div>
+    return (
+      <div className="flex items-center justify-center h-40">
+        <span className="font-mono text-zinc-600 text-xs">loading...</span>
+      </div>
+    )
   }
 
   return (
@@ -72,18 +74,18 @@ export default function ClaudeMd() {
 
       {/* Scope tabs */}
       {entries.length > 0 && (
-        <div className="flex gap-1 mb-5 bg-zinc-900 border border-zinc-800 rounded-md p-1 w-fit">
+        <div className="flex gap-0.5 mb-5 bg-zinc-900 border border-zinc-800 rounded p-0.5 w-fit">
           {entries.map((entry) => (
             <button
               key={entry.scope}
               onClick={() => handleTabChange(entry.scope)}
-              className={`px-3 py-1 text-sm rounded flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 text-xs rounded flex items-center gap-1.5 transition-colors ${
                 activeScope === entry.scope
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-zinc-400 hover:text-zinc-200'
+                  ? 'bg-emerald-600 text-white'
+                  : 'text-zinc-500 hover:text-zinc-200'
               }`}
             >
-              {entry.scope}
+              <span className="font-mono">{entry.scope}</span>
               {!entry.exists && (
                 <span className="text-xs opacity-60">(new)</span>
               )}
@@ -92,20 +94,20 @@ export default function ClaudeMd() {
         </div>
       )}
 
-      {error && <p className="text-sm text-red-400 bg-red-400/10 rounded p-2 mb-4">{error}</p>}
-      {success && <p className="text-sm text-emerald-400 bg-emerald-400/10 rounded p-2 mb-4">Saved successfully.</p>}
+      {error && <p className="text-xs text-red-400 bg-red-400/10 rounded px-3 py-2 mb-4">{error}</p>}
+      {success && <p className="text-xs text-emerald-400 bg-emerald-400/10 rounded px-3 py-2 mb-4">Saved successfully.</p>}
 
       {activeScope && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
-          {/* 파일 경로 표시 */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+          {/* File path header */}
           {scopeData && (
-            <div className="px-4 py-2 border-b border-zinc-800">
-              <span className="text-xs text-zinc-500 font-mono">{scopeData.path}</span>
+            <div className="px-4 py-2 border-b border-zinc-800 bg-zinc-900/50">
+              <span className="font-mono text-xs text-zinc-600">{scopeData.path}</span>
             </div>
           )}
 
           {contentLoading ? (
-            <div className="flex items-center justify-center h-40 text-zinc-500 text-sm">Loading...</div>
+            <div className="flex items-center justify-center h-40 text-zinc-600 text-xs font-mono">loading...</div>
           ) : (
             <MonacoWrapper value={content} onChange={setContent} height="500px" />
           )}
@@ -114,14 +116,14 @@ export default function ClaudeMd() {
             <button
               onClick={handlePreviewDiff}
               disabled={mutation.isPending || contentLoading}
-              className="px-3 py-1.5 text-sm text-zinc-300 border border-zinc-600 hover:border-zinc-400 rounded-md disabled:opacity-50"
+              className="px-3 py-1.5 text-xs text-zinc-400 border border-zinc-700 hover:border-zinc-500 hover:text-zinc-200 rounded transition-colors disabled:opacity-50"
             >
               Preview Diff
             </button>
             <button
               onClick={() => mutation.mutate()}
               disabled={mutation.isPending || contentLoading}
-              className="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-md disabled:opacity-50"
+              className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
             >
               {mutation.isPending ? 'Saving...' : 'Save'}
             </button>
@@ -130,8 +132,8 @@ export default function ClaudeMd() {
       )}
 
       {entries.length === 0 && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-8 text-center">
-          <p className="text-sm text-zinc-500">No CLAUDE.md files found.</p>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-8 text-center">
+          <p className="text-xs text-zinc-600">No CLAUDE.md files found.</p>
         </div>
       )}
 

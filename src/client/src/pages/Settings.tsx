@@ -32,7 +32,6 @@ export default function Settings() {
     queryFn: () => api.settings.get(),
   })
 
-  // raw JSON 탭용 상태 초기화
   useEffect(() => {
     if (data) {
       setRawJson(JSON.stringify(data.global_settings, null, 2))
@@ -48,15 +47,12 @@ export default function Settings() {
       setSuccess(true)
       setTimeout(() => setSuccess(false), 2000)
     },
-    onError: (e: Error) => {
-      setError(e.message)
-    },
+    onError: (e: Error) => setError(e.message),
   })
 
   const handleModelChange = (model: string) => {
     if (!data) return
-    const updated = { ...data.global_settings, model }
-    mutation.mutate({ global_settings: updated, last_mtime: data.last_mtime })
+    mutation.mutate({ global_settings: { ...data.global_settings, model }, last_mtime: data.last_mtime })
   }
 
   const handleRawSave = () => {
@@ -76,7 +72,7 @@ export default function Settings() {
       const result = await api.previewDiff({ target: 'settings', scope: 'global', content: parsed })
       setDiffResult(result)
     } catch {
-      setError('Invalid JSON - cannot preview diff')
+      setError('Invalid JSON — cannot preview diff')
     }
   }
 
@@ -87,7 +83,11 @@ export default function Settings() {
   ]
 
   if (isLoading) {
-    return <div className="flex items-center justify-center h-40"><span className="text-zinc-500 text-sm">Loading...</span></div>
+    return (
+      <div className="flex items-center justify-center h-40">
+        <span className="font-mono text-zinc-600 text-xs">loading...</span>
+      </div>
+    )
   }
 
   const currentModel = (data?.global_settings?.model as string) ?? ''
@@ -97,13 +97,15 @@ export default function Settings() {
       <PageHeader title="Settings" subtitle="Manage your claude configuration" />
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-5 bg-zinc-900 border border-zinc-800 rounded-md p-1 w-fit">
+      <div className="flex gap-0.5 mb-5 bg-zinc-900 border border-zinc-800 rounded p-0.5 w-fit">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => { setTab(t.key); setError('') }}
-            className={`px-3 py-1 text-sm rounded ${
-              tab === t.key ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-zinc-200'
+            className={`px-3 py-1.5 text-xs rounded transition-colors ${
+              tab === t.key
+                ? 'bg-emerald-600 text-white'
+                : 'text-zinc-500 hover:text-zinc-200'
             }`}
           >
             {t.label}
@@ -111,27 +113,26 @@ export default function Settings() {
         ))}
       </div>
 
-      {error && <p className="text-sm text-red-400 bg-red-400/10 rounded p-2 mb-4">{error}</p>}
-      {success && <p className="text-sm text-emerald-400 bg-emerald-400/10 rounded p-2 mb-4">Saved successfully.</p>}
+      {error && <p className="text-xs text-red-400 bg-red-400/10 rounded px-3 py-2 mb-4">{error}</p>}
+      {success && <p className="text-xs text-emerald-400 bg-emerald-400/10 rounded px-3 py-2 mb-4">Saved successfully.</p>}
 
       {tab === 'global' && data && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 space-y-4">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 space-y-5 max-w-xl">
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Model</label>
+            <label className="block font-mono text-xs text-zinc-500 mb-1.5">model</label>
             <select
               value={currentModel}
               onChange={(e) => handleModelChange(e.target.value)}
-              className="bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500"
+              className="bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
             >
               {MODEL_OPTIONS.map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}
             </select>
           </div>
-
           <div>
-            <label className="block text-xs font-medium text-zinc-400 mb-1">Other Settings (read-only)</label>
-            <pre className="bg-zinc-800 rounded-md p-3 text-xs text-zinc-400 overflow-auto max-h-60">
+            <label className="block font-mono text-xs text-zinc-500 mb-1.5">other settings (read-only)</label>
+            <pre className="bg-zinc-800 border border-zinc-800 rounded px-3 py-2.5 text-xs font-mono text-zinc-500 overflow-auto max-h-60">
               {JSON.stringify(
                 Object.fromEntries(Object.entries(data.global_settings).filter(([k]) => k !== 'model')),
                 null,
@@ -143,29 +144,32 @@ export default function Settings() {
       )}
 
       {tab === 'local' && data && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
-          <p className="text-xs font-medium text-zinc-400 mb-2">Local Settings (read-only)</p>
-          <pre className="bg-zinc-800 rounded-md p-3 text-xs text-zinc-400 overflow-auto max-h-96">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 max-w-xl">
+          <label className="block font-mono text-xs text-zinc-500 mb-1.5">local settings (read-only)</label>
+          <pre className="bg-zinc-800 border border-zinc-800 rounded px-3 py-2.5 text-xs font-mono text-zinc-500 overflow-auto max-h-96">
             {JSON.stringify(data.local_settings, null, 2)}
           </pre>
         </div>
       )}
 
       {tab === 'raw' && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+          <div className="px-4 py-2 border-b border-zinc-800">
+            <span className="font-mono text-xs text-zinc-600">~/.claude/settings.json</span>
+          </div>
           <MonacoWrapper value={rawJson} onChange={setRawJson} language="json" height="500px" />
           <div className="flex justify-end gap-2 px-4 py-3 border-t border-zinc-800">
             <button
               onClick={handlePreviewDiff}
               disabled={mutation.isPending}
-              className="px-3 py-1.5 text-sm text-zinc-300 border border-zinc-600 hover:border-zinc-400 rounded-md disabled:opacity-50"
+              className="px-3 py-1.5 text-xs text-zinc-400 border border-zinc-700 hover:border-zinc-500 hover:text-zinc-200 rounded transition-colors disabled:opacity-50"
             >
               Preview Diff
             </button>
             <button
               onClick={handleRawSave}
               disabled={mutation.isPending}
-              className="px-3 py-1.5 text-sm bg-indigo-600 hover:bg-indigo-500 text-white rounded-md disabled:opacity-50"
+              className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
             >
               {mutation.isPending ? 'Saving...' : 'Save'}
             </button>
