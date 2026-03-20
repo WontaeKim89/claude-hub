@@ -9,6 +9,8 @@ import Plugins from './pages/Plugins'
 import Agents from './pages/Agents'
 import Commands from './pages/Commands'
 import Hooks from './pages/Hooks'
+import Mcp from './pages/Mcp'
+import Keybindings from './pages/Keybindings'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -30,6 +32,8 @@ export default function App() {
               <Route path="/agents" element={<Agents />} />
               <Route path="/commands" element={<Commands />} />
               <Route path="/hooks" element={<Hooks />} />
+              <Route path="/mcp" element={<Mcp />} />
+              <Route path="/keybindings" element={<Keybindings />} />
             </Routes>
           </main>
         </div>
