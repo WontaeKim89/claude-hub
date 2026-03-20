@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Edit2, Trash2, Eye, X } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Eye, X, Sparkles } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Badge } from '../components/shared/Badge'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
+import { TableSkeleton } from '../components/shared/Skeleton'
 import { useLang } from '../hooks/useLang'
 import type { SkillSummary, SkillDetail } from '../lib/types'
 
@@ -212,10 +213,13 @@ export default function Skills() {
 
   return (
     <div>
-      <PageHeader title={t('skills.title')} subtitle={t('skills.subtitle')}>
+      <PageHeader
+        title={`${t('skills.title')}${!isLoading ? ` (${skills.length})` : ''}`}
+        subtitle={t('skills.subtitle')}
+      >
         <button
           onClick={() => setShowNew(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors duration-150"
         >
           <Plus size={13} strokeWidth={2} />
           {t('skills.newSkill')}
@@ -229,9 +233,9 @@ export default function Skills() {
             <button
               key={tab.key}
               onClick={() => setFilter(tab.key)}
-              className={`px-2.5 py-1 text-xs rounded transition-colors ${
+              className={`px-2.5 py-1 text-xs rounded transition-colors duration-150 ${
                 filter === tab.key
-                  ? 'bg-emerald-600 text-white'
+                  ? 'bg-emerald-600 text-white font-medium'
                   : 'text-zinc-500 hover:text-zinc-200'
               }`}
             >
@@ -245,16 +249,20 @@ export default function Skills() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('skills.search')}
-            className="bg-zinc-900 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 w-52"
+            className="bg-zinc-900 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/20 w-52 transition-colors duration-150"
           />
         </div>
       </div>
 
       {/* Table */}
       {isLoading ? (
-        <p className="text-xs text-zinc-600 font-mono">loading...</p>
+        <TableSkeleton rows={5} cols={4} />
       ) : filtered.length === 0 ? (
-        <p className="text-xs text-zinc-600">No skills found.</p>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Sparkles size={24} strokeWidth={1} className="text-zinc-700 mb-3" />
+          <p className="text-sm text-zinc-500">No skills found.</p>
+          <p className="text-xs text-zinc-600 mt-1">Try a different filter or create a new skill.</p>
+        </div>
       ) : (
         <div className="border border-zinc-800 rounded-md overflow-hidden">
           <table className="w-full text-xs">
@@ -272,7 +280,7 @@ export default function Skills() {
                 return (
                   <tr
                     key={skill.name}
-                    className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/20 transition-colors"
+                    className={`border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/30 transition-colors duration-150 ${isCustom ? 'border-l-2 border-l-emerald-500/20' : ''}`}
                   >
                     <td className="px-4 py-3">
                       <span className="font-mono text-zinc-200">{skill.name}</span>
@@ -292,7 +300,7 @@ export default function Skills() {
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => setEditSkill(skill)}
-                          className="p-1 text-zinc-600 hover:text-zinc-300 transition-colors"
+                          className="p-1 text-zinc-600 hover:text-zinc-300 transition-colors duration-150"
                           title={isCustom ? 'Edit' : 'View'}
                         >
                           {isCustom ? <Edit2 size={13} strokeWidth={1.5} /> : <Eye size={13} strokeWidth={1.5} />}
@@ -300,7 +308,7 @@ export default function Skills() {
                         {isCustom && (
                           <button
                             onClick={() => setDeleteTarget(skill)}
-                            className="p-1 text-zinc-600 hover:text-red-400 transition-colors"
+                            className="p-1 text-zinc-600 hover:text-red-400 transition-colors duration-150"
                             title="Delete"
                           >
                             <Trash2 size={13} strokeWidth={1.5} />

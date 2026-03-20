@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Edit2, Trash2, X } from 'lucide-react'
+import { Plus, Edit2, Trash2, X, Webhook } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Badge } from '../components/shared/Badge'
+import { TableSkeleton } from '../components/shared/Skeleton'
 import type { HooksData, HookEntry, HookEventType } from '../lib/types'
 
 const EVENT_TYPES: HookEventType[] = [
@@ -251,9 +252,13 @@ export default function Hooks() {
       </PageHeader>
 
       {isLoading ? (
-        <p className="text-xs text-zinc-600 font-mono">loading...</p>
+        <TableSkeleton rows={4} cols={4} />
       ) : rows.length === 0 ? (
-        <p className="text-xs text-zinc-600">No hooks configured.</p>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Webhook size={24} strokeWidth={1} className="text-zinc-700 mb-3" />
+          <p className="text-sm text-zinc-500">No hooks configured.</p>
+          <p className="text-xs text-zinc-600 mt-1">Add a hook to run commands on Claude lifecycle events.</p>
+        </div>
       ) : (
         <div className="border border-zinc-800 rounded-md overflow-hidden">
           <table className="w-full text-xs">
@@ -270,7 +275,7 @@ export default function Hooks() {
               {rows.map((row) => (
                 <tr
                   key={`${row.eventType}-${row.entryIndex}-${row.hookIndex}`}
-                  className={`border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/20 transition-colors`}
+                  className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/30 transition-colors duration-150"
                 >
                   <td className="px-4 py-3">
                     <Badge variant="zinc">{row.eventType}</Badge>

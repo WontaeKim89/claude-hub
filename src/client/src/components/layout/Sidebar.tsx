@@ -13,6 +13,7 @@ import {
   Brain,
   Users,
   Store,
+  Diamond,
 } from 'lucide-react'
 import { useLang } from '../../hooks/useLang'
 
@@ -21,6 +22,7 @@ interface NavItem {
   labelKey: string
   to: string
   icon: React.ElementType
+  shortcut?: string
 }
 
 interface NavGroup {
@@ -33,15 +35,17 @@ const navGroups: NavGroup[] = [
   {
     title: 'Overview',
     titleKey: 'nav.overview',
-    items: [{ label: 'Dashboard', labelKey: 'nav.dashboard', to: '/', icon: LayoutDashboard }],
+    items: [
+      { label: 'Dashboard', labelKey: 'nav.dashboard', to: '/', icon: LayoutDashboard, shortcut: '⌘1' },
+    ],
   },
   {
     title: 'Extensions',
     titleKey: 'nav.extensions',
     items: [
-      { label: 'Skills', labelKey: 'nav.skills', to: '/skills', icon: Sparkles },
-      { label: 'Plugins', labelKey: 'nav.plugins', to: '/plugins', icon: Puzzle },
-      { label: 'Agents', labelKey: 'nav.agents', to: '/agents', icon: Bot },
+      { label: 'Skills', labelKey: 'nav.skills', to: '/skills', icon: Sparkles, shortcut: '⌘2' },
+      { label: 'Plugins', labelKey: 'nav.plugins', to: '/plugins', icon: Puzzle, shortcut: '⌘3' },
+      { label: 'Agents', labelKey: 'nav.agents', to: '/agents', icon: Bot, shortcut: '⌘4' },
       { label: 'Commands', labelKey: 'nav.commands', to: '/commands', icon: Terminal },
     ],
   },
@@ -67,7 +71,9 @@ const navGroups: NavGroup[] = [
   {
     title: 'Store',
     titleKey: 'nav.store',
-    items: [{ label: 'Marketplace', labelKey: 'nav.marketplace', to: '/marketplace', icon: Store }],
+    items: [
+      { label: 'Marketplace', labelKey: 'nav.marketplace', to: '/marketplace', icon: Store },
+    ],
   },
 ]
 
@@ -79,6 +85,7 @@ export function Sidebar() {
       {/* Logo */}
       <div className="px-4 py-4 border-b border-zinc-800">
         <div className="flex items-center gap-2">
+          <Diamond size={13} className="text-emerald-400 shrink-0" strokeWidth={2} />
           <span className="text-zinc-100 font-semibold text-sm tracking-tight">claude-hub</span>
           <span className="font-mono text-zinc-600 text-xs">v0.1.0</span>
         </div>
@@ -86,8 +93,11 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-2">
-        {navGroups.map((group) => (
-          <div key={group.title} className="mb-3">
+        {navGroups.map((group, groupIndex) => (
+          <div key={group.title} className={groupIndex > 0 ? 'mt-1' : ''}>
+            {groupIndex > 0 && (
+              <div className="mx-3 mb-1 border-t border-zinc-800/50" />
+            )}
             <p className="px-3 py-1 text-[10px] font-mono font-medium uppercase tracking-widest text-zinc-600">
               {t(group.titleKey)}
             </p>
@@ -100,12 +110,24 @@ export function Sidebar() {
                   end={item.to === '/'}
                   className={({ isActive }) =>
                     isActive
-                      ? 'flex items-center gap-2.5 px-3 py-1.5 text-xs text-emerald-400 bg-emerald-400/8 border-l-2 border-emerald-400'
-                      : 'flex items-center gap-2.5 px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border-l-2 border-transparent transition-colors'
+                      ? 'group flex items-center gap-2.5 px-3 py-1.5 text-xs text-emerald-400 bg-emerald-400/8 border-l-2 border-emerald-400'
+                      : 'group flex items-center gap-2.5 px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border-l-2 border-transparent transition-colors duration-150'
                   }
                 >
-                  <Icon size={14} strokeWidth={1.5} />
-                  {t(item.labelKey)}
+                  {({ isActive }) => (
+                    <>
+                      {isActive && (
+                        <span className="w-1 h-1 rounded-full bg-emerald-400 shrink-0 -ml-0.5 mr-0" />
+                      )}
+                      <Icon size={14} strokeWidth={1.5} className="shrink-0" />
+                      <span className="flex-1">{t(item.labelKey)}</span>
+                      {item.shortcut && (
+                        <span className="font-mono text-[9px] text-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                          {item.shortcut}
+                        </span>
+                      )}
+                    </>
+                  )}
                 </NavLink>
               )
             })}
@@ -114,26 +136,34 @@ export function Sidebar() {
       </nav>
 
       {/* Language toggle + Status footer */}
-      <div className="px-3 py-3 border-t border-zinc-800 space-y-2">
-        <div className="flex items-center gap-1">
+      <div className="border-t border-zinc-800 space-y-2 px-3 pt-3 pb-3">
+        {/* Capsule language toggle */}
+        <div className="relative flex items-center bg-zinc-800 rounded-full p-0.5 w-full">
           <button
-            onClick={toggleLang}
-            className={`font-mono text-[10px] px-1.5 py-0.5 rounded transition-colors ${
-              lang === 'ko' ? 'text-emerald-400 bg-emerald-400/10' : 'text-zinc-500 hover:text-zinc-300'
+            onClick={lang === 'en' ? toggleLang : undefined}
+            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 ${
+              lang === 'ko'
+                ? 'bg-emerald-500/20 text-emerald-400 shadow-sm shadow-emerald-500/10'
+                : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
-            KO
+            <span className="text-sm">🇰🇷</span>
+            <span className="font-mono">KO</span>
           </button>
-          <span className="text-zinc-700 text-[10px]">/</span>
           <button
-            onClick={toggleLang}
-            className={`font-mono text-[10px] px-1.5 py-0.5 rounded transition-colors ${
-              lang === 'en' ? 'text-emerald-400 bg-emerald-400/10' : 'text-zinc-500 hover:text-zinc-300'
+            onClick={lang === 'ko' ? toggleLang : undefined}
+            className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 ${
+              lang === 'en'
+                ? 'bg-emerald-500/20 text-emerald-400 shadow-sm shadow-emerald-500/10'
+                : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
-            EN
+            <span className="text-sm">🇺🇸</span>
+            <span className="font-mono">EN</span>
           </button>
         </div>
+
+        {/* Connected status */}
         <div className="flex items-center gap-1.5">
           <span className="text-emerald-400 text-xs leading-none">●</span>
           <span className="font-mono text-xs text-zinc-500">{t('common.connected')}</span>

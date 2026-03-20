@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Edit2, Trash2, X } from 'lucide-react'
+import { Plus, Edit2, Trash2, X, Terminal } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
+import { TableSkeleton } from '../components/shared/Skeleton'
 import type { CommandSummary, CommandDetail } from '../lib/types'
 
 function NewCommandModal({ onClose }: { onClose: () => void }) {
@@ -156,9 +157,13 @@ export default function Commands() {
       </PageHeader>
 
       {isLoading ? (
-        <p className="text-xs text-zinc-600 font-mono">loading...</p>
+        <TableSkeleton rows={3} cols={3} />
       ) : commands.length === 0 ? (
-        <p className="text-xs text-zinc-600">No commands found.</p>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Terminal size={24} strokeWidth={1} className="text-zinc-700 mb-3" />
+          <p className="text-sm text-zinc-500">No commands found.</p>
+          <p className="text-xs text-zinc-600 mt-1">Create a slash command to automate common tasks.</p>
+        </div>
       ) : (
         <div className="border border-zinc-800 rounded-md overflow-hidden">
           <table className="w-full text-xs">
@@ -173,7 +178,7 @@ export default function Commands() {
               {commands.map((cmd) => (
                 <tr
                   key={cmd.name}
-                  className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/20 transition-colors"
+                  className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/30 transition-colors duration-150"
                 >
                   <td className="px-4 py-3">
                     <span className="font-mono text-emerald-400">/{cmd.name}</span>

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Edit2, Trash2, X } from 'lucide-react'
+import { Plus, Edit2, Trash2, X, Server } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
+import { TableSkeleton } from '../components/shared/Skeleton'
 import type { McpServer } from '../lib/types'
 
 function envToEntries(env?: Record<string, string>): { key: string; value: string }[] {
@@ -292,9 +293,13 @@ export default function Mcp() {
       </PageHeader>
 
       {isLoading ? (
-        <p className="text-xs text-zinc-600 font-mono">loading...</p>
+        <TableSkeleton rows={3} cols={4} />
       ) : servers.length === 0 ? (
-        <p className="text-xs text-zinc-600">No MCP servers configured.</p>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Server size={24} strokeWidth={1} className="text-zinc-700 mb-3" />
+          <p className="text-sm text-zinc-500">No MCP servers configured.</p>
+          <p className="text-xs text-zinc-600 mt-1">Add a server to connect external tools via MCP.</p>
+        </div>
       ) : (
         <div className="border border-zinc-800 rounded-md overflow-hidden">
           <table className="w-full text-xs">
@@ -310,7 +315,7 @@ export default function Mcp() {
               {servers.map((server) => (
                 <tr
                   key={server.name}
-                  className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/20 transition-colors"
+                  className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/30 transition-colors duration-150"
                 >
                   <td className="px-4 py-3">
                     <span className="font-mono text-zinc-200">{server.name}</span>

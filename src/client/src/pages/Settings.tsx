@@ -4,6 +4,7 @@ import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
 import { DiffModal } from '../components/shared/DiffModal'
+import { Skeleton } from '../components/shared/Skeleton'
 import type { SettingsData, DiffResult } from '../lib/types'
 
 type Tab = 'global' | 'local' | 'raw'
@@ -82,30 +83,22 @@ export default function Settings() {
     { key: 'raw', label: 'Raw JSON' },
   ]
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-40">
-        <span className="font-mono text-zinc-600 text-xs">loading...</span>
-      </div>
-    )
-  }
-
   const currentModel = (data?.global_settings?.model as string) ?? ''
 
   return (
     <div>
       <PageHeader title="Settings" subtitle="Manage your claude configuration" />
 
-      {/* Tabs */}
-      <div className="flex gap-0.5 mb-5 bg-zinc-900 border border-zinc-800 rounded p-0.5 w-fit">
+      {/* Tabs — underline style */}
+      <div className="flex gap-0 mb-5 border-b border-zinc-800 w-fit">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => { setTab(t.key); setError('') }}
-            className={`px-3 py-1.5 text-xs rounded transition-colors ${
+            className={`px-4 py-2 text-xs font-mono transition-colors duration-150 border-b-2 -mb-px ${
               tab === t.key
-                ? 'bg-emerald-600 text-white'
-                : 'text-zinc-500 hover:text-zinc-200'
+                ? 'border-emerald-500 text-emerald-400'
+                : 'border-transparent text-zinc-500 hover:text-zinc-300'
             }`}
           >
             {t.label}
@@ -116,19 +109,35 @@ export default function Settings() {
       {error && <p className="text-xs text-red-400 bg-red-400/10 rounded px-3 py-2 mb-4">{error}</p>}
       {success && <p className="text-xs text-emerald-400 bg-emerald-400/10 rounded px-3 py-2 mb-4">Saved successfully.</p>}
 
+      {isLoading && (
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 max-w-xl space-y-4">
+          <div>
+            <Skeleton className="h-3 w-10 mb-2" />
+            <Skeleton className="h-9 w-64" />
+          </div>
+          <div>
+            <Skeleton className="h-3 w-28 mb-2" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        </div>
+      )}
+
       {tab === 'global' && data && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 space-y-5 max-w-xl">
           <div>
             <label className="block font-mono text-xs text-zinc-500 mb-1.5">model</label>
-            <select
-              value={currentModel}
-              onChange={(e) => handleModelChange(e.target.value)}
-              className="bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
-            >
-              {MODEL_OPTIONS.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+              <select
+                value={currentModel}
+                onChange={(e) => handleModelChange(e.target.value)}
+                className="bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50 transition-colors duration-150"
+              >
+                {MODEL_OPTIONS.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
           </div>
           <div>
             <label className="block font-mono text-xs text-zinc-500 mb-1.5">other settings (read-only)</label>

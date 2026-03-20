@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Puzzle } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Badge } from '../components/shared/Badge'
+import { TableSkeleton } from '../components/shared/Skeleton'
 import type { PluginSummary } from '../lib/types'
 
 function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
@@ -83,9 +84,13 @@ export default function Plugins() {
       <PageHeader title="Plugins" subtitle="Manage installed Claude plugins" />
 
       {isLoading ? (
-        <p className="text-xs text-zinc-600 font-mono">loading...</p>
+        <TableSkeleton rows={4} cols={5} />
       ) : plugins.length === 0 ? (
-        <p className="text-xs text-zinc-600">No plugins installed.</p>
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <Puzzle size={24} strokeWidth={1} className="text-zinc-700 mb-3" />
+          <p className="text-sm text-zinc-500">No plugins installed.</p>
+          <p className="text-xs text-zinc-600 mt-1">Browse the Marketplace to find plugins.</p>
+        </div>
       ) : (
         <div className="border border-zinc-800 rounded-md overflow-hidden">
           <table className="w-full text-xs">
@@ -103,7 +108,7 @@ export default function Plugins() {
               {plugins.map((plugin) => (
                 <tr
                   key={plugin.name}
-                  className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/20 transition-colors"
+                  className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/30 transition-colors duration-150"
                 >
                   <td className="px-4 py-3">
                     <span className="font-mono text-zinc-200">{plugin.name}</span>
