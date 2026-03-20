@@ -5,6 +5,7 @@ import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Badge } from '../components/shared/Badge'
 import { TableSkeleton } from '../components/shared/Skeleton'
+import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import type { PluginSummary } from '../lib/types'
 
 function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
@@ -25,36 +26,6 @@ function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (
   )
 }
 
-function UninstallConfirm({ plugin, onConfirm, onCancel, isPending }: {
-  plugin: PluginSummary
-  onConfirm: () => void
-  onCancel: () => void
-  isPending: boolean
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 w-80">
-        <h3 className="text-sm font-medium text-zinc-100 mb-2">Uninstall plugin</h3>
-        <p className="text-xs text-zinc-400 mb-4">
-          Remove <span className="font-mono text-zinc-200">"{plugin.name}"</span> from{' '}
-          <span className="font-mono text-zinc-400">{plugin.marketplace}</span>? This cannot be undone.
-        </p>
-        <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300">
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isPending}
-            className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-50"
-          >
-            {isPending ? 'Removing...' : 'Uninstall'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default function Plugins() {
   const qc = useQueryClient()
@@ -155,11 +126,11 @@ export default function Plugins() {
       )}
 
       {uninstallTarget && (
-        <UninstallConfirm
-          plugin={uninstallTarget}
+        <DangerDeleteDialog
+          title={`'${uninstallTarget.name}' 플러그인을 제거하시겠습니까?`}
+          confirmText={uninstallTarget.name}
           onConfirm={() => removeMutation.mutate(uninstallTarget.name)}
           onCancel={() => setUninstallTarget(null)}
-          isPending={removeMutation.isPending}
         />
       )}
     </div>

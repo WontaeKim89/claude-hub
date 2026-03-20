@@ -6,6 +6,7 @@ import { PageHeader } from '../components/layout/PageHeader'
 import { Badge } from '../components/shared/Badge'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
 import { TableSkeleton } from '../components/shared/Skeleton'
+import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import { useLang } from '../hooks/useLang'
 import type { SkillSummary, SkillDetail } from '../lib/types'
 
@@ -141,35 +142,6 @@ function EditSkillModal({ skill, onClose }: { skill: SkillSummary; onClose: () =
   )
 }
 
-function DeleteConfirm({ name, onConfirm, onCancel, isPending }: {
-  name: string
-  onConfirm: () => void
-  onCancel: () => void
-  isPending: boolean
-}) {
-  return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 w-80">
-        <h3 className="text-sm font-medium text-zinc-100 mb-2">Delete skill</h3>
-        <p className="text-xs text-zinc-400 mb-4">
-          Delete <span className="font-mono text-zinc-200">"{name}"</span>? This cannot be undone.
-        </p>
-        <div className="flex justify-end gap-2">
-          <button onClick={onCancel} className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300">
-            Cancel
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={isPending}
-            className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-50"
-          >
-            {isPending ? 'Deleting...' : 'Delete'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default function Skills() {
   const qc = useQueryClient()
@@ -327,11 +299,11 @@ export default function Skills() {
       {showNew && <NewSkillModal onClose={() => setShowNew(false)} />}
       {editSkill && <EditSkillModal skill={editSkill} onClose={() => setEditSkill(null)} />}
       {deleteTarget && (
-        <DeleteConfirm
-          name={deleteTarget.name}
+        <DangerDeleteDialog
+          title={`'${deleteTarget.name}' 스킬을 삭제하시겠습니까?`}
+          confirmText={deleteTarget.name}
           onConfirm={() => deleteMutation.mutate(deleteTarget.name)}
           onCancel={() => setDeleteTarget(null)}
-          isPending={deleteMutation.isPending}
         />
       )}
     </div>

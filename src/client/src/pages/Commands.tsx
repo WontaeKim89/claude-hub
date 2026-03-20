@@ -5,6 +5,7 @@ import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
 import { TableSkeleton } from '../components/shared/Skeleton'
+import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import type { CommandSummary, CommandDetail } from '../lib/types'
 
 function NewCommandModal({ onClose }: { onClose: () => void }) {
@@ -215,29 +216,12 @@ export default function Commands() {
       {editCommand && <EditCommandModal command={editCommand} onClose={() => setEditCommand(null)} />}
 
       {deleteTarget && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 w-80">
-            <h3 className="text-sm font-medium text-zinc-100 mb-2">Delete command</h3>
-            <p className="text-xs text-zinc-400 mb-4">
-              Delete <span className="font-mono text-zinc-200">"/{deleteTarget.name}"</span>? This cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteMutation.mutate(deleteTarget.name)}
-                disabled={deleteMutation.isPending}
-                className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DangerDeleteDialog
+          title={`'/${deleteTarget.name}' 커맨드를 삭제하시겠습니까?`}
+          confirmText={deleteTarget.name}
+          onConfirm={() => deleteMutation.mutate(deleteTarget.name)}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   )

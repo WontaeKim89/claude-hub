@@ -4,6 +4,7 @@ import { Plus, Trash2, X } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
+import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import type { MemoryProject, MemoryFileSummary } from '../lib/types'
 
 function NewFileModal({
@@ -275,29 +276,12 @@ export default function Memory() {
       )}
 
       {deleteTarget && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 w-80">
-            <h3 className="text-sm font-medium text-zinc-100 mb-2">Delete file</h3>
-            <p className="text-xs text-zinc-400 mb-4">
-              Delete <span className="font-mono text-zinc-200">"{deleteTarget}"</span>? This cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteMutation.mutate(deleteTarget)}
-                disabled={deleteMutation.isPending}
-                className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DangerDeleteDialog
+          title={`'${deleteTarget}' 파일을 삭제하시겠습니까?`}
+          confirmText={deleteTarget}
+          onConfirm={() => deleteMutation.mutate(deleteTarget)}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   )

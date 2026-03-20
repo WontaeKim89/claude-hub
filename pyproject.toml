@@ -20,6 +20,7 @@ dependencies = [
     "python-frontmatter>=1.1",
     "pydantic>=2.10",
     "httpx>=0.28",
+    "aiosqlite>=0.22.1",
 ]
 
 [project.urls]

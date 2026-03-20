@@ -5,6 +5,7 @@ import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Badge } from '../components/shared/Badge'
 import { TableSkeleton } from '../components/shared/Skeleton'
+import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import type { HooksData, HookEntry, HookEventType } from '../lib/types'
 
 const EVENT_TYPES: HookEventType[] = [
@@ -174,6 +175,7 @@ export default function Hooks() {
   const qc = useQueryClient()
   const [showAdd, setShowAdd] = useState(false)
   const [editTarget, setEditTarget] = useState<FlatHook | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<FlatHook | null>(null)
 
   const { data, isLoading } = useQuery<HooksData>({
     queryKey: ['hooks'],
@@ -237,6 +239,7 @@ export default function Hooks() {
         )
     )
     saveMutation.mutate(buildHooksDict(updated) as Record<string, HookEntry[]>)
+    setDeleteTarget(null)
   }
 
   return (
@@ -299,7 +302,7 @@ export default function Hooks() {
                         <Edit2 size={13} strokeWidth={1.5} />
                       </button>
                       <button
-                        onClick={() => handleDelete(row)}
+                        onClick={() => setDeleteTarget(row)}
                         disabled={saveMutation.isPending}
                         className="p-1 text-zinc-600 hover:text-red-400 transition-colors disabled:opacity-50"
                         title="Delete"
@@ -335,6 +338,15 @@ export default function Hooks() {
           title="Edit Hook"
           onSave={handleEdit}
           onClose={() => setEditTarget(null)}
+        />
+      )}
+
+      {deleteTarget && (
+        <DangerDeleteDialog
+          title={`'${deleteTarget.eventType}' 훅을 삭제하시겠습니까?`}
+          confirmText={deleteTarget.eventType}
+          onConfirm={() => handleDelete(deleteTarget)}
+          onCancel={() => setDeleteTarget(null)}
         />
       )}
     </div>

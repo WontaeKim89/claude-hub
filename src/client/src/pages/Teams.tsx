@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trash2 } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
+import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import type { TeamSummary } from '../lib/types'
 
 export default function Teams() {
@@ -74,29 +75,12 @@ export default function Teams() {
       )}
 
       {deleteTarget && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 w-80">
-            <h3 className="text-sm font-medium text-zinc-100 mb-2">Delete team</h3>
-            <p className="text-xs text-zinc-400 mb-4">
-              Delete <span className="font-mono text-zinc-200">"{deleteTarget.name}"</span>? This cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteMutation.mutate(deleteTarget.name)}
-                disabled={deleteMutation.isPending}
-                className="px-3 py-1.5 text-xs bg-red-600 hover:bg-red-500 text-white rounded disabled:opacity-50"
-              >
-                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DangerDeleteDialog
+          title={`'${deleteTarget.name}' 팀을 삭제하시겠습니까?`}
+          confirmText={deleteTarget.name}
+          onConfirm={() => deleteMutation.mutate(deleteTarget.name)}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   )
