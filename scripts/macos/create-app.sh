@@ -32,9 +32,15 @@ if [ ! -f "$UV_BIN" ]; then
     exit 1
 fi
 
-# claude-hub --app 실행
-cd "$HOME"
-exec "$UV_BIN" run claude-hub --app
+# claude-hub --app 실행 (프로젝트 디렉토리 기준)
+PROJECT_DIR="$HOME/Desktop/Persnal_Project/claude-hub"
+
+if [ ! -d "$PROJECT_DIR" ]; then
+    osascript -e "display dialog \"프로젝트를 찾을 수 없습니다\" with title \"claude-hub\" buttons {\"OK\"} with icon stop"
+    exit 1
+fi
+
+exec "$UV_BIN" run --directory "$PROJECT_DIR" claude-hub --app
 LAUNCHER_EOF
 
 chmod +x "${MACOS}/launcher"
@@ -64,7 +70,7 @@ cat > "${CONTENTS}/Info.plist" << 'PLIST_EOF'
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSUIElement</key>
-    <true/>
+    <false/>
     <key>NSHighResolutionCapable</key>
     <true/>
 </dict>
