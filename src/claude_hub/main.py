@@ -164,18 +164,12 @@ def _auto_setup_tracker(config: AppConfig):
 
 
 def _run_as_app(app, config: AppConfig, url: str):
-    """pywebview 네이티브 창 + macOS 메뉴바 트레이로 실행.
-    창을 닫아도 백그라운드 유지, 트레이 아이콘 클릭으로 재오픈."""
+    """macOS 메뉴바 트레이 + 브라우저 앱 모드로 실행.
+    서버가 백그라운드에서 계속 실행되고, 메뉴바 아이콘으로 제어."""
     import threading
     import time
     import urllib.request
-
-    try:
-        import webview
-    except ImportError:
-        print("ERROR: pywebview is required for --app mode.")
-        print("Install it with: uv add pywebview")
-        return
+    import subprocess
 
     # uvicorn 서버를 별도 스레드에서 실행
     def start_server():
@@ -192,36 +186,26 @@ def _run_as_app(app, config: AppConfig, url: str):
         except Exception:
             time.sleep(0.2)
 
-    # pywebview 창 관리
-    window = None
-    webview_started = threading.Event()
-
-    def create_window():
-        nonlocal window
-        window = webview.create_window(
-            "claude-hub",
-            url,
-            width=1280,
-            height=860,
-            min_size=(900, 600),
-        )
-        webview_started.set()
-        webview.start()
-
-    def reopen_window():
-        """트레이에서 클릭 시 창 다시 열기."""
-        nonlocal window
-        try:
-            if window is not None:
-                window.show()
+    def open_browser():
+        """브라우저를 앱 모드로 열기 (Chrome --app 또는 기본 브라우저)."""
+        # Chrome/Chromium의 --app 모드 시도 (독립 창, 주소창 없음)
+        chrome_paths = [
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "/Applications/Chromium.app/Contents/MacOS/Chromium",
+            "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+        ]
+        for chrome in chrome_paths:
+            if Path(chrome).exists():
+                subprocess.Popen([chrome, f"--app={url}", "--new-window"])
                 return
-        except Exception:
-            pass
-        # 창이 파괴된 경우 새로 생성
-        t = threading.Thread(target=create_window, daemon=True)
-        t.start()
+        # Chromium 계열 없으면 기본 브라우저
+        webbrowser.open(url)
 
-    # macOS 메뉴바 트레이 실행 시도
+    # 브라우저 앱 창 열기
+    open_browser()
+
+    # macOS 메뉴바 트레이
     try:
         import rumps
 
@@ -230,32 +214,33 @@ def _run_as_app(app, config: AppConfig, url: str):
                 super().__init__("claude-hub", title="⬡", quit_button=None)
                 self.menu = [
                     rumps.MenuItem("Open claude-hub", callback=self._open),
-                    None,  # separator
+                    rumps.MenuItem(f"Running on port {config.port}", callback=None),
+                    None,
                     rumps.MenuItem("Quit", callback=self._quit),
                 ]
 
             def _open(self, _):
-                reopen_window()
+                open_browser()
 
             def _quit(self, _):
                 rumps.quit_application()
 
-        # pywebview를 별도 스레드에서 시작
-        webview_thread = threading.Thread(target=create_window, daemon=True)
-        webview_thread.start()
-
         print(f"[claude-hub] Running at {url}")
-        print("[claude-hub] App minimizes to menu bar when closed. Click ⬡ to reopen.")
+        print("[claude-hub] Menu bar icon ⬡ active. Click to reopen.")
 
-        # rumps가 메인 스레드 점유 (macOS 요구사항)
+        # rumps 메인 스레드 (macOS 필수)
         tray = ClaudeHubTray()
         tray.run()
 
     except ImportError:
-        # rumps 없으면 pywebview만으로 실행 (창 닫으면 종료)
+        # rumps 없으면 서버만 포그라운드 유지
         print(f"[claude-hub] Running at {url}")
-        print("[claude-hub] Install 'rumps' for menu bar tray support.")
-        create_window()
+        print("[claude-hub] Press Ctrl+C to stop.")
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
 
 
 def _run_tracker_command(args) -> None:
