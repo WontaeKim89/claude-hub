@@ -7,3 +7,4 @@ uv.lock
 src/client/dist/
 .superpowers/
 *.egg-info/
+src/claude_hub/static/

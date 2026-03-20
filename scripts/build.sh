@@ -1,10 +1,16 @@
 #!/bin/bash
 set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 echo "Building frontend..."
-cd "$(dirname "$0")/../src/client"
+cd "$PROJECT_ROOT/src/client"
 npm ci
 npm run build
+
 echo "Copying to static directory..."
-rm -rf "$(dirname "$0")/../src/claude_hub/static"
-cp -r dist "$(dirname "$0")/../src/claude_hub/static"
+rm -rf "$PROJECT_ROOT/src/claude_hub/static"
+cp -r dist "$PROJECT_ROOT/src/claude_hub/static"
+
 echo "Build complete."
