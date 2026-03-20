@@ -21,6 +21,7 @@ dependencies = [
     "pydantic>=2.10",
     "httpx>=0.28",
     "aiosqlite>=0.22.1",
+    "pywebview>=6.1",
 ]
 
 [project.urls]
@@ -29,6 +30,7 @@ Repository = "https://github.com/claude-hub/claude-hub"
 
 [project.scripts]
 claude-hub = "claude_hub.main:cli"
+claude-hub-tracker = "claude_hub.tracker:main"
 
 [build-system]
 requires = ["hatchling"]

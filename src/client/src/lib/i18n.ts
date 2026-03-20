@@ -57,6 +57,16 @@ const translations: Record<string, Record<Lang, string>> = {
   'marketplace.install': { ko: '설치', en: 'Install' },
   'marketplace.installed': { ko: '설치됨', en: 'Installed' },
   'marketplace.noResults': { ko: '검색 결과가 없습니다', en: 'No results found' },
+  'stats.topSkills': { ko: '많이 쓴 스킬', en: 'Top Used Skills' },
+  'stats.topPlugins': { ko: '많이 쓴 플러그인', en: 'Top Used Plugins' },
+  'stats.timeline': { ko: '사용 타임라인', en: 'Usage Timeline' },
+  'stats.unused': { ko: '미사용 항목 경고', en: 'Unused Items' },
+  'stats.noData': { ko: '사용 데이터 없음. Sync를 실행하세요.', en: 'No usage data yet. Run sync to import history.' },
+  'stats.syncHistory': { ko: 'Sync 이력', en: 'Sync History' },
+  'stats.syncResult': { ko: '파일 파싱 완료', en: 'files parsed' },
+  'stats.unusedDays': { ko: '일간 미사용', en: 'days unused' },
+  'stats.remove': { ko: '제거', en: 'Remove' },
+  'stats.sync': { ko: 'Sync', en: 'Sync' },
 }
 
 let currentLang: Lang = (localStorage.getItem('claude-hub-lang') as Lang) || 'ko'

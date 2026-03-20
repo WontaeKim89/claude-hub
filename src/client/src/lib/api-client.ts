@@ -169,4 +169,13 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(body),
     }),
+
+  stats: {
+    overview: () => request<{ total_events: number; unique_skills_used: number; unique_plugins_used: number }>('/stats/overview'),
+    topSkills: (limit = 10) => request<Array<{ name: string; hit_count: number; last_used: number }>>(`/stats/skills?limit=${limit}`),
+    topPlugins: (limit = 5) => request<Array<{ name: string; hit_count: number; last_used: number }>>(`/stats/plugins?limit=${limit}`),
+    unused: (days = 30) => request<Array<{ type: string; name: string; last_used: number; total_hits: number }>>(`/stats/unused?days=${days}`),
+    timeline: (days = 30) => request<Array<{ date: string; total: number }>>(`/stats/timeline?days=${days}`),
+    sync: () => request<{ files_parsed: number; events_found: number; errors: number }>('/stats/sync', { method: 'POST' }),
+  },
 }
