@@ -19,9 +19,11 @@ export default function ClaudeMd() {
     queryFn: () => api.claudeMd.list(),
   })
 
+  // global scope를 기본 선택, 없으면 첫 번째 항목
   useEffect(() => {
     if (entries.length > 0 && activeScope === null) {
-      setActiveScope(entries[0].scope)
+      const globalEntry = entries.find((e) => e.scope === 'global')
+      setActiveScope(globalEntry ? globalEntry.scope : entries[0].scope)
     }
   }, [entries, activeScope])
 
@@ -72,25 +74,23 @@ export default function ClaudeMd() {
     <div>
       <PageHeader title="CLAUDE.md" subtitle="Manage your Claude instruction files" />
 
-      {/* Scope tabs */}
+      {/* Scope selector */}
       {entries.length > 0 && (
-        <div className="flex gap-0.5 mb-5 bg-zinc-900 border border-zinc-800 rounded p-0.5 w-fit">
-          {entries.map((entry) => (
-            <button
-              key={entry.scope}
-              onClick={() => handleTabChange(entry.scope)}
-              className={`px-3 py-1.5 text-xs rounded flex items-center gap-1.5 transition-colors ${
-                activeScope === entry.scope
-                  ? 'bg-emerald-600 text-white'
-                  : 'text-zinc-500 hover:text-zinc-200'
-              }`}
-            >
-              <span className="font-mono">{entry.scope}</span>
-              {!entry.exists && (
-                <span className="text-xs opacity-60">(new)</span>
-              )}
-            </button>
-          ))}
+        <div className="mb-5">
+          <select
+            value={activeScope ?? ''}
+            onChange={(e) => handleTabChange(e.target.value)}
+            className="bg-zinc-900 border border-zinc-800 rounded px-3 py-1.5 text-xs font-mono text-zinc-200 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 cursor-pointer"
+          >
+            {entries.map((entry) => (
+              <option key={entry.scope} value={entry.scope}>
+                {entry.scope === 'global'
+                  ? 'Global (~/.claude/)'
+                  : entry.decoded_path ?? entry.scope}
+                {!entry.exists ? ' (new)' : ''}
+              </option>
+            ))}
+          </select>
         </div>
       )}
 

@@ -5,6 +5,7 @@ import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { BackupHistory } from '../components/shared/BackupHistory'
 import { StatusDot } from '../components/shared/StatusDot'
+import { useLang } from '../hooks/useLang'
 import type { DashboardData, HealthResult } from '../lib/types'
 
 interface StatCardProps {
@@ -33,6 +34,7 @@ function StatCard({ label, value, icon: Icon, dotVariant, sub }: StatCardProps) 
 
 export default function Dashboard() {
   const [showBackupHistory, setShowBackupHistory] = useState(false)
+  const { t } = useLang()
 
   const { data: dashboard, isLoading: dashLoading } = useQuery<DashboardData>({
     queryKey: ['dashboard'],
@@ -47,18 +49,18 @@ export default function Dashboard() {
   if (dashLoading || healthLoading) {
     return (
       <div className="flex items-center justify-center h-40">
-        <span className="font-mono text-zinc-600 text-xs">loading...</span>
+        <span className="font-mono text-zinc-600 text-xs">{t('dashboard.loading')}</span>
       </div>
     )
   }
 
   const stats: StatCardProps[] = [
-    { label: 'Skills', value: dashboard?.skills?.total ?? 0, icon: Sparkles, dotVariant: 'emerald', sub: `${dashboard?.skills?.custom ?? 0} custom · ${dashboard?.skills?.plugin ?? 0} plugin` },
-    { label: 'Plugins', value: dashboard?.plugins?.total ?? 0, icon: Puzzle, dotVariant: 'teal', sub: `${dashboard?.plugins?.enabled ?? 0} enabled` },
-    { label: 'Agents', value: dashboard?.agents?.total ?? 0, icon: Bot, dotVariant: 'amber' },
-    { label: 'Hooks', value: dashboard?.hooks?.total ?? 0, icon: Webhook, dotVariant: 'red' },
-    { label: 'MCP Servers', value: dashboard?.mcp_servers?.total ?? 0, icon: Server, dotVariant: 'teal' },
-    { label: 'Projects', value: dashboard?.projects?.total ?? 0, icon: FolderOpen, dotVariant: 'zinc' },
+    { label: t('dashboard.skills'), value: dashboard?.skills?.total ?? 0, icon: Sparkles, dotVariant: 'emerald', sub: `${dashboard?.skills?.custom ?? 0} custom · ${dashboard?.skills?.installed ?? 0} installed` },
+    { label: t('dashboard.plugins'), value: dashboard?.plugins?.total ?? 0, icon: Puzzle, dotVariant: 'teal', sub: `${dashboard?.plugins?.enabled ?? 0} enabled` },
+    { label: t('dashboard.agents'), value: dashboard?.agents?.total ?? 0, icon: Bot, dotVariant: 'amber' },
+    { label: t('dashboard.hooks'), value: dashboard?.hooks?.total ?? 0, icon: Webhook, dotVariant: 'red' },
+    { label: t('dashboard.mcp'), value: dashboard?.mcp_servers?.total ?? 0, icon: Server, dotVariant: 'teal' },
+    { label: t('dashboard.projects'), value: dashboard?.projects?.total ?? 0, icon: FolderOpen, dotVariant: 'zinc' },
   ]
 
   const errorCount = health?.filter((r) => !r.valid).length ?? 0
@@ -66,13 +68,13 @@ export default function Dashboard() {
   return (
     <div>
       <div className="flex items-start justify-between mb-0">
-        <PageHeader title="Dashboard" subtitle="Overview of your claude-hub configuration" />
+        <PageHeader title={t('dashboard.title')} subtitle={t('dashboard.subtitle')} />
         <button
           onClick={() => setShowBackupHistory(true)}
           className="flex items-center gap-1.5 mt-0.5 px-3 py-1.5 text-xs text-zinc-400 border border-zinc-800 hover:border-zinc-600 hover:text-zinc-200 rounded-md transition-colors"
         >
           <History size={13} strokeWidth={1.5} />
-          Backup History
+          {t('dashboard.backupHistory')}
         </button>
       </div>
 
@@ -86,14 +88,14 @@ export default function Dashboard() {
       {/* Health status — table style */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
-          <span className="text-xs font-medium text-zinc-400">Validation Status</span>
+          <span className="text-xs font-medium text-zinc-400">{t('dashboard.validation')}</span>
           {errorCount > 0 ? (
             <span className="font-mono text-xs text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded">
               {errorCount} issue{errorCount > 1 ? 's' : ''}
             </span>
           ) : health && health.length > 0 ? (
             <span className="font-mono text-xs text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">
-              all valid
+              {t('dashboard.allValid')}
             </span>
           ) : null}
         </div>

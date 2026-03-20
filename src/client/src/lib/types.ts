@@ -1,5 +1,5 @@
 export interface DashboardData {
-  skills: { total: number; custom: number; plugin: number }
+  skills: { total: number; custom: number; installed: number }
   plugins: { total: number; enabled: number }
   hooks: { total: number }
   mcp_servers: { total: number }

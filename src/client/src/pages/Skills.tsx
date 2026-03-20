@@ -5,9 +5,10 @@ import { api } from '../lib/api-client'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Badge } from '../components/shared/Badge'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
+import { useLang } from '../hooks/useLang'
 import type { SkillSummary, SkillDetail } from '../lib/types'
 
-type FilterTab = 'all' | 'custom' | 'plugin'
+type FilterTab = 'all' | 'custom' | 'installed'
 
 function NewSkillModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
@@ -171,6 +172,7 @@ function DeleteConfirm({ name, onConfirm, onCancel, isPending }: {
 
 export default function Skills() {
   const qc = useQueryClient()
+  const { t } = useLang()
   const [filter, setFilter] = useState<FilterTab>('all')
   const [search, setSearch] = useState('')
   const [showNew, setShowNew] = useState(false)
@@ -193,7 +195,7 @@ export default function Skills() {
   const filtered = skills
     .filter((s) => {
       if (filter === 'custom') return s.source === 'custom'
-      if (filter === 'plugin') return s.source !== 'custom'
+      if (filter === 'installed') return s.source === 'installed'
       return true
     })
     .filter((s) => {
@@ -203,37 +205,37 @@ export default function Skills() {
     })
 
   const filterTabs: { key: FilterTab; label: string }[] = [
-    { key: 'all', label: 'All' },
-    { key: 'custom', label: 'Custom' },
-    { key: 'plugin', label: 'Plugin' },
+    { key: 'all', label: t('skills.all') },
+    { key: 'custom', label: t('skills.custom') },
+    { key: 'installed', label: t('skills.installed') },
   ]
 
   return (
     <div>
-      <PageHeader title="Skills" subtitle="Manage your claude skills">
+      <PageHeader title={t('skills.title')} subtitle={t('skills.subtitle')}>
         <button
           onClick={() => setShowNew(true)}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
         >
           <Plus size={13} strokeWidth={2} />
-          New Skill
+          {t('skills.newSkill')}
         </button>
       </PageHeader>
 
       {/* Filter + Search */}
       <div className="flex items-center gap-3 mb-4">
         <div className="flex gap-0.5 bg-zinc-900 border border-zinc-800 rounded p-0.5">
-          {filterTabs.map((t) => (
+          {filterTabs.map((tab) => (
             <button
-              key={t.key}
-              onClick={() => setFilter(t.key)}
+              key={tab.key}
+              onClick={() => setFilter(tab.key)}
               className={`px-2.5 py-1 text-xs rounded transition-colors ${
-                filter === t.key
+                filter === tab.key
                   ? 'bg-emerald-600 text-white'
                   : 'text-zinc-500 hover:text-zinc-200'
               }`}
             >
-              {t.label}
+              {tab.label}
             </button>
           ))}
         </div>
@@ -242,7 +244,7 @@ export default function Skills() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search skills..."
+            placeholder={t('skills.search')}
             className="bg-zinc-900 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50 w-52"
           />
         </div>
@@ -280,7 +282,7 @@ export default function Skills() {
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant={isCustom ? 'emerald' : 'zinc'}>
-                        {isCustom ? 'custom' : skill.source}
+                        {isCustom ? 'custom' : 'installed'}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
