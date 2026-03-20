@@ -50,6 +50,13 @@ const translations: Record<string, Record<Lang, string>> = {
   'common.command': { ko: '명령', en: 'Command' },
   'common.enabled': { ko: '활성', en: 'Enabled' },
   'common.connected': { ko: '연결됨', en: 'Connected' },
+  'marketplace.title': { ko: '마켓플레이스', en: 'Marketplace' },
+  'marketplace.subtitle': { ko: '플러그인 및 스킬 탐색', en: 'Browse plugins and skills' },
+  'marketplace.all': { ko: '전체', en: 'All' },
+  'marketplace.search': { ko: '플러그인 검색...', en: 'Search plugins...' },
+  'marketplace.install': { ko: '설치', en: 'Install' },
+  'marketplace.installed': { ko: '설치됨', en: 'Installed' },
+  'marketplace.noResults': { ko: '검색 결과가 없습니다', en: 'No results found' },
 }
 
 let currentLang: Lang = (localStorage.getItem('claude-hub-lang') as Lang) || 'ko'
