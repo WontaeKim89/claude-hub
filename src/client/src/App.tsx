@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import Skills from './pages/Skills'
 import Settings from './pages/Settings'
 import ClaudeMd from './pages/ClaudeMd'
+import Plugins from './pages/Plugins'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -22,6 +23,7 @@ export default function App() {
               <Route path="/skills" element={<Skills />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/claude-md" element={<ClaudeMd />} />
+              <Route path="/plugins" element={<Plugins />} />
             </Routes>
           </main>
         </div>

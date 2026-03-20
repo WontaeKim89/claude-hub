@@ -36,3 +36,43 @@ export interface ClaudeMdEntry {
   exists: boolean
   decoded_path?: string
 }
+
+export interface PluginAssets {
+  skills: number
+  commands: number
+  agents: number
+}
+
+export interface PluginSummary {
+  name: string
+  description: string
+  version: string
+  marketplace: string
+  source_type: 'official' | 'community'
+  enabled: boolean
+  assets: PluginAssets
+}
+
+export interface AgentSummary {
+  name: string
+  description: string
+  model: string
+  tools: string[]
+  max_turns: number
+}
+
+export interface AgentDetail extends AgentSummary {
+  content: string
+}
+
+export interface CommandSummary {
+  name: string
+  content_preview: string
+  path: string
+}
+
+export interface CommandDetail {
+  name: string
+  content: string
+  path: string
+}

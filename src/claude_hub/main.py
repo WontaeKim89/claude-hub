@@ -31,11 +31,14 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.state.validator = validator
     app.state.backup = backup
 
-    from claude_hub.routers import dashboard, skills, settings, claude_md
+    from claude_hub.routers import dashboard, skills, settings, claude_md, plugins, agents, commands
     app.include_router(dashboard.router, prefix="/api")
     app.include_router(skills.router, prefix="/api")
     app.include_router(settings.router, prefix="/api")
     app.include_router(claude_md.router, prefix="/api")
+    app.include_router(plugins.router, prefix="/api")
+    app.include_router(agents.router, prefix="/api")
+    app.include_router(commands.router, prefix="/api")
 
     static_dir = Path(__file__).parent / "static"
     if static_dir.exists():

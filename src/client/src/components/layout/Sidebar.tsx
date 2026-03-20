@@ -20,7 +20,7 @@ const navGroups: NavGroup[] = [
     title: 'Extensions',
     items: [
       { label: 'Skills', to: '/skills' },
-      { label: 'Plugins', disabled: true },
+      { label: 'Plugins', to: '/plugins' },
       { label: 'Agents', disabled: true },
       { label: 'Commands', disabled: true },
     ],

@@ -5,6 +5,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from claude_hub.models.agent import AgentSummary
+from claude_hub.models.command import CommandSummary
+from claude_hub.models.plugin import PluginAssets, PluginSummary
 from claude_hub.models.skill import SkillSummary
 from claude_hub.utils.frontmatter import parse_agent_md, parse_skill_md
 from claude_hub.utils.paths import ClaudePaths
@@ -60,6 +62,25 @@ class ScannerService:
                     model=meta.model,
                     tools=meta.tools,
                     max_turns=meta.max_turns,
+                )
+            )
+        return results
+
+    def scan_commands(self) -> list[CommandSummary]:
+        commands_dir = self._paths.commands_dir
+        if not commands_dir.exists():
+            return []
+        results = []
+        for entry in sorted(commands_dir.iterdir()):
+            if not entry.is_file() or entry.suffix != ".md":
+                continue
+            content = entry.read_text(encoding="utf-8")
+            preview = content[:100].replace("\n", " ")
+            results.append(
+                CommandSummary(
+                    name=entry.stem,
+                    content_preview=preview,
+                    path=str(entry),
                 )
             )
         return results
@@ -121,6 +142,63 @@ class ScannerService:
             }
             for p in projects
         ]
+
+    def scan_plugins(self) -> list[PluginSummary]:
+        paths = self._paths
+        installed_path = paths.installed_plugins_path
+        if not installed_path.exists():
+            return []
+
+        installed: list[dict] = json.loads(installed_path.read_text())
+
+        # settings.json 에서 enabledPlugins 상태 조회
+        enabled_map: dict[str, bool] = {}
+        if paths.settings_path.exists():
+            settings = json.loads(paths.settings_path.read_text())
+            enabled_map = settings.get("enabledPlugins", {})
+
+        results = []
+        cache_root = paths.plugins_dir / "cache"
+
+        for entry in installed:
+            name = entry["name"]
+            marketplace = entry.get("marketplace", "")
+            version = entry.get("version", "")
+
+            description = ""
+            assets = PluginAssets()
+
+            cache_dir = cache_root / marketplace / name / version
+            if cache_dir.exists():
+                plugin_json = cache_dir / ".claude-plugin" / "plugin.json"
+                if plugin_json.exists():
+                    meta = json.loads(plugin_json.read_text())
+                    description = meta.get("description", "")
+
+                # assets 하위 디렉토리 수 카운트
+                for asset_key in ("skills", "commands", "agents"):
+                    asset_dir = cache_dir / asset_key
+                    if asset_dir.is_dir():
+                        count = sum(1 for _ in asset_dir.iterdir())
+                        setattr(assets, asset_key, count)
+
+            source_type = "official" if "official" in marketplace else "community"
+            plugin_key = f"{name}@{marketplace}"
+            enabled = enabled_map.get(plugin_key, False)
+
+            results.append(
+                PluginSummary(
+                    name=name,
+                    description=description,
+                    version=version,
+                    marketplace=marketplace,
+                    source_type=source_type,
+                    enabled=enabled,
+                    assets=assets,
+                )
+            )
+
+        return results
 
     def get_dashboard(self) -> dict:
         return {
