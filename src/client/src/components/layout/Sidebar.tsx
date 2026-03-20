@@ -29,7 +29,7 @@ const navGroups: NavGroup[] = [
     title: 'Configuration',
     items: [
       { label: 'Settings', to: '/settings' },
-      { label: 'Hooks', disabled: true },
+      { label: 'Hooks', to: '/hooks' },
       { label: 'MCP Servers', disabled: true },
       { label: 'Keybindings', disabled: true },
     ],

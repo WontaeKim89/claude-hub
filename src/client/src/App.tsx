@@ -8,6 +8,7 @@ import ClaudeMd from './pages/ClaudeMd'
 import Plugins from './pages/Plugins'
 import Agents from './pages/Agents'
 import Commands from './pages/Commands'
+import Hooks from './pages/Hooks'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -28,6 +29,7 @@ export default function App() {
               <Route path="/plugins" element={<Plugins />} />
               <Route path="/agents" element={<Agents />} />
               <Route path="/commands" element={<Commands />} />
+              <Route path="/hooks" element={<Hooks />} />
             </Routes>
           </main>
         </div>

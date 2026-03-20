@@ -76,3 +76,49 @@ export interface CommandDetail {
   content: string
   path: string
 }
+
+export interface McpServer {
+  name: string
+  command: string
+  args?: string[]
+  env?: Record<string, string>
+}
+
+export interface McpData {
+  servers: McpServer[]
+  last_mtime: number
+}
+
+export interface KeybindingsData {
+  data: Record<string, string>
+  last_mtime: number
+}
+
+export type HookEventType =
+  | 'SessionStart'
+  | 'SessionEnd'
+  | 'PreToolUse'
+  | 'PostToolUse'
+  | 'UserPromptSubmit'
+  | 'PermissionRequest'
+  | 'Notification'
+  | 'Stop'
+  | 'SubagentStart'
+  | 'SubagentStop'
+  | 'PreCompact'
+
+export interface HookCommand {
+  type: 'command'
+  command: string
+  timeout?: number
+}
+
+export interface HookEntry {
+  matcher?: string
+  hooks: HookCommand[]
+}
+
+export interface HooksData {
+  hooks: Record<string, HookEntry[]>
+  last_mtime: number
+}

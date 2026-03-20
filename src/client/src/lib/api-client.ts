@@ -1,4 +1,4 @@
-import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail } from './types'
+import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData } from './types'
 
 const BASE = '/api'
 
@@ -97,5 +97,23 @@ export const api = {
       }),
     delete: (name: string) =>
       request<void>(`/commands/${encodeURIComponent(name)}`, { method: 'DELETE' }),
+  },
+
+  hooks: {
+    get: () => request<HooksData>('/hooks'),
+    update: (data: { hooks: Record<string, unknown>; last_mtime: number }) =>
+      request<{ ok: boolean }>('/hooks', { method: 'PUT', body: JSON.stringify(data) }),
+  },
+
+  mcp: {
+    get: () => request<McpData>('/mcp'),
+    update: (data: { servers: Record<string, unknown>; last_mtime: number }) =>
+      request<{ ok: boolean }>('/mcp', { method: 'PUT', body: JSON.stringify(data) }),
+  },
+
+  keybindings: {
+    get: () => request<KeybindingsData>('/keybindings'),
+    update: (data: { data: Record<string, string>; last_mtime: number }) =>
+      request<{ ok: boolean }>('/keybindings', { method: 'PUT', body: JSON.stringify(data) }),
   },
 }
