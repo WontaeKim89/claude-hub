@@ -5,7 +5,7 @@
 set -e
 
 APP_NAME="claude-hub"
-APP_DIR="$HOME/Applications/${APP_NAME}.app"
+APP_DIR="/Applications/${APP_NAME}.app"
 CONTENTS="${APP_DIR}/Contents"
 MACOS="${CONTENTS}/MacOS"
 RESOURCES="${CONTENTS}/Resources"
