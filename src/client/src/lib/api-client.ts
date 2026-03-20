@@ -20,7 +20,7 @@ export const api = {
   },
 
   health: {
-    get: () => request<HealthResult[]>('/health'),
+    get: () => request<{ results: HealthResult[] }>('/health').then(r => r.results),
   },
 
   skills: {
