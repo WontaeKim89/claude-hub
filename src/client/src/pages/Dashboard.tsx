@@ -53,12 +53,12 @@ export default function Dashboard() {
   }
 
   const stats: StatCardProps[] = [
-    { label: 'Skills', value: dashboard?.skills ?? 0, icon: Sparkles, dotVariant: 'emerald' },
-    { label: 'Plugins', value: dashboard?.plugins ?? 0, icon: Puzzle, dotVariant: 'teal' },
-    { label: 'Agents', value: dashboard?.agents ?? 0, icon: Bot, dotVariant: 'amber' },
-    { label: 'Hooks', value: dashboard?.hooks ?? 0, icon: Webhook, dotVariant: 'red' },
-    { label: 'MCP Servers', value: dashboard?.mcp_servers ?? 0, icon: Server, dotVariant: 'teal' },
-    { label: 'Projects', value: dashboard?.projects ?? 0, icon: FolderOpen, dotVariant: 'zinc' },
+    { label: 'Skills', value: dashboard?.skills?.total ?? 0, icon: Sparkles, dotVariant: 'emerald', sub: `${dashboard?.skills?.custom ?? 0} custom · ${dashboard?.skills?.plugin ?? 0} plugin` },
+    { label: 'Plugins', value: dashboard?.plugins?.total ?? 0, icon: Puzzle, dotVariant: 'teal', sub: `${dashboard?.plugins?.enabled ?? 0} enabled` },
+    { label: 'Agents', value: dashboard?.agents?.total ?? 0, icon: Bot, dotVariant: 'amber' },
+    { label: 'Hooks', value: dashboard?.hooks?.total ?? 0, icon: Webhook, dotVariant: 'red' },
+    { label: 'MCP Servers', value: dashboard?.mcp_servers?.total ?? 0, icon: Server, dotVariant: 'teal' },
+    { label: 'Projects', value: dashboard?.projects?.total ?? 0, icon: FolderOpen, dotVariant: 'zinc' },
   ]
 
   const errorCount = health?.filter((r) => !r.valid).length ?? 0

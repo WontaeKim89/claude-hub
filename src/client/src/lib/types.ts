@@ -1,10 +1,10 @@
 export interface DashboardData {
-  skills: number
-  plugins: number
-  hooks: number
-  mcp_servers: number
-  agents?: number
-  projects?: number
+  skills: { total: number; custom: number; plugin: number }
+  plugins: { total: number; enabled: number }
+  hooks: { total: number }
+  mcp_servers: { total: number }
+  agents: { total: number }
+  projects: { total: number }
 }
 
 export interface HealthResult {
