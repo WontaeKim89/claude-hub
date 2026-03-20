@@ -21,8 +21,8 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Skills', to: '/skills' },
       { label: 'Plugins', to: '/plugins' },
-      { label: 'Agents', disabled: true },
-      { label: 'Commands', disabled: true },
+      { label: 'Agents', to: '/agents' },
+      { label: 'Commands', to: '/commands' },
     ],
   },
   {
