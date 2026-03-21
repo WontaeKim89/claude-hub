@@ -1,5 +1,6 @@
 """FastAPI 앱 + CLI 엔트리포인트."""
 import argparse
+import os
 import webbrowser
 from pathlib import Path
 
@@ -107,6 +108,9 @@ def cli():
         _run_tracker_command(args)
         return
 
+    # 기존 claude-hub 프로세스 정리 (포트 충돌 방지)
+    _kill_existing(args.port)
+
     config = AppConfig(port=args.port, host=args.host, auto_open=not args.no_open)
     if args.claude_dir:
         config.claude_dir = args.claude_dir
@@ -128,6 +132,24 @@ def cli():
         if config.auto_open:
             webbrowser.open(url)
         uvicorn.run(app, host=config.host, port=config.port, log_level="warning")
+
+
+def _kill_existing(port: int):
+    """기존 claude-hub 프로세스가 있으면 종료 (좀비 프로세스 방지)."""
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["lsof", "-ti", f":{port}"],
+            capture_output=True, text=True, timeout=3
+        )
+        pids = result.stdout.strip().split("\n")
+        current_pid = str(os.getpid())
+        for pid in pids:
+            pid = pid.strip()
+            if pid and pid != current_pid:
+                os.kill(int(pid), 9)
+    except Exception:
+        pass
 
 
 def _auto_setup_tracker(config: AppConfig):
