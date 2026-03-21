@@ -43,10 +43,12 @@ def _parse_single_file(path: Path, project: str, db: UsageDB) -> int:
 
 def _extract_skill_usage(entry: dict, project: str, db: UsageDB) -> int:
     """JSONL 엔트리에서 Skill/Agent 사용 이벤트를 추출하여 DB 기록. 기록된 이벤트 수 반환."""
-    if entry.get("role") != "assistant":
+    # JSONL 구조: {"message": {"role": "assistant", "content": [...]}} 또는 {"role": "assistant", "content": [...]}
+    msg = entry.get("message", entry)
+    if msg.get("role") != "assistant":
         return 0
 
-    content = entry.get("content", [])
+    content = msg.get("content", [])
     if not isinstance(content, list):
         return 0
 
