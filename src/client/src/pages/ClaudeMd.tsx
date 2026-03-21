@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api-client'
-import { PageHeader } from '../components/layout/PageHeader'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
+import { InfoTooltip } from '../components/shared/InfoTooltip'
+import { CATEGORY_INFO } from '../lib/category-info'
 import { DiffModal } from '../components/shared/DiffModal'
 import type { ClaudeMdEntry, DiffResult } from '../lib/types'
 
@@ -72,7 +73,13 @@ export default function ClaudeMd() {
 
   return (
     <div>
-      <PageHeader title="CLAUDE.md" subtitle="Manage your Claude instruction files" />
+      <div className="flex items-center gap-1.5 mb-6">
+        <div>
+          <h2 className="text-base font-semibold text-zinc-100 tracking-tight">CLAUDE.md</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">Manage your Claude instruction files</p>
+        </div>
+        <InfoTooltip {...CATEGORY_INFO.claudeMd} />
+      </div>
 
       {/* Scope selector */}
       {entries.length > 0 && (

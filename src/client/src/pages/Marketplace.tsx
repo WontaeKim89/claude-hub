@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search, Package } from 'lucide-react'
 import { api } from '../lib/api-client'
-import { PageHeader } from '../components/layout/PageHeader'
 import { useLang } from '../hooks/useLang'
+import { InfoTooltip } from '../components/shared/InfoTooltip'
+import { CATEGORY_INFO } from '../lib/category-info'
 import type { MarketplacePlugin, MarketplaceSource } from '../lib/types'
 
 // 마켓플레이스 소스별 뱃지 색상 매핑
@@ -145,7 +146,13 @@ export default function Marketplace() {
 
   return (
     <div>
-      <PageHeader title={t('marketplace.title')} subtitle={t('marketplace.subtitle')} />
+      <div className="flex items-center gap-1.5 mb-6">
+        <div>
+          <h2 className="text-base font-semibold text-zinc-100 tracking-tight">{t('marketplace.title')}</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">{t('marketplace.subtitle')}</p>
+        </div>
+        <InfoTooltip {...CATEGORY_INFO.marketplace} />
+      </div>
 
       {/* 소스 탭 — 가로 pill 방식 */}
       <div className="flex flex-wrap gap-1.5 mb-4">

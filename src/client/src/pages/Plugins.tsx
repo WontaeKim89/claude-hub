@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trash2, Puzzle } from 'lucide-react'
 import { api } from '../lib/api-client'
-import { PageHeader } from '../components/layout/PageHeader'
 import { Badge } from '../components/shared/Badge'
 import { TableSkeleton } from '../components/shared/Skeleton'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
+import { InfoTooltip } from '../components/shared/InfoTooltip'
+import { CATEGORY_INFO } from '../lib/category-info'
 import type { PluginSummary } from '../lib/types'
 
 function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
@@ -52,7 +53,15 @@ export default function Plugins() {
 
   return (
     <div>
-      <PageHeader title="Plugins" subtitle="Manage installed Claude plugins" />
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-1.5">
+          <div>
+            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Plugins</h2>
+            <p className="mt-0.5 text-xs text-zinc-500">Manage installed Claude plugins</p>
+          </div>
+          <InfoTooltip {...CATEGORY_INFO.plugins} />
+        </div>
+      </div>
 
       {isLoading ? (
         <TableSkeleton rows={4} cols={5} />

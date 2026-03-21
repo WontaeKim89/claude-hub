@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../lib/api-client'
-import { PageHeader } from '../components/layout/PageHeader'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
+import { InfoTooltip } from '../components/shared/InfoTooltip'
+import { CATEGORY_INFO } from '../lib/category-info'
 import { DiffModal } from '../components/shared/DiffModal'
 import { Skeleton } from '../components/shared/Skeleton'
 import type { SettingsData, DiffResult } from '../lib/types'
@@ -87,7 +88,13 @@ export default function Settings() {
 
   return (
     <div>
-      <PageHeader title="Settings" subtitle="Manage your claude configuration" />
+      <div className="flex items-center gap-1.5 mb-6">
+        <div>
+          <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Settings</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">Manage your claude configuration</p>
+        </div>
+        <InfoTooltip {...CATEGORY_INFO.settings} />
+      </div>
 
       {/* Tabs — underline style */}
       <div className="flex gap-0 mb-5 border-b border-zinc-800 w-fit">

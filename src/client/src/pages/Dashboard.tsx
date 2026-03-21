@@ -14,10 +14,10 @@ import {
   ArrowRight,
   AlertTriangle,
   RefreshCw,
+  Info,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api-client'
-import { PageHeader } from '../components/layout/PageHeader'
 import { BackupHistory } from '../components/shared/BackupHistory'
 import { StatusDot } from '../components/shared/StatusDot'
 import { Skeleton } from '../components/shared/Skeleton'
@@ -44,13 +44,16 @@ interface StatCardProps {
   icon: React.ElementType
   accent: AccentKey
   sub?: string
+  link?: string
 }
 
-function StatCard({ label, value, icon: Icon, accent, sub }: StatCardProps) {
+function StatCard({ label, value, icon: Icon, accent, sub, link }: StatCardProps) {
+  const navigate = useNavigate()
   const borderColor = ACCENT_COLORS[accent]
   return (
     <div
-      className={`bg-zinc-900 border border-zinc-800 border-l-2 ${borderColor} rounded-md p-4 glow-emerald hover:border-zinc-700 hover:scale-[1.01] transition-all duration-150 cursor-default`}
+      onClick={() => link && navigate(link)}
+      className={`bg-zinc-900 border border-zinc-800 border-l-2 ${borderColor} rounded-md p-4 glow-emerald hover:border-zinc-700 hover:scale-[1.01] transition-all duration-150 ${link ? 'cursor-pointer hover:scale-[1.02] hover:border-emerald-500/30' : 'cursor-default'}`}
     >
       <div className="flex items-start justify-between mb-2">
         <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">{label}</span>
@@ -58,6 +61,35 @@ function StatCard({ label, value, icon: Icon, accent, sub }: StatCardProps) {
       </div>
       <span className="font-mono text-2xl font-semibold text-zinc-100 leading-none">{value}</span>
       {sub && <p className="mt-1.5 text-[10px] text-zinc-600 font-mono">{sub}</p>}
+    </div>
+  )
+}
+
+// 버튼 옆 클릭 팝오버: Backup/Sync 설명
+function HelpPopup({ content }: { content: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="relative flex items-center">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="text-zinc-600 hover:text-zinc-400 transition-colors"
+        aria-label="도움말"
+      >
+        <Info size={13} strokeWidth={1.5} />
+      </button>
+      {open && (
+        <>
+          {/* 클릭 외부 닫기용 오버레이 */}
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-6 z-50 w-[280px] bg-zinc-900 border border-zinc-700 rounded-md shadow-xl p-3">
+            {content.split('\n\n').map((block, i) => (
+              <p key={i} className={`text-[0.7rem] leading-relaxed ${i === 0 ? 'text-zinc-300' : 'text-zinc-500 font-mono mt-2'}`}>
+                {block}
+              </p>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -199,6 +231,7 @@ export default function Dashboard() {
       icon: Sparkles,
       accent: 'emerald',
       sub: `${dashboard?.skills?.custom ?? 0} custom · ${dashboard?.skills?.installed ?? 0} installed`,
+      link: '/skills',
     },
     {
       label: t('dashboard.plugins'),
@@ -206,30 +239,35 @@ export default function Dashboard() {
       icon: Puzzle,
       accent: 'teal',
       sub: `${dashboard?.plugins?.enabled ?? 0} enabled`,
+      link: '/plugins',
     },
     {
       label: t('dashboard.agents'),
       value: dashboard?.agents?.total ?? 0,
       icon: Bot,
       accent: 'amber',
+      link: '/agents',
     },
     {
       label: t('dashboard.hooks'),
       value: dashboard?.hooks?.total ?? 0,
       icon: Webhook,
       accent: 'red',
+      link: '/hooks',
     },
     {
       label: t('dashboard.mcp'),
       value: dashboard?.mcp_servers?.total ?? 0,
       icon: Server,
       accent: 'violet',
+      link: '/mcp',
     },
     {
       label: t('dashboard.projects'),
       value: dashboard?.projects?.total ?? 0,
       icon: FolderOpen,
       accent: 'zinc',
+      link: '/memory',
     },
   ]
 
@@ -238,8 +276,11 @@ export default function Dashboard() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-0">
-        <PageHeader title={t('dashboard.title')} subtitle={t('dashboard.subtitle')} />
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h2 className="text-base font-semibold text-zinc-100 tracking-tight">{t('dashboard.title')}</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">{t('dashboard.subtitle')}</p>
+        </div>
         <div className="flex items-center gap-2 mt-0.5">
           <button
             onClick={() => syncMutation.mutate()}
@@ -249,6 +290,7 @@ export default function Dashboard() {
             <RefreshCw size={13} strokeWidth={1.5} className={syncMutation.isPending ? 'animate-spin' : ''} />
             {t('stats.syncHistory')}
           </button>
+          <HelpPopup content={"Claude Code 세션 로그에서 스킬/플러그인 사용 이력을 추출하여 통계 DB에 반영합니다. 최초 실행 시 과거 데이터를 소급 분석합니다.\n\n데이터: ~/.claude-hub/usage.db"} />
           <button
             onClick={() => setShowBackupHistory(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-zinc-400 border border-zinc-800 hover:border-zinc-600 hover:text-zinc-200 rounded-md transition-colors duration-150"
@@ -256,6 +298,7 @@ export default function Dashboard() {
             <History size={13} strokeWidth={1.5} />
             {t('dashboard.backupHistory')}
           </button>
+          <HelpPopup content={"claude-hub에서 설정을 수정할 때마다 자동으로 이전 상태를 백업합니다. 실수로 변경한 설정을 이전 시점으로 복원할 수 있습니다.\n\n저장 위치: ~/.claude-hub/backups/\n최대 보관: 50개 (FIFO)"} />
         </div>
       </div>
 

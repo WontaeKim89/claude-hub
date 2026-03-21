@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Trash2, X } from 'lucide-react'
 import { api } from '../lib/api-client'
-import { PageHeader } from '../components/layout/PageHeader'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
+import { InfoTooltip } from '../components/shared/InfoTooltip'
+import { CATEGORY_INFO } from '../lib/category-info'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import type { MemoryProject, MemoryFileSummary } from '../lib/types'
 
@@ -161,17 +162,26 @@ export default function Memory() {
 
   return (
     <div>
-      <PageHeader title="Memory" subtitle="Project memory files managed by Claude">
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-1.5">
+          <div>
+            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Memory</h2>
+            <p className="mt-0.5 text-xs text-zinc-500">Project memory files managed by Claude</p>
+          </div>
+          <InfoTooltip {...CATEGORY_INFO.memory} />
+        </div>
         {selectedProject && (
-          <button
-            onClick={() => setShowNew(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
-          >
-            <Plus size={13} strokeWidth={2} />
-            New
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowNew(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+            >
+              <Plus size={13} strokeWidth={2} />
+              New
+            </button>
+          </div>
         )}
-      </PageHeader>
+      </div>
 
       {projects.length === 0 ? (
         <div className="bg-zinc-900 border border-zinc-800 rounded-md p-8 text-center">

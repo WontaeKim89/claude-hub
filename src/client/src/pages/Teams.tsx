@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Trash2 } from 'lucide-react'
 import { api } from '../lib/api-client'
-import { PageHeader } from '../components/layout/PageHeader'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
+import { InfoTooltip } from '../components/shared/InfoTooltip'
+import { CATEGORY_INFO } from '../lib/category-info'
 import type { TeamSummary } from '../lib/types'
 
 export default function Teams() {
@@ -27,7 +28,13 @@ export default function Teams() {
 
   return (
     <div>
-      <PageHeader title="Teams" subtitle="Shared team configurations at ~/.claude/teams/" />
+      <div className="flex items-center gap-1.5 mb-6">
+        <div>
+          <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Teams</h2>
+          <p className="mt-0.5 text-xs text-zinc-500">Shared team configurations at ~/.claude/teams/</p>
+        </div>
+        <InfoTooltip {...CATEGORY_INFO.teams} />
+      </div>
 
       {error && <p className="text-xs text-red-400 bg-red-400/10 rounded px-3 py-2 mb-4">{error}</p>}
 

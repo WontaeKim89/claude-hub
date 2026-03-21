@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Edit2, Trash2, X, Terminal } from 'lucide-react'
 import { api } from '../lib/api-client'
-import { PageHeader } from '../components/layout/PageHeader'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
+import { InfoTooltip } from '../components/shared/InfoTooltip'
+import { CATEGORY_INFO } from '../lib/category-info'
 import { TableSkeleton } from '../components/shared/Skeleton'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import type { CommandSummary, CommandDetail } from '../lib/types'
@@ -147,15 +148,24 @@ export default function Commands() {
 
   return (
     <div>
-      <PageHeader title="Commands" subtitle="Manage your slash commands">
-        <button
-          onClick={() => setShowNew(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
-        >
-          <Plus size={13} strokeWidth={2} />
-          New Command
-        </button>
-      </PageHeader>
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-1.5">
+          <div>
+            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Commands</h2>
+            <p className="mt-0.5 text-xs text-zinc-500">Manage your slash commands</p>
+          </div>
+          <InfoTooltip {...CATEGORY_INFO.commands} />
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowNew(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+          >
+            <Plus size={13} strokeWidth={2} />
+            New Command
+          </button>
+        </div>
+      </div>
 
       {isLoading ? (
         <TableSkeleton rows={3} cols={3} />
