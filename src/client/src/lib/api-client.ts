@@ -1,4 +1,4 @@
-import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary, BackupHistory, DiffResult, DiffRequest } from './types'
+import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary, BackupHistory, DiffResult, DiffRequest, AnalysisResult, ClaudeStatus } from './types'
 
 const BASE = '/api'
 
@@ -177,5 +177,14 @@ export const api = {
     unused: (days = 30) => request<Array<{ type: string; name: string; last_used: number; total_hits: number }>>(`/stats/unused?days=${days}`),
     timeline: (days = 30) => request<Array<{ date: string; total: number }>>(`/stats/timeline?days=${days}`),
     sync: () => request<{ files_parsed: number; events_found: number; errors: number }>('/stats/sync', { method: 'POST' }),
+  },
+
+  claude: {
+    status: () => request<ClaudeStatus>('/claude/status'),
+  },
+
+  analysis: {
+    skills: () => request<AnalysisResult>('/analysis/skills', { method: 'POST' }),
+    plugins: () => request<AnalysisResult>('/analysis/plugins', { method: 'POST' }),
   },
 }

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Trash2, Puzzle } from 'lucide-react'
+import { Trash2, Puzzle, BarChart2 } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { Badge } from '../components/shared/Badge'
 import { TableSkeleton } from '../components/shared/Skeleton'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
+import { AnalysisPanel } from '../components/analysis/AnalysisPanel'
 import type { PluginSummary } from '../lib/types'
 
 function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
@@ -31,6 +32,7 @@ function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (
 export default function Plugins() {
   const qc = useQueryClient()
   const [uninstallTarget, setUninstallTarget] = useState<PluginSummary | null>(null)
+  const [showAnalysis, setShowAnalysis] = useState(false)
 
   const { data: plugins = [], isLoading } = useQuery<PluginSummary[]>({
     queryKey: ['plugins'],
@@ -61,6 +63,13 @@ export default function Plugins() {
           </div>
           <InfoTooltip {...CATEGORY_INFO.plugins} />
         </div>
+        <button
+          onClick={() => setShowAnalysis(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors duration-150"
+        >
+          <BarChart2 size={13} strokeWidth={2} />
+          사용량 분석
+        </button>
       </div>
 
       {isLoading ? (
@@ -142,6 +151,7 @@ export default function Plugins() {
           onCancel={() => setUninstallTarget(null)}
         />
       )}
+      {showAnalysis && <AnalysisPanel type="plugins" onClose={() => setShowAnalysis(false)} />}
     </div>
   )
 }

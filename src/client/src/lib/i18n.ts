@@ -67,6 +67,12 @@ const translations: Record<string, Record<Lang, string>> = {
   'stats.unusedDays': { ko: '일간 미사용', en: 'days unused' },
   'stats.remove': { ko: '제거', en: 'Remove' },
   'stats.sync': { ko: 'Sync', en: 'Sync' },
+  'analysis.title': { ko: '사용패턴 분석', en: 'Usage Analysis' },
+  'analysis.start': { ko: '분석 시작', en: 'Start Analysis' },
+  'analysis.tokenWarning': { ko: '현재 사용 중인 Claude 플랜 범위 내에서 토큰이 소비됩니다.', en: 'Tokens will be consumed within your current Claude plan.' },
+  'analysis.ranking': { ko: '유용성 랭킹', en: 'Usefulness Ranking' },
+  'analysis.reference': { ko: '평가 기준', en: 'Evaluation Criteria' },
+  'analysis.disconnected': { ko: 'Claude 미연결 — AI 분석 불가', en: 'Claude disconnected — AI analysis unavailable' },
 }
 
 let currentLang: Lang = (localStorage.getItem('claude-hub-lang') as Lang) || 'ko'

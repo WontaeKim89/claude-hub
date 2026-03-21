@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Edit2, Trash2, Eye, X, Sparkles } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Eye, X, Sparkles, BarChart2 } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { Badge } from '../components/shared/Badge'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
@@ -9,6 +9,7 @@ import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import { useLang } from '../hooks/useLang'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
+import { AnalysisPanel } from '../components/analysis/AnalysisPanel'
 import type { SkillSummary, SkillDetail } from '../lib/types'
 
 type FilterTab = 'all' | 'custom' | 'installed'
@@ -192,6 +193,7 @@ export default function Skills() {
   const [showNew, setShowNew] = useState(false)
   const [editSkill, setEditSkill] = useState<SkillSummary | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<SkillSummary | null>(null)
+  const [showAnalysis, setShowAnalysis] = useState(false)
 
   const { data: skills = [], isLoading } = useQuery<SkillSummary[]>({
     queryKey: ['skills'],
@@ -237,6 +239,13 @@ export default function Skills() {
           <InfoTooltip {...CATEGORY_INFO.skills} />
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowAnalysis(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors duration-150"
+          >
+            <BarChart2 size={13} strokeWidth={2} />
+            사용량 분석
+          </button>
           <button
             onClick={() => setShowNew(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors duration-150"
@@ -347,6 +356,7 @@ export default function Skills() {
 
       {showNew && <NewSkillModal onClose={() => setShowNew(false)} />}
       {editSkill && <EditSkillModal skill={editSkill} onClose={() => setEditSkill(null)} />}
+      {showAnalysis && <AnalysisPanel type="skills" onClose={() => setShowAnalysis(false)} />}
       {deleteTarget && (
         <DangerDeleteDialog
           title={`'${deleteTarget.name}' 스킬을 삭제하시겠습니까?`}

@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import {
   LayoutDashboard,
   Sparkles,
@@ -16,6 +17,8 @@ import {
 } from 'lucide-react'
 import { useLang } from '../../hooks/useLang'
 import { Logo } from './Logo'
+import { api } from '../../lib/api-client'
+import type { ClaudeStatus } from '../../lib/types'
 
 interface NavItem {
   label: string
@@ -79,6 +82,12 @@ const navGroups: NavGroup[] = [
 
 export function Sidebar() {
   const { lang, toggleLang, t } = useLang()
+  const { data: claudeStatus } = useQuery<ClaudeStatus>({
+    queryKey: ['claude-status'],
+    queryFn: () => api.claude.status(),
+    refetchInterval: 30_000,
+    staleTime: 20_000,
+  })
 
   return (
     <aside className="w-56 bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0">
@@ -162,10 +171,17 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Connected status */}
+        {/* Claude 연결 상태 */}
         <div className="flex items-center gap-1.5">
-          <span className="text-emerald-400 text-xs leading-none">●</span>
-          <span className="font-mono text-xs text-zinc-500">{t('common.connected')}</span>
+          <span className={`text-xs leading-none ${claudeStatus?.connected ? 'text-emerald-400' : 'text-zinc-600'}`}>●</span>
+          <span className="font-mono text-xs text-zinc-500">
+            {claudeStatus?.connected ? t('common.connected') : 'Claude CLI'}
+          </span>
+          {claudeStatus?.version && (
+            <span className="font-mono text-[9px] text-zinc-700 ml-auto truncate max-w-[60px]" title={claudeStatus.version}>
+              {claudeStatus.version.split(' ').slice(-1)[0]}
+            </span>
+          )}
         </div>
       </div>
     </aside>

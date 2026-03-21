@@ -187,3 +187,30 @@ export interface DiffRequest {
   scope: string
   content: string | Record<string, unknown>
 }
+
+export interface AnalysisItem {
+  name: string
+  source: string
+  total_hits: number
+  last_used: number
+  project_count: number
+  frequency_score: number
+  recency_score: number
+  versatility_score: number
+  trigger_accuracy: number
+  replaceability: number
+  total_score: number
+  ai_comment: string
+}
+
+export interface AnalysisResult {
+  items: AnalysisItem[]
+  total_analyzed: number
+  claude_connected: boolean
+  reference_url: string
+}
+
+export interface ClaudeStatus {
+  connected: boolean
+  version: string | null
+}
