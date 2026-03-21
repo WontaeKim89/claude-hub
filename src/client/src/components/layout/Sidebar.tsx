@@ -13,9 +13,9 @@ import {
   Brain,
   Users,
   Store,
-  Diamond,
 } from 'lucide-react'
 import { useLang } from '../../hooks/useLang'
+import { Logo } from './Logo'
 
 interface NavItem {
   label: string
@@ -83,11 +83,10 @@ export function Sidebar() {
   return (
     <aside className="w-56 bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0">
       {/* Logo */}
-      <div className="px-4 py-4 border-b border-zinc-800">
-        <div className="flex items-center gap-2">
-          <Diamond size={13} className="text-emerald-400 shrink-0" strokeWidth={2} />
-          <span className="text-zinc-100 font-semibold text-sm tracking-tight">claude-hub</span>
-          <span className="font-mono text-zinc-600 text-xs">v0.1.0</span>
+      <div className="px-3 py-3.5 border-b border-zinc-800">
+        <div className="flex items-center justify-between">
+          <Logo />
+          <span className="font-mono text-[9px] text-zinc-700 bg-zinc-800/50 px-1.5 py-0.5 rounded">v0.1</span>
         </div>
       </div>
 
