@@ -23,6 +23,7 @@ import { StatusDot } from '../components/shared/StatusDot'
 import { Skeleton } from '../components/shared/Skeleton'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import { useLang } from '../hooks/useLang'
+import { HitStatsChart } from '../components/dashboard/HitStatsChart'
 import type { DashboardData, HealthResult } from '../lib/types'
 
 // stat 카드 border 색상 매핑
@@ -256,6 +257,11 @@ export default function Dashboard() {
             {t('dashboard.backupHistory')}
           </button>
         </div>
+      </div>
+
+      {/* Hit Stats Chart — 탭별 사용 빈도 시각화 */}
+      <div className="mb-6">
+        <HitStatsChart />
       </div>
 
       {/* Stat cards — 3x2 grid */}

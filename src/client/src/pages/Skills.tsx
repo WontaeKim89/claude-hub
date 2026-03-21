@@ -1,23 +1,59 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Search, Plus, Edit2, Trash2, Eye, X, Sparkles } from 'lucide-react'
 import { api } from '../lib/api-client'
-import { PageHeader } from '../components/layout/PageHeader'
 import { Badge } from '../components/shared/Badge'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
 import { TableSkeleton } from '../components/shared/Skeleton'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import { useLang } from '../hooks/useLang'
+import { InfoTooltip } from '../components/shared/InfoTooltip'
+import { CATEGORY_INFO } from '../lib/category-info'
 import type { SkillSummary, SkillDetail } from '../lib/types'
 
 type FilterTab = 'all' | 'custom' | 'installed'
+
+function buildSkillTemplate(name: string, description: string): string {
+  return `---
+name: ${name}
+description: ${description}
+---
+
+# ${name}
+
+## 목적
+<이 스킬이 해결하는 문제를 설명하세요>
+
+## 트리거 조건
+<이 스킬이 언제 사용되어야 하는지 명시하세요>
+
+## 동작
+<스킬이 수행할 구체적인 작업 단계를 기술하세요>
+
+## 제약 조건
+<하지 말아야 할 것, 주의사항을 명시하세요>
+`
+}
 
 function NewSkillModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [content, setContent] = useState('')
+  const [content, setContent] = useState(() => buildSkillTemplate('', ''))
+  const [contentEdited, setContentEdited] = useState(false)
   const [error, setError] = useState('')
+
+  // name/description 변경 시 템플릿 갱신 (사용자가 직접 수정하지 않은 경우에만)
+  useEffect(() => {
+    if (!contentEdited) {
+      setContent(buildSkillTemplate(name, description))
+    }
+  }, [name, description, contentEdited])
+
+  const handleContentChange = (val: string) => {
+    setContentEdited(true)
+    setContent(val)
+  }
 
   const mutation = useMutation({
     mutationFn: () => api.skills.create({ name, description, content }),
@@ -58,8 +94,13 @@ function NewSkillModal({ onClose }: { onClose: () => void }) {
             />
           </div>
           <div>
-            <label className="block font-mono text-xs text-zinc-500 mb-1.5">content (SKILL.md)</label>
-            <MonacoWrapper value={content} onChange={setContent} height="280px" />
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="font-mono text-xs text-zinc-500">content (SKILL.md)</label>
+              <span className="text-[10px] text-emerald-500/70 font-mono">
+                Claude 공식 스킬 포맷 기반 템플릿이 적용되었습니다
+              </span>
+            </div>
+            <MonacoWrapper value={content} onChange={handleContentChange} height="280px" />
           </div>
         </div>
         <div className="flex justify-end gap-2 px-5 py-3.5 border-t border-zinc-800">
@@ -185,18 +226,26 @@ export default function Skills() {
 
   return (
     <div>
-      <PageHeader
-        title={`${t('skills.title')}${!isLoading ? ` (${skills.length})` : ''}`}
-        subtitle={t('skills.subtitle')}
-      >
-        <button
-          onClick={() => setShowNew(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors duration-150"
-        >
-          <Plus size={13} strokeWidth={2} />
-          {t('skills.newSkill')}
-        </button>
-      </PageHeader>
+      <div className="flex items-start justify-between mb-6">
+        <div className="flex items-center gap-1.5">
+          <div>
+            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">
+              {`${t('skills.title')}${!isLoading ? ` (${skills.length})` : ''}`}
+            </h2>
+            <p className="mt-0.5 text-xs text-zinc-500">{t('skills.subtitle')}</p>
+          </div>
+          <InfoTooltip {...CATEGORY_INFO.skills} />
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowNew(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors duration-150"
+          >
+            <Plus size={13} strokeWidth={2} />
+            {t('skills.newSkill')}
+          </button>
+        </div>
+      </div>
 
       {/* Filter + Search */}
       <div className="flex items-center gap-3 mb-4">
