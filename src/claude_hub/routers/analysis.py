@@ -1,9 +1,34 @@
 """사용패턴 AI 분석 API."""
+import json
+import time
+from datetime import datetime
+from pathlib import Path
+
 from fastapi import APIRouter, Request
 
 from claude_hub.services.claude_connection import check_claude_connection
 
 router = APIRouter(tags=["analysis"])
+
+CACHE_DIR = Path.home() / ".claude-hub"
+
+
+def _cache_path(analysis_type: str) -> Path:
+    return CACHE_DIR / f"analysis_{analysis_type}.json"
+
+
+def _save_result(analysis_type: str, data: dict):
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    data["analyzed_at"] = datetime.now().strftime("%Y%m%d%H%M")
+    data["analyzed_timestamp"] = time.time()
+    _cache_path(analysis_type).write_text(json.dumps(data, ensure_ascii=False, indent=2))
+
+
+def _load_cached(analysis_type: str) -> dict | None:
+    path = _cache_path(analysis_type)
+    if path.exists():
+        return json.loads(path.read_text())
+    return None
 
 
 @router.get("/claude/status")
@@ -12,9 +37,18 @@ async def claude_status():
     return {"connected": status.connected, "version": status.version}
 
 
+@router.get("/analysis/{analysis_type}")
+async def get_cached_analysis(analysis_type: str):
+    """캐시된 분석 결과 조회. 없으면 빈 응답."""
+    cached = _load_cached(analysis_type)
+    if cached:
+        return cached
+    return {"items": [], "total_analyzed": 0, "analyzed_at": None}
+
+
 @router.post("/analysis/skills")
 async def analyze_skills_endpoint(request: Request):
-    """전체 스킬 비교 분석."""
+    """전체 스킬 비교 분석 (실행 + 저장)."""
     status = check_claude_connection()
 
     scanner = request.app.state.scanner
@@ -55,17 +89,20 @@ async def analyze_skills_endpoint(request: Request):
 
     results.sort(key=lambda x: x.total_score, reverse=True)
 
-    return {
+    response = {
         "items": [vars(r) for r in results],
         "total_analyzed": len(results),
         "claude_connected": status.connected,
         "reference_url": "https://claude.com/blog/improving-skill-creator-test-measure-and-refine-agent-skills",
     }
 
+    _save_result("skills", response)
+    return response
+
 
 @router.post("/analysis/plugins")
 async def analyze_plugins_endpoint(request: Request):
-    """전체 플러그인 비교 분석. 스킬과 동일한 로직."""
+    """전체 플러그인 비교 분석."""
     status = check_claude_connection()
     scanner = request.app.state.scanner
     db = request.app.state.usage_db
@@ -74,12 +111,38 @@ async def analyze_plugins_endpoint(request: Request):
     plugins_data = [{"name": p.name, "source": p.source_type, "description": p.description} for p in plugins]
     total_projects = len(scanner.list_projects())
 
-    from claude_hub.services.analyzer import analyze_skills
+    from claude_hub.services.analyzer import analyze_skills, analyze_with_claude
     results = analyze_skills(db, plugins_data, total_projects)
 
-    return {
+    ai_results = []
+    if status.connected:
+        analysis_input = [
+            {"name": r.name, "source": r.source, "total_hits": r.total_hits, "project_count": r.project_count,
+             "description": next((s["description"] for s in plugins_data if s["name"] == r.name), "")}
+            for r in results
+        ]
+        ai_results = analyze_with_claude(analysis_input)
+
+    if ai_results and isinstance(ai_results, list):
+        ai_map = {r.get("name", ""): r for r in ai_results if isinstance(r, dict)}
+        for result in results:
+            ai = ai_map.get(result.name, {})
+            result.trigger_accuracy = ai.get("trigger_accuracy", 0)
+            result.replaceability = ai.get("replaceability", 0)
+            result.ai_comment = ai.get("comment", "")
+            result.total_score = round(
+                result.frequency_score + result.recency_score + result.versatility_score +
+                result.trigger_accuracy + result.replaceability, 1
+            )
+
+    results.sort(key=lambda x: x.total_score, reverse=True)
+
+    response = {
         "items": [vars(r) for r in results],
         "total_analyzed": len(results),
         "claude_connected": status.connected,
         "reference_url": "https://claude.com/blog/improving-skill-creator-test-measure-and-refine-agent-skills",
     }
+
+    _save_result("plugins", response)
+    return response

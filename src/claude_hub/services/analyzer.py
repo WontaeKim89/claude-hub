@@ -11,6 +11,7 @@ from claude_hub.services.usage_db import UsageDB
 class SkillScore:
     name: str
     source: str
+    description: str
     total_hits: int
     last_used: float
     project_count: int
@@ -64,6 +65,7 @@ def analyze_skills(db: UsageDB, skills: list[dict], total_projects: int) -> list
         results.append(SkillScore(
             name=name,
             source=skill.get("source", ""),
+            description=skill.get("description", ""),
             total_hits=hits,
             last_used=last,
             project_count=proj_count,
@@ -115,16 +117,35 @@ def analyze_with_claude(skills_data: list[dict]) -> list[dict]:
 [{{"name": "skill-name", "trigger_accuracy": 18, "replaceability": 15, "comment": "한줄 평가"}}]"""
 
     try:
-        result = subprocess.run(
+        proc = subprocess.run(
             ["claude", "-p", prompt, "--output-format", "json"],
-            capture_output=True, text=True, timeout=120
+            capture_output=True, text=True, timeout=180
         )
-        if result.returncode == 0:
-            output = result.stdout.strip()
-            # claude가 ```json ... ``` 으로 감쌀 수 있으므로 처리
-            if output.startswith("```"):
+        if proc.returncode == 0:
+            # --output-format json → {"result": "...", ...} 구조
+            wrapper = json.loads(proc.stdout)
+            output = wrapper.get("result", "") if isinstance(wrapper, dict) else proc.stdout
+
+            # JSON 배열 추출 (```json ... ``` 래핑 제거)
+            output = output.strip()
+            if "```" in output:
                 lines = output.split("\n")
-                output = "\n".join(lines[1:-1])
+                json_lines = []
+                in_block = False
+                for line in lines:
+                    if line.strip().startswith("```"):
+                        in_block = not in_block
+                        continue
+                    if in_block:
+                        json_lines.append(line)
+                output = "\n".join(json_lines)
+
+            # [ 로 시작하는 JSON 배열 찾기
+            start = output.find("[")
+            end = output.rfind("]")
+            if start >= 0 and end > start:
+                output = output[start:end + 1]
+
             return json.loads(output)
     except Exception:
         pass

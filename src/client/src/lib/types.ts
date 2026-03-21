@@ -191,6 +191,7 @@ export interface DiffRequest {
 export interface AnalysisItem {
   name: string
   source: string
+  description?: string
   total_hits: number
   last_used: number
   project_count: number
@@ -208,6 +209,7 @@ export interface AnalysisResult {
   total_analyzed: number
   claude_connected: boolean
   reference_url: string
+  analyzed_at?: string  // "202603211130" 형식
 }
 
 export interface ClaudeStatus {

@@ -186,5 +186,6 @@ export const api = {
   analysis: {
     skills: () => request<AnalysisResult>('/analysis/skills', { method: 'POST' }),
     plugins: () => request<AnalysisResult>('/analysis/plugins', { method: 'POST' }),
+    getCached: (type: string) => request<AnalysisResult>(`/analysis/${type}`),
   },
 }
