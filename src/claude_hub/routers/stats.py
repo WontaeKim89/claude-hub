@@ -11,15 +11,15 @@ async def stats_overview(request: Request):
 
 
 @router.get("/stats/skills")
-async def stats_skills(request: Request, limit: int = 10):
+async def stats_skills(request: Request, limit: int = 10, days: int = 30):
     db = request.app.state.usage_db
-    return db.get_top_skills(limit)
+    return db.get_top_skills(limit, days=days)
 
 
 @router.get("/stats/plugins")
-async def stats_plugins(request: Request, limit: int = 10):
+async def stats_plugins(request: Request, limit: int = 10, days: int = 30):
     db = request.app.state.usage_db
-    return db.get_top_plugins(limit)
+    return db.get_top_plugins(limit, days=days)
 
 
 @router.get("/stats/unused")

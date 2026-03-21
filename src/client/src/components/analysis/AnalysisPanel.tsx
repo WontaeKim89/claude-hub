@@ -190,7 +190,7 @@ export function AnalysisPanel({ type, onClose }: Props) {
                 <div className="bg-purple-500/5 border border-purple-500/15 rounded-md px-4 py-3 space-y-1">
                   <p className="text-xs font-mono text-purple-400 font-medium">AI 종합 분석 완료</p>
                   <p className="text-xs text-zinc-500">
-                    총 {result.total_analyzed}개 항목을 정량(60점) + 정성(40점) 기준으로 평가했습니다.
+                    총 {result.total_analyzed}개 항목을 최근 30일 사용 데이터 기반, 정량(60점) + 정성(40점) 기준으로 평가했습니다.
                   </p>
                   <a
                     href={result.reference_url}

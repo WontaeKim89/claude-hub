@@ -66,25 +66,27 @@ class UsageDB:
                 (date_str, type, name),
             )
 
-    def get_top_skills(self, limit: int = 10) -> list[dict]:
+    def get_top_skills(self, limit: int = 10, days: int = 30) -> list[dict]:
+        cutoff = time.time() - (days * 86400)
         with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 """SELECT name, COUNT(*) as hit_count, MAX(timestamp) as last_used
-                   FROM usage_events WHERE type = 'skill'
+                   FROM usage_events WHERE type = 'skill' AND timestamp >= ?
                    GROUP BY name ORDER BY hit_count DESC LIMIT ?""",
-                (limit,),
+                (cutoff, limit),
             ).fetchall()
             return [dict(r) for r in rows]
 
-    def get_top_plugins(self, limit: int = 10) -> list[dict]:
+    def get_top_plugins(self, limit: int = 10, days: int = 30) -> list[dict]:
+        cutoff = time.time() - (days * 86400)
         with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
                 """SELECT name, COUNT(*) as hit_count, MAX(timestamp) as last_used
-                   FROM usage_events WHERE type = 'plugin'
+                   FROM usage_events WHERE type = 'plugin' AND timestamp >= ?
                    GROUP BY name ORDER BY hit_count DESC LIMIT ?""",
-                (limit,),
+                (cutoff, limit),
             ).fetchall()
             return [dict(r) for r in rows]
 

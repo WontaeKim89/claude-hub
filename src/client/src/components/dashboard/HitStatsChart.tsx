@@ -89,21 +89,24 @@ export function HitStatsChart() {
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-      {/* 헤더: 탭 */}
-      <div className="flex items-center gap-0 border-b border-zinc-800 px-4">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`font-mono text-xs px-3 py-3 border-b-2 transition-colors duration-150 ${
-              activeTab === tab.key
-                ? 'border-emerald-500 text-zinc-100'
-                : 'border-transparent text-zinc-500 hover:text-zinc-300'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* 헤더: 탭 + 기간 표시 */}
+      <div className="flex items-center justify-between border-b border-zinc-800 px-4">
+        <div className="flex items-center gap-0">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`font-mono text-xs px-3 py-3 border-b-2 transition-colors duration-150 ${
+                activeTab === tab.key
+                  ? 'border-emerald-500 text-zinc-100'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <span className="font-mono text-[10px] text-zinc-600">최근 30일 기준</span>
       </div>
 
       {/* 바 차트 본문 */}
