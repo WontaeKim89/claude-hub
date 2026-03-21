@@ -129,6 +129,9 @@ fi
 
 rm -rf "$ICON_DIR"
 
+# Gatekeeper quarantine 속성 제거 (더블클릭 실행 허용)
+xattr -cr "$APP_DIR" 2>/dev/null
+
 echo ""
 echo "==================================="
 echo "  claude-hub.app created!"
