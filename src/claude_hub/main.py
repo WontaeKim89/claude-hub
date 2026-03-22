@@ -229,13 +229,18 @@ def _run_as_app(app, config: AppConfig, url: str):
             "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
             "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
         ]
+        # claude-hub 전용 Chrome 프로필 (캐시 격리)
+        chrome_profile = Path.home() / ".claude-hub" / "chrome-profile"
+        chrome_profile.mkdir(parents=True, exist_ok=True)
+
         for chrome in chrome_paths:
             if Path(chrome).exists():
                 subprocess.Popen([
                     chrome,
                     f"--app={url}",
-                    "--new-window",
-                    "--disk-cache-size=0",
+                    f"--user-data-dir={chrome_profile}",
+                    "--no-first-run",
+                    "--disable-extensions",
                 ])
                 return
         # Chromium 계열 없으면 기본 브라우저
