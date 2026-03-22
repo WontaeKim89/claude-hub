@@ -10,6 +10,7 @@ import { useLang } from '../hooks/useLang'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
 import { AnalysisPanel } from '../components/analysis/AnalysisPanel'
+import { SkillChat } from '../components/wizard/SkillChat'
 import type { SkillSummary, SkillDetail } from '../lib/types'
 
 type FilterTab = 'all' | 'custom' | 'installed'
@@ -36,15 +37,24 @@ description: ${description}
 `
 }
 
-function NewSkillModal({ onClose }: { onClose: () => void }) {
+type NewSkillTab = 'manual' | 'ai'
+
+function ManualSkillForm({
+  initialContent,
+  onSuccess,
+  onClose,
+}: {
+  initialContent?: string
+  onSuccess: () => void
+  onClose: () => void
+}) {
   const qc = useQueryClient()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
-  const [content, setContent] = useState(() => buildSkillTemplate('', ''))
-  const [contentEdited, setContentEdited] = useState(false)
+  const [content, setContent] = useState(() => initialContent || buildSkillTemplate('', ''))
+  const [contentEdited, setContentEdited] = useState(!!initialContent)
   const [error, setError] = useState('')
 
-  // name/description 변경 시 템플릿 갱신 (사용자가 직접 수정하지 않은 경우에만)
   useEffect(() => {
     if (!contentEdited) {
       setContent(buildSkillTemplate(name, description))
@@ -60,61 +70,131 @@ function NewSkillModal({ onClose }: { onClose: () => void }) {
     mutationFn: () => api.skills.create({ name, description, content }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['skills'] })
-      onClose()
+      onSuccess()
     },
     onError: (e: Error) => setError(e.message),
   })
 
   return (
+    <div className="p-5 space-y-4 overflow-y-auto flex-1">
+      {error && <p className="text-xs text-red-400 bg-red-400/10 rounded px-3 py-2">{error}</p>}
+      <div>
+        <label className="block font-mono text-xs text-zinc-500 mb-1.5">name</label>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+          placeholder="my-skill"
+        />
+      </div>
+      <div>
+        <label className="block font-mono text-xs text-zinc-500 mb-1.5">description</label>
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500/50"
+          placeholder="What does this skill do?"
+        />
+      </div>
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="font-mono text-xs text-zinc-500">content (SKILL.md)</label>
+          {!contentEdited && (
+            <span className="text-[10px] text-emerald-500/70 font-mono">
+              Claude 공식 스킬 포맷 기반 템플릿이 적용되었습니다
+            </span>
+          )}
+        </div>
+        <MonacoWrapper value={content} onChange={handleContentChange} height="280px" />
+      </div>
+      <div className="flex justify-end gap-2 pt-1">
+        <button onClick={onClose} className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300">
+          Cancel
+        </button>
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending || !name.trim()}
+          className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+        >
+          {mutation.isPending ? 'Creating...' : 'Create'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function NewSkillModal({ onClose }: { onClose: () => void }) {
+  const { t } = useLang()
+  const qc = useQueryClient()
+  const [activeTab, setActiveTab] = useState<NewSkillTab>('manual')
+  const [aiGeneratedContent, setAiGeneratedContent] = useState<string | undefined>()
+
+  // AI 생성 스킬을 직접 저장
+  const saveMutation = useMutation({
+    mutationFn: ({ name, content }: { name: string; content: string }) => {
+      // YAML frontmatter에서 description 추출 시도
+      const descMatch = content.match(/^description:\s*(.+)$/m)
+      const description = descMatch ? descMatch[1].trim() : ''
+      return api.skills.create({ name, description, content })
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['skills'] })
+      onClose()
+    },
+  })
+
+  const handleSwitchToManual = (content: string) => {
+    setAiGeneratedContent(content)
+    setActiveTab('manual')
+  }
+
+  const tabs: { key: NewSkillTab; label: string }[] = [
+    { key: 'manual', label: t('wizard.manualWrite') },
+    { key: 'ai', label: t('wizard.aiGenerate') },
+  ]
+
+  return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
       <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[680px] max-h-[90vh] flex flex-col">
+        {/* 헤더 + 탭 */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800">
-          <span className="text-sm font-medium text-zinc-100">New Skill</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-medium text-zinc-100">New Skill</span>
+            <div className="flex gap-0.5 bg-zinc-800 rounded p-0.5">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`px-2.5 py-1 text-xs rounded transition-colors duration-150 ${
+                    activeTab === tab.key
+                      ? 'bg-zinc-700 text-zinc-100'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
           <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">
             <X size={16} />
           </button>
         </div>
-        <div className="p-5 space-y-4 overflow-y-auto flex-1">
-          {error && <p className="text-xs text-red-400 bg-red-400/10 rounded px-3 py-2">{error}</p>}
-          <div>
-            <label className="block font-mono text-xs text-zinc-500 mb-1.5">name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
-              placeholder="my-skill"
+
+        {/* 탭 콘텐츠 */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          {activeTab === 'manual' ? (
+            <ManualSkillForm
+              initialContent={aiGeneratedContent}
+              onSuccess={onClose}
+              onClose={onClose}
             />
-          </div>
-          <div>
-            <label className="block font-mono text-xs text-zinc-500 mb-1.5">description</label>
-            <input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500/50"
-              placeholder="What does this skill do?"
+          ) : (
+            <SkillChat
+              onSave={(name, content) => saveMutation.mutate({ name, content })}
+              onSwitchToManual={handleSwitchToManual}
             />
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="font-mono text-xs text-zinc-500">content (SKILL.md)</label>
-              <span className="text-[10px] text-emerald-500/70 font-mono">
-                Claude 공식 스킬 포맷 기반 템플릿이 적용되었습니다
-              </span>
-            </div>
-            <MonacoWrapper value={content} onChange={handleContentChange} height="280px" />
-          </div>
-        </div>
-        <div className="flex justify-end gap-2 px-5 py-3.5 border-t border-zinc-800">
-          <button onClick={onClose} className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300">
-            Cancel
-          </button>
-          <button
-            onClick={() => mutation.mutate()}
-            disabled={mutation.isPending || !name.trim()}
-            className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
-          >
-            {mutation.isPending ? 'Creating...' : 'Create'}
-          </button>
+          )}
         </div>
       </div>
     </div>

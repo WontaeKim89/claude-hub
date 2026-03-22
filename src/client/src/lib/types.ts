@@ -216,3 +216,17 @@ export interface ClaudeStatus {
   connected: boolean
   version: string | null
 }
+
+export interface WizardResult {
+  project_path: string
+  tech_stack: string[]
+  claude_md: string
+  hooks: Array<{ event: string; command: string; reason: string }>
+  mcp_suggestions: Array<{ name: string; reason: string }>
+}
+
+export interface SkillGenResult {
+  questions: string[]
+  skill_md: string
+  name: string
+}

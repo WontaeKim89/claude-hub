@@ -73,6 +73,21 @@ const translations: Record<string, Record<Lang, string>> = {
   'analysis.ranking': { ko: '유용성 랭킹', en: 'Usefulness Ranking' },
   'analysis.reference': { ko: '평가 기준', en: 'Evaluation Criteria' },
   'analysis.disconnected': { ko: 'Claude 미연결 — AI 분석 불가', en: 'Claude disconnected — AI analysis unavailable' },
+  'nav.tools': { ko: '도구', en: 'Tools' },
+  'nav.wizard': { ko: 'Wizard', en: 'Wizard' },
+  'wizard.title': { ko: 'Harness Wizard', en: 'Harness Wizard' },
+  'wizard.subtitle': { ko: '프로젝트 맞춤 환경 자동 구성', en: 'Auto-configure project environment' },
+  'wizard.analyze': { ko: '분석 시작', en: 'Start Analysis' },
+  'wizard.apply': { ko: '선택 항목 적용', en: 'Apply Selected' },
+  'wizard.selectProject': { ko: '프로젝트를 선택하세요', en: 'Select a project' },
+  'wizard.newPath': { ko: '새 경로 입력', en: 'Enter new path' },
+  'wizard.aiGenerate': { ko: 'AI 생성', en: 'AI Generate' },
+  'wizard.manualWrite': { ko: '직접 작성', en: 'Write Manually' },
+  'wizard.analyzing': { ko: '프로젝트 분석 중...', en: 'Analyzing project...' },
+  'wizard.techStack': { ko: '감지된 기술 스택', en: 'Detected Tech Stack' },
+  'wizard.editInMonaco': { ko: 'Monaco에서 편집', en: 'Edit in Monaco' },
+  'wizard.saveSkill': { ko: '스킬 저장', en: 'Save Skill' },
+  'wizard.chatPlaceholder': { ko: '메시지를 입력하세요...', en: 'Type a message...' },
 }
 
 let currentLang: Lang = (localStorage.getItem('claude-hub-lang') as Lang) || 'ko'

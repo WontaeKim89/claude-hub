@@ -14,6 +14,7 @@ import Keybindings from './pages/Keybindings'
 import Marketplace from './pages/Marketplace'
 import Memory from './pages/Memory'
 import Teams from './pages/Teams'
+import Wizard from './pages/Wizard'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -38,6 +39,7 @@ function AnimatedRoutes() {
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/memory" element={<Memory />} />
         <Route path="/teams" element={<Teams />} />
+        <Route path="/wizard" element={<Wizard />} />
       </Routes>
     </div>
   )

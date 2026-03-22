@@ -14,6 +14,7 @@ import {
   Brain,
   Users,
   Store,
+  Wand2,
 } from 'lucide-react'
 import { useLang } from '../../hooks/useLang'
 import { Logo } from './Logo'
@@ -40,6 +41,13 @@ const navGroups: NavGroup[] = [
     titleKey: 'nav.overview',
     items: [
       { label: 'Dashboard', labelKey: 'nav.dashboard', to: '/', icon: LayoutDashboard, shortcut: '⌘1' },
+    ],
+  },
+  {
+    title: 'Tools',
+    titleKey: 'nav.tools',
+    items: [
+      { label: 'Wizard', labelKey: 'nav.wizard', to: '/wizard', icon: Wand2 },
     ],
   },
   {

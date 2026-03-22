@@ -1,4 +1,4 @@
-import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary, BackupHistory, DiffResult, DiffRequest, AnalysisResult, ClaudeStatus } from './types'
+import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary, BackupHistory, DiffResult, DiffRequest, AnalysisResult, ClaudeStatus, WizardResult, SkillGenResult } from './types'
 
 const BASE = '/api'
 
@@ -187,5 +187,20 @@ export const api = {
     skills: () => request<AnalysisResult>('/analysis/skills', { method: 'POST' }),
     plugins: () => request<AnalysisResult>('/analysis/plugins', { method: 'POST' }),
     getCached: (type: string) => request<AnalysisResult>(`/analysis/${type}`),
+  },
+
+  wizard: {
+    analyze: (projectPath: string) =>
+      request<WizardResult>('/wizard/analyze', {
+        method: 'POST',
+        body: JSON.stringify({ project_path: projectPath }),
+      }),
+    apply: (data: { project_path: string; claude_md?: string; hooks?: Array<Record<string, unknown>> }) =>
+      request('/wizard/apply', { method: 'POST', body: JSON.stringify(data) }),
+    generateSkill: (messages: Array<{ role: string; content: string }>) =>
+      request<SkillGenResult>('/wizard/generate-skill', {
+        method: 'POST',
+        body: JSON.stringify({ messages }),
+      }),
   },
 }

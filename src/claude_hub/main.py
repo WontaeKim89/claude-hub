@@ -38,7 +38,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.state.marketplace = marketplace
     app.state.usage_db = usage_db
 
-    from claude_hub.routers import dashboard, skills, settings, claude_md, plugins, agents, commands, hooks, mcp, keybindings, marketplace as marketplace_router, memory, teams, backups, stats, analysis
+    from claude_hub.routers import dashboard, skills, settings, claude_md, plugins, agents, commands, hooks, mcp, keybindings, marketplace as marketplace_router, memory, teams, backups, stats, analysis, wizard
     app.include_router(dashboard.router, prefix="/api")
     app.include_router(skills.router, prefix="/api")
     app.include_router(settings.router, prefix="/api")
@@ -55,6 +55,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.include_router(backups.router, prefix="/api")
     app.include_router(stats.router, prefix="/api")
     app.include_router(analysis.router, prefix="/api")
+    app.include_router(wizard.router, prefix="/api")
 
     static_dir = Path(__file__).parent / "static"
     if static_dir.exists():
