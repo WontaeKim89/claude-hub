@@ -5,7 +5,7 @@ import { api } from '../lib/api-client'
 import { useLang } from '../hooks/useLang'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
-import type { MarketplacePlugin, MarketplaceSource } from '../lib/types'
+import type { MarketplacePlugin } from '../lib/types'
 
 // 마켓플레이스 소스별 뱃지 색상 매핑
 function getSourceStyle(marketplace: string): string {
@@ -93,32 +93,25 @@ export default function Marketplace() {
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [query, setQuery] = useState('')
 
-  // 소스 목록 조회
-  const { data: sources = [] } = useQuery<MarketplaceSource[]>({
-    queryKey: ['marketplace', 'sources'],
-    queryFn: () => api.marketplace.sources(),
-  })
-
   // 전체 플러그인 목록 조회 (필터는 클라이언트에서 처리)
   const { data: allPlugins = [], isLoading } = useQuery<MarketplacePlugin[]>({
     queryKey: ['marketplace', 'browse'],
     queryFn: () => api.marketplace.browse({}),
   })
 
-  // 소스 탭 목록 + 각 소스별 count
+  // 소스 탭 목록 — browse 데이터에서 마켓플레이스 목록 추출
   const sourceTabs = useMemo(() => {
     const counts = allPlugins.reduce<Record<string, number>>((acc, p) => {
       acc[p.marketplace] = (acc[p.marketplace] ?? 0) + 1
       return acc
     }, {})
 
-    const fromSources = sources.map((s) => ({
-      name: s.name,
-      count: counts[s.name] ?? 0,
-    }))
+    const marketplaces = Object.entries(counts)
+      .sort(([, a], [, b]) => b - a)
+      .map(([name, count]) => ({ name, count }))
 
-    return [{ name: 'all', count: allPlugins.length }, ...fromSources]
-  }, [sources, allPlugins])
+    return [{ name: 'all', count: allPlugins.length }, ...marketplaces]
+  }, [allPlugins])
 
   // 카테고리 목록 (현재 선택된 소스 기준)
   const categories = useMemo(() => {
