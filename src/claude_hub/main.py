@@ -77,12 +77,19 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
             # 정적 파일이 존재하면 직접 서빙
             file_path = static_dir / path.lstrip("/")
             if file_path.is_file():
-                return StarletteFileResponse(file_path)
+                resp = StarletteFileResponse(file_path)
+                # assets/는 해시가 포함되어 있으므로 장기 캐시 OK
+                # index.html은 항상 최신을 로드하도록 캐시 금지
+                if not path.startswith("/assets/"):
+                    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                return resp
 
-            # 그 외 모든 경로 → index.html (SPA fallback)
+            # 그 외 모든 경로 → index.html (SPA fallback, 캐시 금지)
             index_path = static_dir / "index.html"
             if index_path.is_file():
-                return StarletteFileResponse(index_path)
+                resp = StarletteFileResponse(index_path)
+                resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+                return resp
 
             return await call_next(request)
 
@@ -224,7 +231,12 @@ def _run_as_app(app, config: AppConfig, url: str):
         ]
         for chrome in chrome_paths:
             if Path(chrome).exists():
-                subprocess.Popen([chrome, f"--app={url}", "--new-window"])
+                subprocess.Popen([
+                    chrome,
+                    f"--app={url}",
+                    "--new-window",
+                    "--disk-cache-size=0",
+                ])
                 return
         # Chromium 계열 없으면 기본 브라우저
         webbrowser.open(url)
