@@ -58,14 +58,14 @@ function ToolBadge({ block }: { block: ContentBlock }) {
       <div className="my-1">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-[10px] font-mono text-zinc-400 hover:text-zinc-200 hover:border-zinc-600 transition-colors"
+          className="flex items-center gap-1.5 px-2 py-1 bg-zinc-700 border border-zinc-600 rounded text-[10px] font-mono text-zinc-200 hover:text-zinc-100 hover:border-zinc-500 transition-colors"
         >
           {expanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-          <span className="text-teal-400">[{block.name}]</span>
-          <span className="truncate max-w-[300px] text-zinc-500">{block.input_preview}</span>
+          <span className="text-teal-300">[{block.name}]</span>
+          <span className="truncate max-w-[300px] text-zinc-400">{block.input_preview}</span>
         </button>
         {expanded && block.input_preview && (
-          <pre className="mt-1 ml-4 px-2 py-1.5 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono text-zinc-400 whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
+          <pre className="mt-1 ml-4 px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded text-[10px] font-mono text-zinc-300 whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
             {block.input_preview}
           </pre>
         )}
@@ -78,14 +78,14 @@ function ToolBadge({ block }: { block: ContentBlock }) {
       <div className="my-1">
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800/60 border border-zinc-800 rounded text-[10px] font-mono text-zinc-500 hover:text-zinc-300 hover:border-zinc-700 transition-colors"
+          className="flex items-center gap-1.5 px-2 py-1 bg-zinc-800 border border-zinc-700 rounded text-[10px] font-mono text-zinc-300 hover:text-zinc-100 hover:border-zinc-600 transition-colors"
         >
           {expanded ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-          <span className="text-zinc-600">[result]</span>
-          <span className="truncate max-w-[300px]">{block.content_preview}</span>
+          <span className="text-zinc-400">[result]</span>
+          <span className="truncate max-w-[300px] text-zinc-300">{block.content_preview}</span>
         </button>
         {expanded && block.content_preview && (
-          <pre className="mt-1 ml-4 px-2 py-1.5 bg-zinc-900 border border-zinc-800 rounded text-[10px] font-mono text-zinc-500 whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
+          <pre className="mt-1 ml-4 px-2 py-1.5 bg-zinc-800 border border-zinc-700 rounded text-[10px] font-mono text-zinc-300 whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
             {block.content_preview}
           </pre>
         )}
@@ -104,12 +104,12 @@ function MessageBubble({ message }: { message: Message }) {
     <div className={`flex ${isUser ? 'justify-end' : 'justify-start'} mb-3`}>
       <div className={`max-w-[85%] ${isUser ? 'items-end' : 'items-start'} flex flex-col`}>
         {/* 역할 레이블 */}
-        <span className={`font-mono text-[10px] mb-1 ${isUser ? 'text-emerald-600 text-right' : 'text-zinc-600'}`}>
+        <span className={`font-mono text-[11px] mb-1 ${isUser ? 'text-zinc-400 text-right' : 'text-zinc-400'}`}>
           {isUser ? 'User' : `Assistant${message.model ? ` · ${message.model.split('-').slice(0, 2).join('-')}` : ''}`}
         </span>
 
         {/* 메시지 내용 버블 */}
-        <div className={`rounded-lg px-3 py-2 text-xs ${isUser ? 'bg-emerald-900/30 border border-emerald-800/40 text-emerald-100' : 'bg-zinc-800/60 border border-zinc-700/50 text-zinc-200'}`}>
+        <div className={`rounded-lg px-3 py-2 text-xs ${isUser ? 'bg-emerald-500/10 border border-emerald-500/20 text-zinc-100' : 'bg-zinc-800 border border-zinc-700 text-zinc-200'}`}>
           {message.content.map((block, idx) => {
             if (block.type === 'text') {
               return (
@@ -229,32 +229,20 @@ export default function Sessions() {
         />
       </PageHeader>
 
-      {/* 프로젝트 필터 탭 */}
-      <div className="flex items-center gap-1.5 mb-4 flex-wrap">
-        <button
-          onClick={() => setSelectedProject(undefined)}
-          className={`px-2.5 py-1 rounded text-[11px] font-mono transition-colors ${
-            selectedProject === undefined
-              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-              : 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50 hover:text-zinc-300'
-          }`}
+      {/* 프로젝트 필터 — combobox */}
+      <div className="mb-4">
+        <select
+          value={selectedProject ?? 'all'}
+          onChange={(e) => setSelectedProject(e.target.value === 'all' ? undefined : e.target.value)}
+          className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-sm font-mono text-zinc-100"
         >
-          {t('sessions.allProjects')}
-        </button>
-        {projects.map((proj) => (
-          <button
-            key={proj}
-            onClick={() => setSelectedProject(proj)}
-            className={`px-2.5 py-1 rounded text-[11px] font-mono truncate max-w-[180px] transition-colors ${
-              selectedProject === proj
-                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                : 'bg-zinc-800/50 text-zinc-500 border border-zinc-700/50 hover:text-zinc-300'
-            }`}
-            title={proj}
-          >
-            {proj.replace(/^-/, '').replace(/-/g, '/').split('/').pop() ?? proj}
-          </button>
-        ))}
+          <option value="all">{t('sessions.allProjects')}</option>
+          {projects.map((proj) => (
+            <option key={proj} value={proj}>
+              {proj.replace(/^-/, '').replace(/-/g, '/').split('/').pop() ?? proj}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* 스플릿 패널 */}

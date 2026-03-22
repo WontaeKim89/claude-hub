@@ -54,10 +54,10 @@ function Cell({ item, onOpen }: { item: OverviewItem; onOpen: (item: OverviewIte
 
   if (canOpen) {
     return (
-      <td className="px-2 py-2 text-center">
+      <td className="px-2 py-1.5 text-center whitespace-nowrap">
         <button
           onClick={() => onOpen(item)}
-          className="group inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-emerald-500/5 border border-emerald-500/10 hover:border-emerald-500/30 hover:bg-emerald-500/10 transition-all cursor-pointer"
+          className="group inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-500/5 border border-emerald-500/10 hover:border-emerald-500/30 hover:bg-emerald-500/10 transition-all cursor-pointer"
           title={`클릭하여 편집: ${item.path}`}
         >
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
@@ -69,8 +69,8 @@ function Cell({ item, onOpen }: { item: OverviewItem; onOpen: (item: OverviewIte
   }
 
   return (
-    <td className="px-2 py-2 text-center">
-      <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-zinc-800/30 border border-zinc-800/50">
+    <td className="px-2 py-1.5 text-center whitespace-nowrap">
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-zinc-800/30 border border-zinc-800/50">
         <span className="w-1.5 h-1.5 rounded-full bg-red-400/50 shrink-0" />
         <span className="font-mono text-[11px] text-zinc-600">{content}</span>
       </span>
@@ -286,13 +286,6 @@ export default function ProjectOverview() {
                     {COLUMN_LABELS[type]}
                   </th>
                 ))}
-                {/* 범례: 편집 가능 항목 안내 */}
-                <th className="px-3 py-2 text-right font-normal whitespace-nowrap">
-                  <span className="inline-flex items-center gap-1 text-[10px] text-zinc-500">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
-                    클릭하여 편집 가능
-                  </span>
-                </th>
               </tr>
             </thead>
             <tbody>
@@ -331,8 +324,6 @@ export default function ProjectOverview() {
                     return <Cell key={type} item={item} onOpen={setEditingItem} />
                   })}
 
-                  {/* 범례 컬럼 대응 빈 셀 */}
-                  <td />
                 </tr>
               ))}
             </tbody>
