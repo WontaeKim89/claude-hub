@@ -32,50 +32,56 @@ def analyze_project(project_path: str, paths: ClaudePaths) -> WizardResult:
     if paths.skills_dir.exists():
         installed_skills = [d.name for d in paths.skills_dir.iterdir() if d.is_dir()]
 
-    prompt = f"""아래 프로젝트를 분석하여 프로젝트 맞춤 CLAUDE.md를 생성해주세요.
+    # 프롬프트를 간결하게 구성 (긴 프롬프트는 CLI timeout 유발)
+    readme_summary = context.get("readme", "")[:500]
+    structure_summary = json.dumps(context.get("structure", [])[:15], ensure_ascii=False)
+    tech_stack = _detect_tech_stack(project_dir)
 
-## 프로젝트 정보
-{json.dumps(context, ensure_ascii=False, indent=2)}
+    prompt = f"""프로젝트 "{project_dir.name}"의 CLAUDE.md를 생성하세요.
 
-## 전역 CLAUDE.md (이미 존재 — 여기 있는 내용과 중복하지 마세요)
-{global_claude_md[:2000]}
+기술스택: {', '.join(tech_stack)}
+README 요약: {readme_summary[:300]}
+구조: {structure_summary[:500]}
 
-## 이미 설치된 스킬
-{', '.join(installed_skills)}
-
-## 요청사항
-1. 프로젝트 고유의 CLAUDE.md 내용만 생성 (전역과 중복 금지)
-2. 프로젝트 구조, 코드 규칙, 실행 방법을 포함
-3. 프로젝트의 tech stack에 맞는 구체적 지시문 작성
-
-응답 형식 (JSON):
-{{
-  "tech_stack": ["Python 3.13", "FastAPI", ...],
-  "claude_md": "# 프로젝트명\\n...",
-  "hooks": [{{"event": "PostToolUse", "command": "...", "reason": "..."}}],
-  "mcp_suggestions": [{{"name": "github", "reason": "..."}}]
-}}"""
+JSON으로만 응답하세요:
+{{"tech_stack": ["..."], "claude_md": "# 프로젝트명\\n## 구조\\n...\\n## 코드 규칙\\n...\\n## 실행 방법\\n...", "hooks": [], "mcp_suggestions": []}}"""
 
     try:
         proc = subprocess.run(
             ["claude", "-p", prompt, "--output-format", "json"],
-            capture_output=True, text=True, timeout=120
+            capture_output=True, text=True, timeout=60
         )
-        if proc.returncode == 0:
+        if proc.returncode == 0 and proc.stdout.strip():
             wrapper = json.loads(proc.stdout)
             output = wrapper.get("result", "") if isinstance(wrapper, dict) else proc.stdout
             output = output.strip()
+
+            # JSON 추출 (```json 래핑 제거)
+            if "```" in output:
+                lines = output.split("\n")
+                json_lines = []
+                in_block = False
+                for line in lines:
+                    if line.strip().startswith("```"):
+                        in_block = not in_block
+                        continue
+                    if in_block:
+                        json_lines.append(line)
+                output = "\n".join(json_lines)
+
             start = output.find("{")
             end = output.rfind("}")
             if start >= 0 and end > start:
                 data = json.loads(output[start:end + 1])
                 return WizardResult(
                     project_path=str(project_dir),
-                    tech_stack=data.get("tech_stack", []),
+                    tech_stack=data.get("tech_stack", tech_stack),
                     claude_md=data.get("claude_md", ""),
                     hooks=data.get("hooks", []),
                     mcp_suggestions=data.get("mcp_suggestions", []),
                 )
+    except subprocess.TimeoutExpired:
+        pass
     except Exception:
         pass
 
