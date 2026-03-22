@@ -78,3 +78,26 @@ async def generate_skill_endpoint(body: GenerateSkillRequest, request: Request):
     config = request.app.state.config
     result = generate_skill(body.messages, config.paths)
     return result
+
+
+@router.post("/wizard/project-overview")
+async def project_overview(body: AnalyzeRequest, request: Request):
+    scanner = request.app.state.scanner
+    try:
+        return scanner.get_project_overview(body.project_path)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/wizard/project-overviews")
+async def all_project_overviews(request: Request):
+    scanner = request.app.state.scanner
+    projects = scanner.list_projects()
+    results = []
+    for p in projects:
+        try:
+            overview = scanner.get_project_overview(p["decoded"])
+            results.append(overview)
+        except Exception:
+            continue
+    return results

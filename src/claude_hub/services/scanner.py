@@ -217,6 +217,111 @@ class ScannerService:
 
         return results
 
+    def get_project_overview(self, project_path: str) -> dict:
+        """프로젝트별 harness 셋팅 현황."""
+        from pathlib import Path
+        from claude_hub.utils.paths import encode_project_path
+
+        project_dir = Path(project_path).expanduser().resolve()
+        encoded = encode_project_path(str(project_dir))
+        memory_dir = self._paths.projects_dir / encoded / "memory"
+
+        claude_md = project_dir / "CLAUDE.md"
+        docs_dir = project_dir / "docs"
+        gitignore = project_dir / ".gitignore"
+        readme = project_dir / "README.md"
+
+        items = []
+
+        # CLAUDE.md
+        items.append({
+            "name": "CLAUDE.md",
+            "type": "claude_md",
+            "exists": claude_md.exists(),
+            "size": claude_md.stat().st_size if claude_md.exists() else 0,
+            "lines": len(claude_md.read_text(errors="ignore").splitlines()) if claude_md.exists() else 0,
+            "path": str(claude_md),
+        })
+
+        # Memory 파일
+        memory_files = []
+        if memory_dir.exists():
+            for f in sorted(memory_dir.iterdir()):
+                if f.is_file() and f.suffix == ".md":
+                    memory_files.append(f.name)
+        items.append({
+            "name": "Memory",
+            "type": "memory",
+            "exists": bool(memory_files),
+            "count": len(memory_files),
+            "files": memory_files,
+            "path": str(memory_dir),
+        })
+
+        # docs/ 디렉토리
+        doc_files = []
+        if docs_dir.exists():
+            for f in sorted(docs_dir.rglob("*.md")):
+                doc_files.append(str(f.relative_to(project_dir)))
+        items.append({
+            "name": "docs/",
+            "type": "docs",
+            "exists": docs_dir.exists(),
+            "count": len(doc_files),
+            "files": doc_files[:20],
+            "path": str(docs_dir),
+        })
+
+        # README.md
+        items.append({
+            "name": "README.md",
+            "type": "file",
+            "exists": readme.exists(),
+            "lines": len(readme.read_text(errors="ignore").splitlines()) if readme.exists() else 0,
+            "path": str(readme),
+        })
+
+        # tests/ 디렉토리
+        tests_dir = project_dir / "tests"
+        test_count = len(list(tests_dir.rglob("test_*.py"))) if tests_dir.exists() else 0
+        if not tests_dir.exists():
+            tests_dir = project_dir / "test"
+            test_count = len(list(tests_dir.rglob("*.test.*"))) if tests_dir.exists() else 0
+        items.append({
+            "name": "tests/",
+            "type": "tests",
+            "exists": tests_dir.exists(),
+            "count": test_count,
+            "path": str(tests_dir),
+        })
+
+        # 패키지 관리자 파일 탐색
+        package_found = False
+        for pm in ["pyproject.toml", "package.json", "Cargo.toml", "go.mod"]:
+            pm_path = project_dir / pm
+            if pm_path.exists():
+                items.append({
+                    "name": pm,
+                    "type": "package_manager",
+                    "exists": True,
+                    "path": str(pm_path),
+                })
+                package_found = True
+                break
+        if not package_found:
+            items.append({
+                "name": "패키지 관리자",
+                "type": "package_manager",
+                "exists": False,
+                "path": "",
+            })
+
+        return {
+            "project_path": str(project_dir),
+            "project_name": project_dir.name,
+            "items": items,
+        }
+
     def get_dashboard(self) -> dict:
         skills = self.scan_skills()
         plugins = self.scan_plugins()

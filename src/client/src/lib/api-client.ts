@@ -202,6 +202,20 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ messages }),
       }),
+    projectOverviews: () =>
+      request<Array<{
+        project_path: string
+        project_name: string
+        items: Array<{
+          name: string
+          type: string
+          exists: boolean
+          count?: number
+          lines?: number
+          files?: string[]
+          path: string
+        }>
+      }>>('/wizard/project-overviews'),
   },
 
   cost: {

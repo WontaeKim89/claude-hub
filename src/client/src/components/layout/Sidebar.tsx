@@ -19,6 +19,7 @@ import {
   DollarSign,
   FileStack,
   GitCompare,
+  FolderKanban,
 } from 'lucide-react'
 import { useLang } from '../../hooks/useLang'
 import { Logo } from './Logo'
@@ -52,6 +53,7 @@ const navGroups: NavGroup[] = [
     titleKey: 'nav.tools',
     items: [
       { label: 'Wizard', labelKey: 'nav.wizard', to: '/wizard', icon: Wand2 },
+      { label: 'Projects', labelKey: 'nav.projects', to: '/projects', icon: FolderKanban },
     ],
   },
   {

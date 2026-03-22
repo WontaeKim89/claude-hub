@@ -79,4 +79,9 @@ export const CATEGORY_INFO = {
     description: '두 프로젝트의 Claude 설정(CLAUDE.md, memory, hooks 등)을 나란히 비교하고 동기화합니다.',
     detail: '~/.claude/projects/{path}/ 디렉토리 비교',
   },
+  projects: {
+    title: '프로젝트 현황이란?',
+    description: '각 프로젝트별로 CLAUDE.md, Memory, docs, 테스트 등의 설정 상태를 한눈에 확인합니다.',
+    detail: '~/.claude/projects/ + 각 프로젝트 디렉토리',
+  },
 } as const

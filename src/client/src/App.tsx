@@ -19,6 +19,7 @@ import Monitor from './pages/Monitor'
 import Cost from './pages/Cost'
 import Templates from './pages/Templates'
 import ConfigDiff from './pages/ConfigDiff'
+import ProjectOverview from './pages/ProjectOverview'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -48,6 +49,7 @@ function AnimatedRoutes() {
         <Route path="/cost" element={<Cost />} />
         <Route path="/templates" element={<Templates />} />
         <Route path="/config-diff" element={<ConfigDiff />} />
+        <Route path="/projects" element={<ProjectOverview />} />
       </Routes>
     </div>
   )
