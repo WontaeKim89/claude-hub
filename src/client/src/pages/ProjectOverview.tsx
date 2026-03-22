@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { FolderKanban, Loader2, X, Save } from 'lucide-react'
+import { FolderKanban, Loader2, X, Save, Pencil } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useLang } from '../hooks/useLang'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
@@ -50,29 +50,29 @@ function getCellContent(item: OverviewItem): string {
 
 function Cell({ item, onOpen }: { item: OverviewItem; onOpen: (item: OverviewItem) => void }) {
   const content = getCellContent(item)
-  const isExists = item.exists
-  const canOpen = isExists && item.path
+  const canOpen = item.exists && !!item.path
 
   if (canOpen) {
     return (
-      <td className="px-3 py-2 text-center">
+      <td className="px-2 py-2 text-center">
         <button
           onClick={() => onOpen(item)}
-          className="inline-flex items-center gap-1 font-mono text-[11px] text-emerald-400 hover:text-emerald-300 underline decoration-dotted decoration-emerald-600 hover:decoration-emerald-400 cursor-pointer transition-colors"
+          className="group inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-emerald-500/5 border border-emerald-500/10 hover:border-emerald-500/30 hover:bg-emerald-500/10 transition-all cursor-pointer"
           title={`클릭하여 편집: ${item.path}`}
         >
-          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-400" />
-          {content}
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+          <span className="font-mono text-[11px] text-emerald-400">{content}</span>
+          <Pencil size={10} className="text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
         </button>
       </td>
     )
   }
 
   return (
-    <td className="px-3 py-2 text-center">
-      <span className="inline-flex items-center gap-1 font-mono text-[11px] text-red-400/70">
-        <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-red-400/70" />
-        {content}
+    <td className="px-2 py-2 text-center">
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-zinc-800/30 border border-zinc-800/50">
+        <span className="w-1.5 h-1.5 rounded-full bg-red-400/50 shrink-0" />
+        <span className="font-mono text-[11px] text-zinc-600">{content}</span>
       </span>
     </td>
   )
@@ -143,9 +143,17 @@ function FileEditorModal({ item, onClose }: { item: OverviewItem; onClose: () =>
       <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[900px] max-h-[85vh] flex flex-col">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="font-mono text-xs text-emerald-400 truncate">{item.name}</span>
-            <span className="font-mono text-[10px] text-zinc-600 truncate max-w-[400px]" title={filePath}>
+          <div className="flex flex-col gap-0.5 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs text-emerald-400">{item.name}</span>
+              <span className="font-mono text-[10px] text-zinc-500 bg-zinc-800/60 px-1.5 py-0.5 rounded">
+                편집 중
+              </span>
+            </div>
+            <span
+              className="font-mono text-[10px] text-zinc-600 truncate max-w-[500px]"
+              title={filePath}
+            >
               {filePath}
             </span>
           </div>
@@ -278,24 +286,34 @@ export default function ProjectOverview() {
                     {COLUMN_LABELS[type]}
                   </th>
                 ))}
+                {/* 범례: 편집 가능 항목 안내 */}
+                <th className="px-3 py-2 text-right font-normal whitespace-nowrap">
+                  <span className="inline-flex items-center gap-1 text-[10px] text-zinc-500">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block" />
+                    클릭하여 편집 가능
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {projects.map((project) => (
                 <tr
                   key={project.project_path}
-                  className="border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/30 transition-colors"
+                  className="border-b border-zinc-800/50 last:border-0 hover:bg-zinc-800/20 transition-colors"
                 >
                   {/* 프로젝트명 (클릭 시 Wizard 이동) */}
                   <td className="px-3 py-2">
                     <button
                       onClick={() => navigate('/wizard')}
-                      className="font-mono text-xs text-zinc-300 hover:text-emerald-400 transition-colors text-left truncate max-w-[200px]"
+                      className="font-mono text-xs text-zinc-300 hover:text-emerald-400 transition-colors text-left truncate max-w-[250px] block"
                       title={project.project_path}
                     >
                       {project.project_name}
                     </button>
-                    <p className="font-mono text-[10px] text-zinc-600 truncate max-w-[200px]" title={project.project_path}>
+                    <p
+                      className="font-mono text-[10px] text-zinc-600 truncate max-w-[250px]"
+                      title={project.project_path}
+                    >
                       {project.project_path}
                     </p>
                   </td>
@@ -312,6 +330,9 @@ export default function ProjectOverview() {
                     }
                     return <Cell key={type} item={item} onOpen={setEditingItem} />
                   })}
+
+                  {/* 범례 컬럼 대응 빈 셀 */}
+                  <td />
                 </tr>
               ))}
             </tbody>
