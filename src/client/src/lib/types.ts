@@ -230,3 +230,28 @@ export interface SkillGenResult {
   skill_md: string
   name: string
 }
+
+export interface CostSummary {
+  days: number
+  total_tokens_in: number
+  total_tokens_out: number
+  total_cost_usd: number
+  daily_avg_cost: number
+  session_count: number
+  tool_calls: number
+  model_usage: Record<string, { input: number; output: number; cost: number }>
+}
+
+export interface ProjectCost {
+  project: string
+  tokens_in: number
+  tokens_out: number
+  cost: number
+  sessions: number
+}
+
+export interface MonitorEvent {
+  tool: string
+  summary: string
+  project: string
+}

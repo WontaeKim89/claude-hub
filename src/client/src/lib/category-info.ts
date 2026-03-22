@@ -59,4 +59,14 @@ export const CATEGORY_INFO = {
     description: '공식/커뮤니티 마켓플레이스에서 플러그인과 스킬을 탐색하고 설치합니다.',
     detail: '등록된 마켓플레이스에서 검색',
   },
+  monitor: {
+    title: 'Session Monitor란?',
+    description: '최근 세션의 도구 호출 이벤트를 실시간으로 확인합니다. 10초 간격으로 자동 갱신됩니다.',
+    detail: '~/.claude/projects/**/*.jsonl (최근 3개 파일, 마지막 200줄)',
+  },
+  cost: {
+    title: '비용 추적이란?',
+    description: '세션 JSONL 로그에서 토큰 사용량을 파싱하여 예상 비용을 계산합니다. 실제 청구 금액과 다를 수 있습니다.',
+    detail: 'input/output 토큰 × 모델별 단가 (Opus/Sonnet/Haiku)',
+  },
 } as const

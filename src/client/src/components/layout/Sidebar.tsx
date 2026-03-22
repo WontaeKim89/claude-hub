@@ -15,6 +15,8 @@ import {
   Users,
   Store,
   Wand2,
+  Activity,
+  DollarSign,
 } from 'lucide-react'
 import { useLang } from '../../hooks/useLang'
 import { Logo } from './Logo'
@@ -84,6 +86,14 @@ const navGroups: NavGroup[] = [
     titleKey: 'nav.store',
     items: [
       { label: 'Marketplace', labelKey: 'nav.marketplace', to: '/marketplace', icon: Store },
+    ],
+  },
+  {
+    title: 'Monitor',
+    titleKey: 'nav.monitor',
+    items: [
+      { label: 'Live Monitor', labelKey: 'nav.liveMonitor', to: '/monitor', icon: Activity },
+      { label: 'Cost', labelKey: 'nav.cost', to: '/cost', icon: DollarSign },
     ],
   },
 ]

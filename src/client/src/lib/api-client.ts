@@ -1,4 +1,4 @@
-import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary, BackupHistory, DiffResult, DiffRequest, AnalysisResult, ClaudeStatus, WizardResult, SkillGenResult } from './types'
+import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary, BackupHistory, DiffResult, DiffRequest, AnalysisResult, ClaudeStatus, WizardResult, SkillGenResult, CostSummary, ProjectCost, MonitorEvent } from './types'
 
 const BASE = '/api'
 
@@ -202,5 +202,15 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ messages }),
       }),
+  },
+
+  cost: {
+    summary: (days = 7) => request<CostSummary>(`/cost/summary?days=${days}`),
+    byProject: (days = 7) => request<ProjectCost[]>(`/cost/by-project?days=${days}`),
+  },
+
+  monitor: {
+    session: () => request<{ active_sessions: unknown[] }>('/monitor/session'),
+    recentEvents: (limit = 50) => request<{ events: MonitorEvent[] }>(`/monitor/recent-events?limit=${limit}`),
   },
 }
