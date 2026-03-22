@@ -52,27 +52,8 @@ JSON으로만 응답하세요:
             capture_output=True, text=True, timeout=60
         )
         if proc.returncode == 0 and proc.stdout.strip():
-            wrapper = json.loads(proc.stdout)
-            output = wrapper.get("result", "") if isinstance(wrapper, dict) else proc.stdout
-            output = output.strip()
-
-            # JSON 추출 (```json 래핑 제거)
-            if "```" in output:
-                lines = output.split("\n")
-                json_lines = []
-                in_block = False
-                for line in lines:
-                    if line.strip().startswith("```"):
-                        in_block = not in_block
-                        continue
-                    if in_block:
-                        json_lines.append(line)
-                output = "\n".join(json_lines)
-
-            start = output.find("{")
-            end = output.rfind("}")
-            if start >= 0 and end > start:
-                data = json.loads(output[start:end + 1])
+            data = _parse_claude_json_response(proc.stdout)
+            if data:
                 return WizardResult(
                     project_path=str(project_dir),
                     tech_stack=data.get("tech_stack", tech_stack),
@@ -132,18 +113,63 @@ JSON으로 응답:
             ["claude", "-p", prompt, "--output-format", "json"],
             capture_output=True, text=True, timeout=60
         )
-        if proc.returncode == 0:
-            wrapper = json.loads(proc.stdout)
-            output = wrapper.get("result", "") if isinstance(wrapper, dict) else proc.stdout
-            output = output.strip()
-            start = output.find("{")
-            end = output.rfind("}")
-            if start >= 0 and end > start:
-                return json.loads(output[start:end + 1])
+        if proc.returncode == 0 and proc.stdout.strip():
+            data = _parse_claude_json_response(proc.stdout)
+            if data:
+                return data
     except Exception:
         pass
 
     return {"questions": [], "skill_md": "", "name": ""}
+
+
+def _parse_claude_json_response(stdout: str) -> dict | None:
+    """Claude CLI --output-format json 응답에서 JSON 객체를 추출."""
+    try:
+        wrapper = json.loads(stdout)
+        text = wrapper.get("result", "") if isinstance(wrapper, dict) else stdout
+    except json.JSONDecodeError:
+        text = stdout
+
+    text = text.strip()
+
+    # ```json ... ``` 래핑 제거
+    if "```" in text:
+        lines = text.split("\n")
+        extracted = []
+        in_block = False
+        for line in lines:
+            if line.strip().startswith("```"):
+                in_block = not in_block
+                continue
+            if in_block:
+                extracted.append(line)
+        if extracted:
+            text = "\n".join(extracted)
+
+    # JSON 객체 추출 — 중첩 브레이스를 고려한 파싱
+    start = text.find("{")
+    if start < 0:
+        return None
+
+    depth = 0
+    end = -1
+    for i in range(start, len(text)):
+        if text[i] == "{":
+            depth += 1
+        elif text[i] == "}":
+            depth -= 1
+            if depth == 0:
+                end = i
+                break
+
+    if end > start:
+        try:
+            return json.loads(text[start:end + 1])
+        except json.JSONDecodeError:
+            pass
+
+    return None
 
 
 def _gather_project_context(project_dir: Path) -> dict:
