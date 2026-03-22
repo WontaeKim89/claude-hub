@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { FolderKanban, Loader2 } from 'lucide-react'
+import { FolderKanban, Loader2, X, Save } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useLang } from '../hooks/useLang'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
+import { MonacoWrapper } from '../components/editors/MonacoWrapper'
 import { CATEGORY_INFO } from '../lib/category-info'
 
 type OverviewItem = {
@@ -46,26 +48,165 @@ function getCellContent(item: OverviewItem): string {
   return '있음'
 }
 
-function Cell({ item }: { item: OverviewItem }) {
+function Cell({ item, onOpen }: { item: OverviewItem; onOpen: (item: OverviewItem) => void }) {
   const content = getCellContent(item)
   const isExists = item.exists
+  // 파일을 열 수 있는 타입인지 (claude_md, file=README, memory, docs)
+  const canOpen = isExists && ['claude_md', 'file', 'memory', 'docs'].includes(item.type)
 
   return (
     <td
       className="px-3 py-2 text-center"
       title={item.path || undefined}
     >
-      <span className={`inline-flex items-center gap-1 font-mono text-[11px] ${isExists ? 'text-emerald-400' : 'text-red-400/70'}`}>
+      <button
+        onClick={() => canOpen && onOpen(item)}
+        disabled={!canOpen}
+        className={`inline-flex items-center gap-1 font-mono text-[11px] transition-colors ${
+          canOpen
+            ? 'text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer'
+            : isExists
+              ? 'text-emerald-400/70 cursor-default'
+              : 'text-red-400/70 cursor-default'
+        }`}
+      >
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isExists ? 'bg-emerald-400' : 'bg-red-400/70'}`} />
         {content}
-      </span>
+      </button>
     </td>
+  )
+}
+
+// 파일 편집 모달
+function FileEditorModal({ item, onClose }: { item: OverviewItem; onClose: () => void }) {
+  const [content, setContent] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [selectedFile, setSelectedFile] = useState<string>(
+    item.type === 'memory' || item.type === 'docs'
+      ? item.files?.[0] || ''
+      : ''
+  )
+
+  const filePath = item.type === 'memory' || item.type === 'docs'
+    ? `${item.path}/${selectedFile}`
+    : item.path
+
+  // 파일 내용 읽기
+  const loadFile = async (path: string) => {
+    setLoading(true)
+    setSaved(false)
+    try {
+      const resp = await fetch(`/api/file/read`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path }),
+      })
+      if (resp.ok) {
+        const data = await resp.json()
+        setContent(data.content || '')
+      } else {
+        setContent('(파일을 읽을 수 없습니다)')
+      }
+    } catch {
+      setContent('(파일을 읽을 수 없습니다)')
+    }
+    setLoading(false)
+  }
+
+  // 파일 저장
+  const saveFile = async () => {
+    setSaving(true)
+    try {
+      await fetch(`/api/file/write`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: filePath, content }),
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch {
+      // ignore
+    }
+    setSaving(false)
+  }
+
+  // 초기 로드
+  useState(() => { loadFile(filePath) })
+
+  const language = filePath.endsWith('.json') ? 'json' : filePath.endsWith('.toml') ? 'toml' : 'markdown'
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[900px] max-h-[85vh] flex flex-col">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="font-mono text-xs text-emerald-400 truncate">{item.name}</span>
+            <span className="font-mono text-[10px] text-zinc-600 truncate max-w-[400px]" title={filePath}>
+              {filePath}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {saved && <span className="text-[10px] text-emerald-400">저장됨</span>}
+            <button
+              onClick={saveFile}
+              disabled={saving || loading}
+              className="flex items-center gap-1 px-2.5 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors disabled:opacity-50"
+            >
+              <Save size={12} />
+              {saving ? '저장 중...' : '저장'}
+            </button>
+            <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* memory/docs인 경우 파일 선택 탭 */}
+        {(item.type === 'memory' || item.type === 'docs') && item.files && item.files.length > 1 && (
+          <div className="flex gap-0 border-b border-zinc-800 px-4 overflow-x-auto">
+            {item.files.map((f) => (
+              <button
+                key={f}
+                onClick={() => { setSelectedFile(f); loadFile(`${item.path}/${f}`) }}
+                className={`px-3 py-2 text-[11px] font-mono whitespace-nowrap border-b-2 transition-colors ${
+                  selectedFile === f
+                    ? 'border-emerald-500 text-zinc-100'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* 에디터 */}
+        <div className="flex-1 min-h-0">
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 size={16} className="text-zinc-600 animate-spin" />
+            </div>
+          ) : (
+            <MonacoWrapper
+              value={content}
+              onChange={setContent}
+              language={language}
+              height="60vh"
+            />
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
 
 export default function ProjectOverview() {
   const { t } = useLang()
   const navigate = useNavigate()
+  const [editingItem, setEditingItem] = useState<OverviewItem | null>(null)
 
   const { data: projects = [], isLoading, isError } = useQuery<ProjectOverview[]>({
     queryKey: ['project-overviews'],
@@ -168,13 +309,18 @@ export default function ProjectOverview() {
                         </td>
                       )
                     }
-                    return <Cell key={type} item={item} />
+                    return <Cell key={type} item={item} onOpen={setEditingItem} />
                   })}
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* 파일 편집 모달 */}
+      {editingItem && (
+        <FileEditorModal item={editingItem} onClose={() => setEditingItem(null)} />
       )}
     </div>
   )

@@ -96,8 +96,40 @@ async def all_project_overviews(request: Request):
     results = []
     for p in projects:
         try:
-            overview = scanner.get_project_overview(p["decoded"])
+            decoded = p["decoded"] if isinstance(p, dict) else p.decoded
+            overview = scanner.get_project_overview(decoded)
             results.append(overview)
         except Exception:
             continue
     return results
+
+
+class FileReadRequest(BaseModel):
+    path: str
+
+
+class FileWriteRequest(BaseModel):
+    path: str
+    content: str
+
+
+@router.post("/file/read")
+async def read_file(body: FileReadRequest):
+    """파일 내용 읽기."""
+    file_path = Path(body.path).expanduser().resolve()
+    if not file_path.is_file():
+        raise HTTPException(status_code=404, detail="파일을 찾을 수 없습니다")
+    try:
+        content = file_path.read_text(errors="ignore")
+        return {"content": content, "path": str(file_path)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/file/write")
+async def write_file(body: FileWriteRequest, request: Request):
+    """파일 내용 수정 (백업 후)."""
+    file_path = Path(body.path).expanduser().resolve()
+    editor = request.app.state.editor
+    editor.write_text(file_path, body.content)
+    return {"ok": True, "path": str(file_path)}
