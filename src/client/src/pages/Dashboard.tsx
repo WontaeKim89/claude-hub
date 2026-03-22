@@ -23,7 +23,6 @@ import { StatusDot } from '../components/shared/StatusDot'
 import { Skeleton } from '../components/shared/Skeleton'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import { useLang } from '../hooks/useLang'
-import { HitStatsChart } from '../components/dashboard/HitStatsChart'
 import type { DashboardData, HealthResult } from '../lib/types'
 
 // stat 카드 border 색상 매핑
@@ -302,11 +301,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Hit Stats Chart — 탭별 사용 빈도 시각화 */}
-      <div className="mb-6">
-        <HitStatsChart />
-      </div>
-
       {/* Stat cards — 3x2 grid */}
       <div className="grid grid-cols-3 gap-3 mb-6">
         {isLoading
@@ -394,41 +388,6 @@ export default function Dashboard() {
           )}
         </div>
       </div>
-
-      {/* Environment Summary */}
-      {!isLoading && dashboard && (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md px-4 py-3">
-          <div className="flex items-center gap-1.5 mb-2.5">
-            <span className="text-xs font-medium text-zinc-400">Environment Summary</span>
-          </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-1.5">
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-wide">Plugins</span>
-              <span className="font-mono text-xs text-zinc-300">
-                {dashboard.plugins.enabled}/{dashboard.plugins.total} enabled
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-wide">MCP</span>
-              <span className="font-mono text-xs text-zinc-300">{dashboard.mcp_servers.total} servers</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-wide">Hooks</span>
-              <span className="font-mono text-xs text-zinc-300">{dashboard.hooks.total} active</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-wide">Projects</span>
-              <span className="font-mono text-xs text-zinc-300">{dashboard.projects.total} tracked</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-wide">Skills</span>
-              <span className="font-mono text-xs text-zinc-300">
-                {dashboard.skills.custom} custom · {dashboard.skills.installed} installed
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Usage Stats 섹션 */}
       <div className="grid grid-cols-2 gap-4 mt-4">
