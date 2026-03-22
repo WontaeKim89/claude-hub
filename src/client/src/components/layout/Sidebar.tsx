@@ -20,6 +20,7 @@ import {
   FileStack,
   GitCompare,
   FolderKanban,
+  MessageSquare,
 } from 'lucide-react'
 import { useLang } from '../../hooks/useLang'
 import { Logo } from './Logo'
@@ -97,6 +98,7 @@ const navGroups: NavGroup[] = [
     titleKey: 'nav.monitor',
     items: [
       { label: 'Live Monitor', labelKey: 'nav.liveMonitor', to: '/monitor', icon: Activity },
+      { label: 'Sessions', labelKey: 'nav.sessions', to: '/sessions', icon: MessageSquare },
       { label: 'Cost', labelKey: 'nav.cost', to: '/cost', icon: DollarSign },
     ],
   },

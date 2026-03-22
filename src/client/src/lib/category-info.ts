@@ -84,4 +84,9 @@ export const CATEGORY_INFO = {
     description: '각 프로젝트별로 CLAUDE.md, Memory, docs, 테스트 등의 설정 상태를 한눈에 확인합니다.',
     detail: '~/.claude/projects/ + 각 프로젝트 디렉토리',
   },
+  sessions: {
+    title: '세션 기록이란?',
+    description: 'Claude Code의 프로젝트별 대화 기록을 조회하고 관리합니다. /resume 기능의 시각화 버전.',
+    detail: '~/.claude/projects/{path}/*.jsonl',
+  },
 } as const

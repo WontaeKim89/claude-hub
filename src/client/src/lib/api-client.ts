@@ -241,4 +241,22 @@ export const api = {
     diff: (projectA: string, projectB: string) => request<ConfigDiffItem[]>('/config/diff', { method: 'POST', body: JSON.stringify({ project_a: projectA, project_b: projectB }) }),
     sync: (source: string, target: string) => request<{ synced: boolean; target: string }>('/config/sync', { method: 'POST', body: JSON.stringify({ source, target }) }),
   },
+
+  sessions: {
+    list: (project?: string) =>
+      request<Array<{ id: string; project: string; file: string; size: number; modified: number; message_count: number; title: string }>>(
+        `/sessions${project ? `?project=${encodeURIComponent(project)}` : ''}`
+      ),
+    messages: (sessionId: string, project?: string, limit = 200) =>
+      request<{
+        session_id: string
+        messages: Array<{
+          role: string
+          content: Array<{ type: string; text?: string; name?: string; input_preview?: string; content_preview?: string }>
+          model: string
+        }>
+      }>(`/sessions/${sessionId}/messages?limit=${limit}${project ? `&project=${encodeURIComponent(project)}` : ''}`),
+    delete: (sessionId: string) =>
+      request<{ deleted: boolean }>(`/sessions/${sessionId}`, { method: 'DELETE' }),
+  },
 }
