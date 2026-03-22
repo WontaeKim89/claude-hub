@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { FolderKanban, Loader2, X, Save } from 'lucide-react'
@@ -51,28 +51,29 @@ function getCellContent(item: OverviewItem): string {
 function Cell({ item, onOpen }: { item: OverviewItem; onOpen: (item: OverviewItem) => void }) {
   const content = getCellContent(item)
   const isExists = item.exists
-  // 파일을 열 수 있는 타입인지 (claude_md, file=README, memory, docs)
-  const canOpen = isExists && ['claude_md', 'file', 'memory', 'docs'].includes(item.type)
+  const canOpen = isExists && item.path
+
+  if (canOpen) {
+    return (
+      <td className="px-3 py-2 text-center">
+        <button
+          onClick={() => onOpen(item)}
+          className="inline-flex items-center gap-1 font-mono text-[11px] text-emerald-400 hover:text-emerald-300 underline decoration-dotted decoration-emerald-600 hover:decoration-emerald-400 cursor-pointer transition-colors"
+          title={`클릭하여 편집: ${item.path}`}
+        >
+          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-400" />
+          {content}
+        </button>
+      </td>
+    )
+  }
 
   return (
-    <td
-      className="px-3 py-2 text-center"
-      title={item.path || undefined}
-    >
-      <button
-        onClick={() => canOpen && onOpen(item)}
-        disabled={!canOpen}
-        className={`inline-flex items-center gap-1 font-mono text-[11px] transition-colors ${
-          canOpen
-            ? 'text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer'
-            : isExists
-              ? 'text-emerald-400/70 cursor-default'
-              : 'text-red-400/70 cursor-default'
-        }`}
-      >
-        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isExists ? 'bg-emerald-400' : 'bg-red-400/70'}`} />
+    <td className="px-3 py-2 text-center">
+      <span className="inline-flex items-center gap-1 font-mono text-[11px] text-red-400/70">
+        <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-red-400/70" />
         {content}
-      </button>
+      </span>
     </td>
   )
 }
@@ -89,7 +90,7 @@ function FileEditorModal({ item, onClose }: { item: OverviewItem; onClose: () =>
       : ''
   )
 
-  const filePath = item.type === 'memory' || item.type === 'docs'
+  const filePath = (item.type === 'memory' || item.type === 'docs') && selectedFile
     ? `${item.path}/${selectedFile}`
     : item.path
 
@@ -133,7 +134,7 @@ function FileEditorModal({ item, onClose }: { item: OverviewItem; onClose: () =>
   }
 
   // 초기 로드
-  useState(() => { loadFile(filePath) })
+  useEffect(() => { loadFile(filePath) }, [])
 
   const language = filePath.endsWith('.json') ? 'json' : filePath.endsWith('.toml') ? 'toml' : 'markdown'
 
