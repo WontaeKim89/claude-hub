@@ -86,9 +86,38 @@ class ClaudePaths:
 
 
 def decode_project_path(encoded: str) -> str:
+    """인코딩된 프로젝트 경로를 실제 경로로 복원.
+    '-'가 디렉토리 구분자인지 이름의 일부인지 구분하기 위해
+    실제 파일시스템을 탐색하여 존재하는 경로를 찾는다."""
     if not encoded.startswith("-"):
         return encoded
+
+    # 선행 '-' 제거 → 루트 '/'부터 시작
+    raw = encoded[1:]
+    result = _resolve_path("/", raw)
+    if result:
+        return result
+    # fallback: 단순 치환 (존재하지 않는 경로)
     return encoded.replace("-", "/")
+
+
+def _resolve_path(base: str, remaining: str) -> str | None:
+    """하이픈으로 구분된 경로를 실제 파일시스템과 대조하여 복원."""
+    import os
+    if not remaining:
+        return base if os.path.isdir(base) else None
+
+    parts = remaining.split("-")
+    # 앞에서부터 하이픈을 하나씩 늘려가며 디렉토리 존재 여부 확인
+    for i in range(1, len(parts) + 1):
+        candidate_name = "-".join(parts[:i])
+        candidate_path = os.path.join(base, candidate_name)
+        if os.path.exists(candidate_path):
+            rest = "-".join(parts[i:])
+            result = _resolve_path(candidate_path, rest)
+            if result:
+                return result
+    return None
 
 
 def encode_project_path(path: str) -> str:
