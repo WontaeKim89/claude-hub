@@ -66,11 +66,22 @@ JSON으로만 응답하세요:
     except Exception:
         pass
 
-    # Claude CLI 호출 실패 시 tech stack 감지만 수행
+    # Claude CLI 실패 시: 기존 CLAUDE.md가 있으면 사용, 없으면 기본 템플릿 생성
+    detected_stack = _detect_tech_stack(project_dir)
+    existing_claude_md = project_dir / "CLAUDE.md"
+
+    if existing_claude_md.exists():
+        fallback_md = existing_claude_md.read_text(errors="ignore")
+    else:
+        stack_str = ", ".join(detected_stack) if detected_stack else "unknown"
+        readme = context.get("readme", "")
+        desc = readme.split("\n")[0] if readme else ""
+        fallback_md = f"# {project_dir.name}\n\n{desc}\n\n## 기술 스택\n\n{stack_str}\n\n## 실행 방법\n\n(수동으로 작성해주세요)"
+
     return WizardResult(
         project_path=str(project_dir),
-        tech_stack=_detect_tech_stack(project_dir),
-        claude_md=f"# {project_dir.name}\n\n프로젝트 분석에 실패했습니다. 수동으로 작성해주세요.",
+        tech_stack=detected_stack,
+        claude_md=fallback_md,
         hooks=[],
         mcp_suggestions=[],
     )

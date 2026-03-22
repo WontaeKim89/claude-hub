@@ -27,12 +27,15 @@ async def analyze_project_endpoint(body: AnalyzeRequest, request: Request):
     config = request.app.state.config
     try:
         result = analyze_project(body.project_path, config.paths)
+        # AI 생성 성공 여부 판단: hooks나 mcp_suggestions가 있거나, claude_md가 실질적 내용을 포함
+        ai_generated = bool(result.hooks or result.mcp_suggestions) or len(result.claude_md) > 200
         return {
             "project_path": result.project_path,
             "tech_stack": result.tech_stack,
             "claude_md": result.claude_md,
             "hooks": result.hooks,
             "mcp_suggestions": result.mcp_suggestions,
+            "ai_generated": ai_generated,
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
