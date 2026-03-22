@@ -17,6 +17,8 @@ import {
   Wand2,
   Activity,
   DollarSign,
+  FileStack,
+  GitCompare,
 } from 'lucide-react'
 import { useLang } from '../../hooks/useLang'
 import { Logo } from './Logo'
@@ -94,6 +96,14 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Live Monitor', labelKey: 'nav.liveMonitor', to: '/monitor', icon: Activity },
       { label: 'Cost', labelKey: 'nav.cost', to: '/cost', icon: DollarSign },
+    ],
+  },
+  {
+    title: 'Sync',
+    titleKey: 'nav.sync',
+    items: [
+      { label: 'Templates', labelKey: 'nav.templates', to: '/templates', icon: FileStack },
+      { label: 'Config Diff', labelKey: 'nav.configDiff', to: '/config-diff', icon: GitCompare },
     ],
   },
 ]

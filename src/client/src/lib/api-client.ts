@@ -1,4 +1,4 @@
-import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary, BackupHistory, DiffResult, DiffRequest, AnalysisResult, ClaudeStatus, WizardResult, SkillGenResult, CostSummary, ProjectCost, MonitorEvent } from './types'
+import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary, BackupHistory, DiffResult, DiffRequest, AnalysisResult, ClaudeStatus, WizardResult, SkillGenResult, CostSummary, ProjectCost, MonitorEvent, HarnessTemplate, ConfigDiffItem } from './types'
 
 const BASE = '/api'
 
@@ -212,5 +212,19 @@ export const api = {
   monitor: {
     session: () => request<{ active_sessions: unknown[] }>('/monitor/session'),
     recentEvents: (limit = 50) => request<{ events: MonitorEvent[] }>(`/monitor/recent-events?limit=${limit}`),
+  },
+
+  templates: {
+    list: () => request<HarnessTemplate[]>('/templates'),
+    get: (name: string) => request<HarnessTemplate>(`/templates/${name}`),
+    save: (data: Record<string, unknown>) => request('/templates', { method: 'POST', body: JSON.stringify(data) }),
+    delete: (name: string) => request(`/templates/${name}`, { method: 'DELETE' }),
+    export: (projectPath: string) => request<HarnessTemplate>('/templates/export', { method: 'POST', body: JSON.stringify({ project_path: projectPath }) }),
+    apply: (name: string, projectPath: string) => request(`/templates/${name}/apply`, { method: 'POST', body: JSON.stringify({ project_path: projectPath }) }),
+  },
+
+  configDiff: {
+    diff: (projectA: string, projectB: string) => request<ConfigDiffItem[]>('/config/diff', { method: 'POST', body: JSON.stringify({ project_a: projectA, project_b: projectB }) }),
+    sync: (source: string, target: string) => request<{ synced: boolean; target: string }>('/config/sync', { method: 'POST', body: JSON.stringify({ source, target }) }),
   },
 }

@@ -69,4 +69,14 @@ export const CATEGORY_INFO = {
     description: '세션 JSONL 로그에서 토큰 사용량을 파싱하여 예상 비용을 계산합니다. 실제 청구 금액과 다를 수 있습니다.',
     detail: 'input/output 토큰 × 모델별 단가 (Opus/Sonnet/Haiku)',
   },
+  templates: {
+    title: 'Templates란?',
+    description: 'CLAUDE.md, hooks, MCP 설정을 묶어 저장한 harness 템플릿입니다. 새 프로젝트에 원클릭으로 적용할 수 있습니다.',
+    detail: '~/.claude-hub/templates/{name}.json',
+  },
+  configDiff: {
+    title: 'Config Diff란?',
+    description: '두 프로젝트의 Claude 설정(CLAUDE.md, memory, hooks 등)을 나란히 비교하고 동기화합니다.',
+    detail: '~/.claude/projects/{path}/ 디렉토리 비교',
+  },
 } as const

@@ -17,6 +17,8 @@ import Teams from './pages/Teams'
 import Wizard from './pages/Wizard'
 import Monitor from './pages/Monitor'
 import Cost from './pages/Cost'
+import Templates from './pages/Templates'
+import ConfigDiff from './pages/ConfigDiff'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -44,6 +46,8 @@ function AnimatedRoutes() {
         <Route path="/wizard" element={<Wizard />} />
         <Route path="/monitor" element={<Monitor />} />
         <Route path="/cost" element={<Cost />} />
+        <Route path="/templates" element={<Templates />} />
+        <Route path="/config-diff" element={<ConfigDiff />} />
       </Routes>
     </div>
   )

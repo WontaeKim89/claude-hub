@@ -255,3 +255,23 @@ export interface MonitorEvent {
   summary: string
   project: string
 }
+
+export interface HarnessTemplate {
+  name: string
+  display_name: string
+  description: string
+  builtin: boolean
+  claude_md: string
+  hooks: Array<{ event: string; command: string; reason?: string }>
+  mcp_servers: Record<string, unknown>
+  tags?: string[]
+  created_at?: string
+}
+
+export interface ConfigDiffItem {
+  component: string
+  a_value: string
+  b_value: string
+  status: 'identical' | 'different' | 'missing' | 'both_missing'
+  diff: string | null
+}
