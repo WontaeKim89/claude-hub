@@ -64,6 +64,32 @@ class MarketplaceService:
 
         return results
 
+    def browse_mcp(self) -> list[dict]:
+        """MCP 서버 마켓플레이스 (공식 MCP 서버 목록)."""
+        MCP_SERVERS = [
+            {"name": "github", "description": "GitHub API 연동 (이슈, PR, 코드 검색)", "package": "@modelcontextprotocol/server-github", "category": "development", "source": "MCP Official"},
+            {"name": "filesystem", "description": "로컬 파일시스템 접근", "package": "@modelcontextprotocol/server-filesystem", "category": "system", "source": "MCP Official"},
+            {"name": "postgres", "description": "PostgreSQL 데이터베이스 쿼리", "package": "@modelcontextprotocol/server-postgres", "category": "database", "source": "MCP Official"},
+            {"name": "sqlite", "description": "SQLite 데이터베이스 관리", "package": "@modelcontextprotocol/server-sqlite", "category": "database", "source": "MCP Official"},
+            {"name": "slack", "description": "Slack 메시지 및 채널 접근", "package": "@modelcontextprotocol/server-slack", "category": "communication", "source": "MCP Official"},
+            {"name": "google-drive", "description": "Google Drive 파일 접근", "package": "@anthropic/mcp-server-google-drive", "category": "storage", "source": "Anthropic"},
+            {"name": "memory", "description": "지식 그래프 기반 메모리", "package": "@modelcontextprotocol/server-memory", "category": "AI", "source": "MCP Official"},
+            {"name": "puppeteer", "description": "브라우저 자동화 (Puppeteer)", "package": "@modelcontextprotocol/server-puppeteer", "category": "automation", "source": "MCP Official"},
+            {"name": "brave-search", "description": "Brave 웹 검색", "package": "@anthropic/mcp-server-brave-search", "category": "search", "source": "Anthropic"},
+            {"name": "fetch", "description": "HTTP 요청 (웹 페이지 가져오기)", "package": "@anthropic/mcp-server-fetch", "category": "network", "source": "Anthropic"},
+        ]
+
+        # 현재 설치된 MCP 서버 확인
+        installed: set[str] = set()
+        if self.paths.settings_path.exists():
+            settings = json.loads(self.paths.settings_path.read_text())
+            installed = set(settings.get("mcpServers", {}).keys())
+
+        for server in MCP_SERVERS:
+            server["installed"] = server["name"] in installed
+
+        return MCP_SERVERS
+
     def _is_installed(self, plugin_name: str, marketplace: str) -> bool:
         installed_path = self.paths.installed_plugins_path
         if not installed_path.exists():

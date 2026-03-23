@@ -19,3 +19,10 @@ async def browse(
 ):
     marketplace = request.app.state.marketplace
     return marketplace.browse(source=source, query=q, category=category)
+
+
+@router.get("/marketplace/mcp")
+async def marketplace_mcp(request: Request):
+    """MCP 서버 마켓플레이스."""
+    marketplace = request.app.state.marketplace
+    return marketplace.browse_mcp()

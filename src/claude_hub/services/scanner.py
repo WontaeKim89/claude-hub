@@ -145,6 +145,42 @@ class ScannerService:
             for p in projects
         ]
 
+    def list_projects_grouped(self) -> list[dict]:
+        """프로젝트를 원본 레포와 워크트리로 그룹화."""
+        projects = self.list_projects()
+        groups: dict[str, dict] = {}
+
+        for p in projects:
+            decoded = p["decoded"]
+            encoded = p["encoded"]
+
+            # worktree 감지: 경로 마지막 세그먼트에 "worktree"가 포함되면 하위
+            last_segment = decoded.rstrip("/").split("/")[-1]
+            is_worktree = "worktree" in last_segment.lower()
+
+            # 부모 프로젝트 경로 추정
+            if is_worktree:
+                parts = decoded.rsplit("-worktree", 1)
+                parent_path = parts[0] if parts else decoded
+            else:
+                parent_path = decoded
+
+            if parent_path not in groups:
+                groups[parent_path] = {
+                    "path": parent_path,
+                    "name": parent_path.rstrip("/").split("/")[-1],
+                    "worktrees": [],
+                    "main": None,
+                }
+
+            entry = {"decoded": decoded, "encoded": encoded, "is_worktree": is_worktree}
+            if is_worktree:
+                groups[parent_path]["worktrees"].append(entry)
+            else:
+                groups[parent_path]["main"] = entry
+
+        return list(groups.values())
+
     def scan_plugins(self) -> list[PluginSummary]:
         paths = self._paths
         installed_path = paths.installed_plugins_path
@@ -322,6 +358,71 @@ class ScannerService:
             "items": items,
         }
 
+    def get_project_tree(self, project_path: str) -> dict:
+        """프로젝트의 .claude 관련 파일을 트리 구조로 반환."""
+        from pathlib import Path
+        from claude_hub.utils.paths import encode_project_path
+
+        project_dir = Path(project_path).expanduser().resolve()
+        encoded = encode_project_path(str(project_dir))
+        claude_project_dir = self._paths.projects_dir / encoded
+
+        tree = {
+            "project_name": project_dir.name,
+            "project_path": str(project_dir),
+            "nodes": [],
+        }
+
+        # CLAUDE.md (프로젝트 루트)
+        claude_md = project_dir / "CLAUDE.md"
+        tree["nodes"].append(_file_node("CLAUDE.md", claude_md, warn_lines=200))
+
+        # README.md
+        readme = project_dir / "README.md"
+        tree["nodes"].append(_file_node("README.md", readme))
+
+        # .claude/ project directory
+        claude_node: dict = {"name": ".claude/", "type": "dir", "children": []}
+
+        # memory/
+        memory_dir = claude_project_dir / "memory"
+        if memory_dir.exists():
+            memory_node: dict = {"name": "memory/", "type": "dir", "children": []}
+            for f in sorted(memory_dir.iterdir()):
+                if f.is_file() and f.suffix == ".md":
+                    memory_node["children"].append(_file_node(f.name, f, warn_lines=200))
+            claude_node["children"].append(memory_node)
+        else:
+            claude_node["children"].append({"name": "memory/", "type": "dir", "children": [], "missing": True})
+
+        tree["nodes"].append(claude_node)
+
+        # docs/
+        docs_dir = project_dir / "docs"
+        if docs_dir.exists():
+            docs_node: dict = {"name": "docs/", "type": "dir", "children": []}
+            for f in sorted(docs_dir.rglob("*.md"))[:15]:
+                rel = str(f.relative_to(docs_dir))
+                docs_node["children"].append(_file_node(rel, f))
+            tree["nodes"].append(docs_node)
+
+        # tests/
+        tests_dir = project_dir / "tests"
+        if not tests_dir.exists():
+            tests_dir = project_dir / "test"
+        if tests_dir.exists():
+            test_count = len(list(tests_dir.rglob("test_*")))
+            tree["nodes"].append({"name": "tests/", "type": "dir", "count": test_count, "children": []})
+
+        # 패키지 관리자
+        for pm in ["pyproject.toml", "package.json", "Cargo.toml", "go.mod"]:
+            pm_path = project_dir / pm
+            if pm_path.exists():
+                tree["nodes"].append(_file_node(pm, pm_path))
+                break
+
+        return tree
+
     def get_dashboard(self) -> dict:
         skills = self.scan_skills()
         plugins = self.scan_plugins()
@@ -335,3 +436,25 @@ class ScannerService:
             "agents": {"total": len(self.scan_agents())},
             "projects": {"total": len(self.list_projects())},
         }
+
+
+def _file_node(name: str, path: object, warn_lines: int = 0) -> dict:
+    """파일 노드 생성. warn_lines 초과 시 compact 경고 플래그 설정."""
+    from pathlib import Path
+    p = Path(str(path))
+    if not p.exists():
+        return {"name": name, "type": "file", "exists": False, "path": str(p)}
+
+    content = p.read_text(errors="ignore")
+    lines = len(content.splitlines())
+    size = p.stat().st_size
+
+    return {
+        "name": name,
+        "type": "file",
+        "exists": True,
+        "path": str(p),
+        "lines": lines,
+        "size": size,
+        "needs_compact": warn_lines > 0 and lines > warn_lines,
+    }

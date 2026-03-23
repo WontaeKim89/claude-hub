@@ -127,6 +127,7 @@ export const api = {
       const query = qs.toString()
       return request<MarketplacePlugin[]>(`/marketplace/browse${query ? `?${query}` : ''}`)
     },
+    mcp: () => request<Array<{ name: string; description: string; package: string; category: string; source: string; installed: boolean }>>('/marketplace/mcp'),
   },
 
   memory: {
@@ -192,6 +193,11 @@ export const api = {
       daily_avg_cost: number;
       model_breakdown: Record<string, { input: number; output: number; cost: number }>;
     }>('/claude/usage'),
+    authStatus: () => request<{ authenticated: boolean; details: string }>('/claude/auth/status'),
+    authLogin: () => request<{ ok: boolean; message: string }>('/claude/auth/login', { method: 'POST' }),
+    authLogout: () => request<{ ok: boolean; message: string }>('/claude/auth/logout', { method: 'POST' }),
+    remoteStart: (task: string) => request<{ ok: boolean; message: string }>('/claude/remote-start', { method: 'POST', body: JSON.stringify({ task }) }),
+    teleport: () => request<{ ok: boolean; message: string }>('/claude/teleport', { method: 'POST' }),
   },
 
   analysis: {
@@ -236,6 +242,20 @@ export const api = {
         '/wizard/compact',
         { method: 'POST', body: JSON.stringify({ path }) }
       ),
+    projectsGrouped: () =>
+      request<Array<{
+        path: string
+        name: string
+        main: { decoded: string; encoded: string; is_worktree: boolean } | null
+        worktrees: Array<{ decoded: string; encoded: string; is_worktree: boolean }>
+      }>>('/projects/grouped'),
+    permissionsStatus: (projectPath: string) =>
+      request<{ all_allowed: boolean }>(`/projects/permissions-status?project_path=${encodeURIComponent(projectPath)}`),
+    togglePermissions: (projectPath: string, enabled: boolean) =>
+      request<{ ok: boolean; enabled: boolean }>('/projects/toggle-permissions', {
+        method: 'POST',
+        body: JSON.stringify({ project_path: projectPath, enabled }),
+      }),
   },
 
   cost: {

@@ -153,6 +153,20 @@ const translations: Record<string, Record<Lang, string>> = {
   'dashboard.weekly': { ko: '주간 (7일)', en: 'Weekly (7d)' },
   'dashboard.monthly': { ko: '월간 (30일)', en: 'Monthly (30d)' },
   'dashboard.dailyAvg': { ko: '일평균', en: 'Daily Avg' },
+  'claudeSettings.auth': { ko: '인증 관리', en: 'Auth Management' },
+  'claudeSettings.authenticated': { ko: '인증됨', en: 'Authenticated' },
+  'claudeSettings.notAuthenticated': { ko: '미인증', en: 'Not Authenticated' },
+  'claudeSettings.login': { ko: '로그인', en: 'Login' },
+  'claudeSettings.logout': { ko: '로그아웃', en: 'Logout' },
+  'claudeSettings.remote': { ko: '원격 제어', en: 'Remote Control' },
+  'claudeSettings.remoteStart': { ko: '클라우드에서 작업 실행', en: 'Run Task Remotely' },
+  'claudeSettings.teleport': { ko: '웹 세션 로컬로 가져오기', en: 'Teleport Session' },
+  'claudeSettings.taskPlaceholder': { ko: '실행할 작업을 입력하세요...', en: 'Enter task to run...' },
+  'marketplace.mcp': { ko: 'MCP 서버', en: 'MCP Servers' },
+  'marketplace.mcpSubtitle': { ko: '공식 MCP 서버 탐색 및 설치', en: 'Browse and install MCP servers' },
+  'marketplace.plugins': { ko: '플러그인', en: 'Plugins' },
+  'projects.worktree': { ko: '워크트리', en: 'Worktree' },
+  'projects.allPermissions': { ko: '전체 권한', en: 'All Permissions' },
 }
 
 let currentLang: Lang = (localStorage.getItem('claude-hub-lang') as Lang) || 'ko'
