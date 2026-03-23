@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Cpu, LogIn, LogOut, Radio, Download } from 'lucide-react'
+import { LogIn, LogOut, Radio, Download } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
 import { useLang } from '../hooks/useLang'
 
-// Settings.tsx와 동일한 모델 목록
 const MODEL_OPTIONS = [
   'claude-opus-4-5',
   'claude-sonnet-4-5',
@@ -17,6 +16,16 @@ const MODEL_OPTIONS = [
   'claude-3-5-haiku-20241022',
   'claude-3-opus-20240229',
 ]
+
+// claude auth status --text 출력에서 이메일과 플랜 정보 추출
+function parseAuthDetails(details: string): { email: string | null; plan: string | null } {
+  const emailMatch = details.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/)
+  const planMatch = details.match(/\b(Max|Pro|Team|Free|max|pro|team|free)\b/)
+  return {
+    email: emailMatch ? emailMatch[0] : null,
+    plan: planMatch ? planMatch[1] : null,
+  }
+}
 
 export default function ClaudeSettings() {
   const { t } = useLang()
@@ -87,6 +96,7 @@ export default function ClaudeSettings() {
   })
 
   const currentModel = data?.model ?? ''
+  const parsedAuth = authStatus?.details ? parseAuthDetails(authStatus.details) : { email: null, plan: null }
 
   return (
     <div>
@@ -101,127 +111,117 @@ export default function ClaudeSettings() {
       </div>
 
       <div className="max-w-lg space-y-4">
-        {/* 모델 선택 */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
-          <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-2">
-            {t('claudeSettings.model')}
-          </label>
-          {isLoading ? (
-            <div className="h-9 bg-zinc-800 rounded-md animate-pulse" />
-          ) : (
-            <select
-              value={currentModel}
-              onChange={(e) => mutation.mutate(e.target.value)}
-              disabled={mutation.isPending}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500 disabled:opacity-50 transition-colors"
-            >
-              {/* 현재 모델이 목록에 없을 경우를 위한 fallback 옵션 */}
-              {currentModel && !MODEL_OPTIONS.includes(currentModel) && (
-                <option value={currentModel}>{currentModel}</option>
-              )}
-              {MODEL_OPTIONS.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          )}
-          <p className="mt-2 text-[11px] text-zinc-600">{t('claudeSettings.modelHint')}</p>
-
-          {success && (
-            <p className="mt-2 text-xs text-emerald-400 font-mono">저장됨</p>
-          )}
-          {error && (
-            <p className="mt-2 text-xs text-red-400 font-mono">{error}</p>
-          )}
-        </div>
-
-        {/* Claude CLI 연결 상태 */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
-          <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-3">
-            {t('claudeSettings.cliVersion')}
-          </label>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Cpu size={14} strokeWidth={1.5} className="text-zinc-500" />
-              {isLoading ? (
-                <div className="h-4 w-32 bg-zinc-800 rounded animate-pulse" />
-              ) : (
-                <span className="font-mono text-sm text-zinc-300">
-                  {data?.cli_version ?? '—'}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className={`text-xs leading-none ${data?.cli_version ? 'text-emerald-400' : 'text-zinc-600'}`}>●</span>
-              <span className="font-mono text-xs text-zinc-500">
-                {data?.cli_version ? '연결됨' : '미연결'}
-              </span>
-            </div>
+        {/* 인증 정보 섹션 */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+          <div className="px-4 py-3 border-b border-zinc-800">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">{t('claudeSettings.auth')}</span>
           </div>
-        </div>
-
-        {/* 인증 관리 */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
-          <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-3">
-            {t('claudeSettings.auth')}
-          </label>
-
-          {/* 인증 상태 */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              {authLoading ? (
-                <div className="h-4 w-24 bg-zinc-800 rounded animate-pulse" />
-              ) : (
-                <>
-                  <span className={`text-xs leading-none ${authStatus?.authenticated ? 'text-emerald-400' : 'text-zinc-600'}`}>●</span>
-                  <span className="font-mono text-xs text-zinc-300">
+          <div className="px-4 py-4">
+            {authLoading ? (
+              <div className="space-y-2">
+                <div className="h-4 w-40 bg-zinc-800 rounded animate-pulse" />
+                <div className="h-3 w-56 bg-zinc-800 rounded animate-pulse" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {/* 인증 상태 표시 */}
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm leading-none ${authStatus?.authenticated ? 'text-emerald-400' : 'text-red-400'}`}>●</span>
+                  <span className="font-mono text-sm text-zinc-100">
                     {authStatus?.authenticated ? t('claudeSettings.authenticated') : t('claudeSettings.notAuthenticated')}
                   </span>
-                  {authStatus?.details && (
-                    <span className="font-mono text-[10px] text-zinc-600 truncate max-w-[180px]" title={authStatus.details}>
-                      {authStatus.details}
+                  {parsedAuth.plan && (
+                    <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                      {parsedAuth.plan}
                     </span>
                   )}
-                </>
-              )}
-            </div>
+                </div>
 
-            {/* 로그인/로그아웃 버튼 */}
-            <div className="flex items-center gap-2">
-              {authStatus?.authenticated ? (
-                <button
-                  onClick={() => logoutMutation.mutate()}
-                  disabled={logoutMutation.isPending}
-                  className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono border border-zinc-700 text-zinc-400 hover:border-red-500/50 hover:text-red-400 rounded transition-colors disabled:opacity-50"
-                >
-                  <LogOut size={11} />
-                  {t('claudeSettings.logout')}
-                </button>
-              ) : (
-                <button
-                  onClick={() => loginMutation.mutate()}
-                  disabled={loginMutation.isPending}
-                  className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono border border-emerald-600 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded transition-colors disabled:opacity-50"
-                >
-                  <LogIn size={11} />
-                  {t('claudeSettings.login')}
-                </button>
-              )}
-            </div>
+                {/* 이메일 및 CLI 버전 */}
+                <div className="space-y-1">
+                  {parsedAuth.email && (
+                    <p className="font-mono text-xs text-zinc-400">{parsedAuth.email}</p>
+                  )}
+                  {data?.cli_version && (
+                    <p className="font-mono text-[11px] text-zinc-600">
+                      CLI {data.cli_version}
+                    </p>
+                  )}
+                </div>
+
+                {/* 로그인/로그아웃 버튼 */}
+                <div className="pt-1">
+                  {authStatus?.authenticated ? (
+                    <button
+                      onClick={() => logoutMutation.mutate()}
+                      disabled={logoutMutation.isPending}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border border-zinc-700 text-zinc-400 hover:border-red-500/50 hover:text-red-400 rounded transition-colors disabled:opacity-50"
+                    >
+                      <LogOut size={12} />
+                      {t('claudeSettings.logout')}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => loginMutation.mutate()}
+                      disabled={loginMutation.isPending}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border border-emerald-600 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded transition-colors disabled:opacity-50"
+                    >
+                      <LogIn size={12} />
+                      {t('claudeSettings.login')}
+                    </button>
+                  )}
+                </div>
+
+                {authMsg && (
+                  <p className="text-[11px] text-emerald-400 font-mono">{authMsg}</p>
+                )}
+              </div>
+            )}
           </div>
-
-          {authMsg && (
-            <p className="text-[11px] text-emerald-400 font-mono">{authMsg}</p>
-          )}
         </div>
 
-        {/* 원격 제어 */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4">
-          <label className="block text-[10px] font-mono uppercase tracking-widest text-zinc-500 mb-3">
-            {t('claudeSettings.remote')}
-          </label>
+        {/* 모델 설정 섹션 */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+          <div className="px-4 py-3 border-b border-zinc-800">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">{t('claudeSettings.model')}</span>
+          </div>
+          <div className="px-4 py-4">
+            {isLoading ? (
+              <div className="h-9 bg-zinc-800 rounded-md animate-pulse" />
+            ) : (
+              <select
+                value={currentModel}
+                onChange={(e) => mutation.mutate(e.target.value)}
+                disabled={mutation.isPending}
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500 disabled:opacity-50 transition-colors"
+              >
+                {/* 현재 모델이 목록에 없을 경우를 위한 fallback 옵션 */}
+                {currentModel && !MODEL_OPTIONS.includes(currentModel) && (
+                  <option value={currentModel}>{currentModel}</option>
+                )}
+                {MODEL_OPTIONS.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            )}
+            <p className="mt-2 text-[11px] text-zinc-600">{t('claudeSettings.modelHint')}</p>
 
-          {/* 원격 작업 실행 */}
-          <div className="mb-3">
+            {success && (
+              <p className="mt-2 text-xs text-emerald-400 font-mono">저장됨</p>
+            )}
+            {error && (
+              <p className="mt-2 text-xs text-red-400 font-mono">{error}</p>
+            )}
+          </div>
+        </div>
+
+        {/* 원격 제어 섹션 */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
+          <div className="px-4 py-3 border-b border-zinc-800">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">{t('claudeSettings.remote')}</span>
+          </div>
+          <div className="px-4 py-4 space-y-3">
+            {/* 원격 작업 실행 */}
             <div className="flex gap-2">
               <input
                 type="text"
@@ -233,27 +233,27 @@ export default function ClaudeSettings() {
               <button
                 onClick={() => remoteStartMutation.mutate()}
                 disabled={remoteStartMutation.isPending || !remoteTask.trim()}
-                className="flex items-center gap-1 px-3 py-1.5 text-[11px] font-mono border border-emerald-600 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded transition-colors disabled:opacity-50 shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border border-emerald-600 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded transition-colors disabled:opacity-50 shrink-0"
               >
-                <Radio size={11} />
+                <Radio size={12} />
                 {t('claudeSettings.remoteStart')}
               </button>
             </div>
+
+            {/* Teleport */}
+            <button
+              onClick={() => teleportMutation.mutate()}
+              disabled={teleportMutation.isPending}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 rounded transition-colors disabled:opacity-50"
+            >
+              <Download size={12} />
+              {t('claudeSettings.teleport')}
+            </button>
+
+            {remoteMsg && (
+              <p className="text-[11px] text-emerald-400 font-mono">{remoteMsg}</p>
+            )}
           </div>
-
-          {/* Teleport */}
-          <button
-            onClick={() => teleportMutation.mutate()}
-            disabled={teleportMutation.isPending}
-            className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] font-mono border border-zinc-700 text-zinc-400 hover:border-zinc-500 hover:text-zinc-200 rounded transition-colors disabled:opacity-50"
-          >
-            <Download size={11} />
-            {t('claudeSettings.teleport')}
-          </button>
-
-          {remoteMsg && (
-            <p className="mt-2 text-[11px] text-emerald-400 font-mono">{remoteMsg}</p>
-          )}
         </div>
       </div>
     </div>

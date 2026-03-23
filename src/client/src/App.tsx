@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-route
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Sidebar } from './components/layout/Sidebar'
 import Dashboard from './pages/Dashboard'
-import Settings from './pages/Settings'
 import ClaudeMd from './pages/ClaudeMd'
 import Keybindings from './pages/Keybindings'
 import Marketplace from './pages/Marketplace'
@@ -37,7 +36,7 @@ function AnimatedRoutes() {
         <Route path="/commands" element={<Navigate to="/extensions" replace />} />
         <Route path="/hooks" element={<Navigate to="/extensions" replace />} />
         <Route path="/mcp" element={<Navigate to="/extensions" replace />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/settings" element={<Navigate to="/claude-settings" replace />} />
         <Route path="/claude-md" element={<ClaudeMd />} />
         <Route path="/keybindings" element={<Keybindings />} />
         <Route path="/marketplace" element={<Marketplace />} />

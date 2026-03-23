@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import {
   LayoutDashboard,
   Blocks,
-  Settings,
   Keyboard,
   FileText,
   Brain,
@@ -43,6 +42,8 @@ const navGroups: NavGroup[] = [
     titleKey: 'nav.overview',
     items: [
       { label: 'Dashboard', labelKey: 'nav.dashboard', to: '/', icon: LayoutDashboard, shortcut: '⌘1' },
+      { label: 'Claude 설정', labelKey: 'nav.claudeSettings', to: '/claude-settings', icon: Cpu },
+      { label: 'Keybindings', labelKey: 'nav.keybindings', to: '/keybindings', icon: Keyboard },
     ],
   },
   {
@@ -57,15 +58,6 @@ const navGroups: NavGroup[] = [
     titleKey: 'nav.extensions',
     items: [
       { label: '확장 기능', labelKey: 'nav.extensionsPage', to: '/extensions', icon: Blocks },
-    ],
-  },
-  {
-    title: 'Configuration',
-    titleKey: 'nav.configuration',
-    items: [
-      { label: 'Claude 설정', labelKey: 'nav.claudeSettings', to: '/claude-settings', icon: Cpu },
-      { label: 'Settings', labelKey: 'nav.settings', to: '/settings', icon: Settings },
-      { label: 'Keybindings', labelKey: 'nav.keybindings', to: '/keybindings', icon: Keyboard },
     ],
   },
   {
