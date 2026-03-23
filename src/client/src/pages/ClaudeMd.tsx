@@ -5,15 +5,18 @@ import { MonacoWrapper } from '../components/editors/MonacoWrapper'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
 import { DiffModal } from '../components/shared/DiffModal'
+import { SaveConfirmDialog } from '../components/shared/SaveConfirmDialog'
 import type { ClaudeMdEntry, DiffResult } from '../lib/types'
 
 export default function ClaudeMd() {
   const qc = useQueryClient()
   const [activeScope, setActiveScope] = useState<string | null>(null)
   const [content, setContent] = useState('')
+  const [originalContent, setOriginalContent] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [diffResult, setDiffResult] = useState<DiffResult | null>(null)
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false)
 
   const { data: entries = [], isLoading } = useQuery<ClaudeMdEntry[]>({
     queryKey: ['claude-md'],
@@ -37,6 +40,7 @@ export default function ClaudeMd() {
   useEffect(() => {
     if (scopeData) {
       setContent(scopeData.content)
+      setOriginalContent(scopeData.content)
     }
   }, [scopeData])
 
@@ -46,14 +50,19 @@ export default function ClaudeMd() {
       qc.invalidateQueries({ queryKey: ['claude-md', activeScope] })
       setError('')
       setSuccess(true)
+      setShowSaveConfirm(false)
       setTimeout(() => setSuccess(false), 2000)
     },
-    onError: (e: Error) => setError(e.message),
+    onError: (e: Error) => {
+      setError(e.message)
+      setShowSaveConfirm(false)
+    },
   })
 
   const handleTabChange = (scope: string) => {
     setActiveScope(scope)
     setContent('')
+    setOriginalContent('')
     setError('')
   }
 
@@ -128,7 +137,7 @@ export default function ClaudeMd() {
               Preview Diff
             </button>
             <button
-              onClick={() => mutation.mutate()}
+              onClick={() => setShowSaveConfirm(true)}
               disabled={mutation.isPending || contentLoading}
               className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
             >
@@ -149,6 +158,17 @@ export default function ClaudeMd() {
           diff={diffResult.diff}
           targetPath={diffResult.target_path}
           onClose={() => setDiffResult(null)}
+        />
+      )}
+
+      {showSaveConfirm && (
+        <SaveConfirmDialog
+          oldContent={originalContent}
+          newContent={content}
+          fileName={scopeData?.path ?? 'CLAUDE.md'}
+          onConfirm={() => mutation.mutate()}
+          onCancel={() => setShowSaveConfirm(false)}
+          saving={mutation.isPending}
         />
       )}
     </div>

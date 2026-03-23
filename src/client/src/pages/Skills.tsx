@@ -6,6 +6,7 @@ import { Badge } from '../components/shared/Badge'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
 import { TableSkeleton } from '../components/shared/Skeleton'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
+import { SaveConfirmDialog } from '../components/shared/SaveConfirmDialog'
 import { useLang } from '../hooks/useLang'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
@@ -208,59 +209,85 @@ function EditSkillModal({ skill, onClose }: { skill: SkillSummary; onClose: () =
     queryFn: () => api.skills.get(skill.name),
   })
   const [content, setContent] = useState('')
+  const [originalContent, setOriginalContent] = useState('')
   const [error, setError] = useState('')
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false)
 
   const editorValue = content || data?.content || ''
   const isReadOnly = data && !data.editable
+
+  // 데이터 로드 시 원본 내용 저장
+  useEffect(() => {
+    if (data?.content && !originalContent) {
+      setOriginalContent(data.content)
+    }
+  }, [data?.content])
 
   const mutation = useMutation({
     mutationFn: () => api.skills.update(skill.name, editorValue),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['skills'] })
       qc.invalidateQueries({ queryKey: ['skill', skill.name] })
+      setShowSaveConfirm(false)
       onClose()
     },
-    onError: (e: Error) => setError(e.message),
+    onError: (e: Error) => {
+      setError(e.message)
+      setShowSaveConfirm(false)
+    },
   })
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-      <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[720px] max-h-[90vh] flex flex-col">
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800">
-          <div>
-            <span className="text-sm font-medium text-zinc-100 font-mono">{skill.name}</span>
-            {data?.path && (
-              <p className="text-xs text-zinc-600 font-mono mt-0.5">{data.path}</p>
+    <>
+      <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[720px] max-h-[90vh] flex flex-col">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800">
+            <div>
+              <span className="text-sm font-medium text-zinc-100 font-mono">{skill.name}</span>
+              {data?.path && (
+                <p className="text-xs text-zinc-600 font-mono mt-0.5">{data.path}</p>
+              )}
+            </div>
+            <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">
+              <X size={16} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-hidden">
+            {data ? (
+              <MonacoWrapper value={editorValue} onChange={setContent} height="480px" />
+            ) : (
+              <div className="flex items-center justify-center h-40 text-zinc-600 text-xs font-mono">loading...</div>
             )}
           </div>
-          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300">
-            <X size={16} />
-          </button>
-        </div>
-        <div className="flex-1 overflow-hidden">
-          {data ? (
-            <MonacoWrapper value={editorValue} onChange={setContent} height="480px" />
-          ) : (
-            <div className="flex items-center justify-center h-40 text-zinc-600 text-xs font-mono">loading...</div>
-          )}
-        </div>
-        {error && <p className="text-xs text-red-400 px-5 py-2">{error}</p>}
-        <div className="flex justify-end gap-2 px-5 py-3.5 border-t border-zinc-800">
-          <button onClick={onClose} className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300">
-            Close
-          </button>
-          {!isReadOnly && (
-            <button
-              onClick={() => mutation.mutate()}
-              disabled={mutation.isPending}
-              className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
-            >
-              {mutation.isPending ? 'Saving...' : 'Save'}
+          {error && <p className="text-xs text-red-400 px-5 py-2">{error}</p>}
+          <div className="flex justify-end gap-2 px-5 py-3.5 border-t border-zinc-800">
+            <button onClick={onClose} className="px-3 py-1.5 text-xs text-zinc-500 hover:text-zinc-300">
+              Close
             </button>
-          )}
+            {!isReadOnly && (
+              <button
+                onClick={() => setShowSaveConfirm(true)}
+                disabled={mutation.isPending}
+                className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+              >
+                {mutation.isPending ? 'Saving...' : 'Save'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {showSaveConfirm && (
+        <SaveConfirmDialog
+          oldContent={originalContent}
+          newContent={editorValue}
+          fileName="SKILL.md"
+          onConfirm={() => mutation.mutate()}
+          onCancel={() => setShowSaveConfirm(false)}
+          saving={mutation.isPending}
+        />
+      )}
+    </>
   )
 }
 

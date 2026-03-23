@@ -7,6 +7,7 @@ import { useLang } from '../hooks/useLang'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
 import { CATEGORY_INFO } from '../lib/category-info'
+import { SaveConfirmDialog } from '../components/shared/SaveConfirmDialog'
 
 type OverviewItem = {
   name: string
@@ -81,9 +82,11 @@ function Cell({ item, onOpen }: { item: OverviewItem; onOpen: (item: OverviewIte
 // 파일 편집 모달
 function FileEditorModal({ item, onClose }: { item: OverviewItem; onClose: () => void }) {
   const [content, setContent] = useState('')
+  const [originalContent, setOriginalContent] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false)
   const [selectedFile, setSelectedFile] = useState<string>(
     item.type === 'memory' || item.type === 'docs'
       ? item.files?.[0] || ''
@@ -106,17 +109,21 @@ function FileEditorModal({ item, onClose }: { item: OverviewItem; onClose: () =>
       })
       if (resp.ok) {
         const data = await resp.json()
-        setContent(data.content || '')
+        const loaded = data.content || ''
+        setContent(loaded)
+        setOriginalContent(loaded)
       } else {
         setContent('(파일을 읽을 수 없습니다)')
+        setOriginalContent('')
       }
     } catch {
       setContent('(파일을 읽을 수 없습니다)')
+      setOriginalContent('')
     }
     setLoading(false)
   }
 
-  // 파일 저장
+  // 실제 파일 저장
   const saveFile = async () => {
     setSaving(true)
     try {
@@ -125,7 +132,9 @@ function FileEditorModal({ item, onClose }: { item: OverviewItem; onClose: () =>
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ path: filePath, content }),
       })
+      setOriginalContent(content)
       setSaved(true)
+      setShowSaveConfirm(false)
       setTimeout(() => setSaved(false), 2000)
     } catch {
       // ignore
@@ -160,7 +169,7 @@ function FileEditorModal({ item, onClose }: { item: OverviewItem; onClose: () =>
           <div className="flex items-center gap-2 shrink-0">
             {saved && <span className="text-[10px] text-emerald-400">저장됨</span>}
             <button
-              onClick={saveFile}
+              onClick={() => setShowSaveConfirm(true)}
               disabled={saving || loading}
               className="flex items-center gap-1 px-2.5 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors disabled:opacity-50"
             >
@@ -208,6 +217,17 @@ function FileEditorModal({ item, onClose }: { item: OverviewItem; onClose: () =>
           )}
         </div>
       </div>
+
+      {showSaveConfirm && (
+        <SaveConfirmDialog
+          oldContent={originalContent}
+          newContent={content}
+          fileName={filePath.split('/').pop() ?? filePath}
+          onConfirm={saveFile}
+          onCancel={() => setShowSaveConfirm(false)}
+          saving={saving}
+        />
+      )}
     </div>
   )
 }
