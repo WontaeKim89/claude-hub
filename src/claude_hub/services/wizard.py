@@ -4,6 +4,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from claude_hub.utils.claude_cli import run_claude
 from claude_hub.utils.paths import ClaudePaths
 
 
@@ -47,10 +48,7 @@ JSON으로만 응답하세요:
 {{"tech_stack": ["..."], "claude_md": "# 프로젝트명\\n## 구조\\n...\\n## 코드 규칙\\n...\\n## 실행 방법\\n...", "hooks": [], "mcp_suggestions": []}}"""
 
     try:
-        proc = subprocess.run(
-            ["claude", "-p", prompt, "--output-format", "json"],
-            capture_output=True, text=True, timeout=60
-        )
+        proc = run_claude("-p", prompt, "--output-format", "json", timeout=60)
         if proc.returncode == 0 and proc.stdout.strip():
             data = _parse_claude_json_response(proc.stdout)
             if data:
@@ -120,10 +118,7 @@ JSON으로 응답:
 {{"questions": [], "skill_md": "---\\nname: ...\\n---\\n...", "name": "skill-name"}}"""
 
     try:
-        proc = subprocess.run(
-            ["claude", "-p", prompt, "--output-format", "json"],
-            capture_output=True, text=True, timeout=60
-        )
+        proc = run_claude("-p", prompt, "--output-format", "json", timeout=60)
         if proc.returncode == 0 and proc.stdout.strip():
             data = _parse_claude_json_response(proc.stdout)
             if data:

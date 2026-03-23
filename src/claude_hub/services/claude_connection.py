@@ -1,6 +1,7 @@
 """Claude CLI 연결 상태 확인."""
-import subprocess
 from dataclasses import dataclass
+
+from claude_hub.utils.claude_cli import run_claude
 
 
 @dataclass
@@ -11,10 +12,7 @@ class ClaudeStatus:
 
 def check_claude_connection() -> ClaudeStatus:
     try:
-        result = subprocess.run(
-            ["claude", "--version"],
-            capture_output=True, text=True, timeout=5
-        )
+        result = run_claude("--version", timeout=5)
         if result.returncode == 0:
             return ClaudeStatus(connected=True, version=result.stdout.strip())
     except Exception:

@@ -1,8 +1,9 @@
 """스킬/플러그인 사용패턴 분석 — 정량(Python) + 정성(Claude CLI)."""
 import json
-import subprocess
 import time
 from dataclasses import dataclass
+
+from claude_hub.utils.claude_cli import run_claude
 
 from claude_hub.services.usage_db import UsageDB
 
@@ -117,10 +118,7 @@ def analyze_with_claude(skills_data: list[dict]) -> list[dict]:
 [{{"name": "skill-name", "trigger_accuracy": 18, "replaceability": 15, "comment": "한줄 평가"}}]"""
 
     try:
-        proc = subprocess.run(
-            ["claude", "-p", prompt, "--output-format", "json"],
-            capture_output=True, text=True, timeout=180
-        )
+        proc = run_claude("-p", prompt, "--output-format", "json", timeout=180)
         if proc.returncode == 0:
             # --output-format json → {"result": "...", ...} 구조
             wrapper = json.loads(proc.stdout)

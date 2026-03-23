@@ -1,6 +1,7 @@
 """Plugins API."""
 import asyncio
 import json
+import os
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -63,12 +64,25 @@ async def toggle_plugin(name: str, body: PluginToggle, request: Request):
     return {"ok": True}
 
 
+def _make_env() -> dict:
+    """asyncio subprocess용 PATH 확장 환경변수."""
+    env = os.environ.copy()
+    env["PATH"] = (
+        f"{os.path.expanduser('~')}/.npm-global/bin:"
+        f"{os.path.expanduser('~')}/.local/bin:"
+        "/opt/homebrew/bin:/usr/local/bin:"
+        + env.get("PATH", "")
+    )
+    return env
+
+
 @router.post("/plugins/install", status_code=201)
 async def install_plugin(body: PluginInstall):
     proc = await asyncio.create_subprocess_exec(
         "claude", "plugin", "install", f"{body.name}@{body.marketplace}",
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+        env=_make_env(),
     )
     stdout, stderr = await proc.communicate()
     if proc.returncode != 0:
@@ -85,6 +99,7 @@ async def remove_plugin(name: str):
         "claude", "plugin", "remove", name,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
+        env=_make_env(),
     )
     stdout, stderr = await proc.communicate()
     if proc.returncode != 0:

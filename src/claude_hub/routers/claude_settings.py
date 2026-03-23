@@ -1,8 +1,9 @@
 """Claude 설정 및 사용량 API."""
 import json
-import subprocess
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+
+from claude_hub.utils.claude_cli import popen_claude, run_claude
 
 router = APIRouter(tags=["claude-settings"])
 
@@ -24,10 +25,7 @@ async def get_claude_settings(request: Request):
 
     # Claude CLI 버전 확인
     try:
-        proc = subprocess.run(
-            ["claude", "--version"],
-            capture_output=True, text=True, timeout=5
-        )
+        proc = run_claude("--version", timeout=5)
         if proc.returncode == 0:
             result["cli_version"] = proc.stdout.strip()
     except Exception:
@@ -62,10 +60,7 @@ async def update_model(body: ModelUpdateRequest, request: Request):
 async def claude_auth_login():
     """Claude 로그인 시작 (브라우저 기반)."""
     try:
-        subprocess.Popen(
-            ["claude", "auth", "login"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        popen_claude("auth", "login")
         return {"ok": True, "message": "브라우저에서 로그인을 완료해주세요"}
     except Exception as e:
         return {"ok": False, "message": str(e)}
@@ -75,10 +70,7 @@ async def claude_auth_login():
 async def claude_auth_logout():
     """Claude 로그아웃."""
     try:
-        subprocess.run(
-            ["claude", "auth", "logout"],
-            capture_output=True, text=True, timeout=10
-        )
+        run_claude("auth", "logout", timeout=10)
         return {"ok": True, "message": "로그아웃 완료"}
     except Exception as e:
         return {"ok": False, "message": str(e)}
@@ -88,10 +80,7 @@ async def claude_auth_logout():
 async def claude_auth_status():
     """인증 상태 확인."""
     try:
-        proc = subprocess.run(
-            ["claude", "auth", "status", "--text"],
-            capture_output=True, text=True, timeout=5
-        )
+        proc = run_claude("auth", "status", "--text", timeout=5)
         return {
             "authenticated": proc.returncode == 0,
             "details": proc.stdout.strip() if proc.stdout else proc.stderr.strip(),
@@ -106,10 +95,7 @@ async def start_remote_session(request: Request):
     body = await request.json()
     task = body.get("task", "")
     try:
-        subprocess.Popen(
-            ["claude", "--remote", task],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        popen_claude("--remote", task)
         return {"ok": True, "message": f"원격 세션이 claude.ai에서 시작되었습니다: {task}"}
     except Exception as e:
         return {"ok": False, "message": str(e)}
@@ -119,10 +105,7 @@ async def start_remote_session(request: Request):
 async def teleport_session():
     """웹 세션을 로컬로 가져오기 (claude --teleport)."""
     try:
-        subprocess.Popen(
-            ["claude", "--teleport"],
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE
-        )
+        popen_claude("--teleport")
         return {"ok": True, "message": "Teleport가 시작되었습니다. 터미널에서 확인하세요."}
     except Exception as e:
         return {"ok": False, "message": str(e)}

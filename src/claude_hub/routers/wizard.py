@@ -176,8 +176,9 @@ class CompactRequest(BaseModel):
 async def compact_file(body: CompactRequest, request: Request):
     """Claude CLI로 파일 내용을 요약/compact."""
     import json
-    import subprocess
     from pathlib import Path
+
+    from claude_hub.utils.claude_cli import run_claude
 
     file_path = Path(body.path).expanduser().resolve()
     if not file_path.is_file():
@@ -198,10 +199,7 @@ async def compact_file(body: CompactRequest, request: Request):
 요약된 내용만 출력하세요 (JSON 아님, 마크다운 원문만):"""
 
     try:
-        proc = subprocess.run(
-            ["claude", "-p", prompt, "--output-format", "json"],
-            capture_output=True, text=True, timeout=60
-        )
+        proc = run_claude("-p", prompt, "--output-format", "json", timeout=60)
         if proc.returncode == 0:
             wrapper = json.loads(proc.stdout)
             result = wrapper.get("result", "") if isinstance(wrapper, dict) else proc.stdout
