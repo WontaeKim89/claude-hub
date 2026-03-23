@@ -89,4 +89,9 @@ export const CATEGORY_INFO = {
     description: 'Claude Code의 프로젝트별 대화 기록을 조회하고 관리합니다. /resume 기능의 시각화 버전.',
     detail: '~/.claude/projects/{path}/*.jsonl',
   },
+  claudeSettings: {
+    title: 'Claude 설정이란?',
+    description: 'Claude Code의 모델, 연결 상태 등을 설정합니다. 여기서 변경한 모델이 전역으로 적용됩니다.',
+    detail: '~/.claude/settings.json → model',
+  },
 } as const

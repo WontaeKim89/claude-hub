@@ -21,6 +21,7 @@ import {
   FolderKanban,
   MessageSquare,
   FlaskConical,
+  Cpu,
 } from 'lucide-react'
 import { useLang } from '../../hooks/useLang'
 import { Logo } from './Logo'
@@ -70,6 +71,7 @@ const navGroups: NavGroup[] = [
     title: 'Configuration',
     titleKey: 'nav.configuration',
     items: [
+      { label: 'Claude 설정', labelKey: 'nav.claudeSettings', to: '/claude-settings', icon: Cpu },
       { label: 'Settings', labelKey: 'nav.settings', to: '/settings', icon: Settings },
       { label: 'Hooks', labelKey: 'nav.hooks', to: '/hooks', icon: Webhook },
       { label: 'MCP Servers', labelKey: 'nav.mcp', to: '/mcp', icon: Server },

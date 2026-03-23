@@ -163,6 +163,12 @@ export default function Dashboard() {
     queryFn: () => api.stats.timeline(30),
   })
 
+  const { data: claudeUsage } = useQuery({
+    queryKey: ['claude-usage'],
+    queryFn: () => api.claudeSettings.usage(),
+    staleTime: 60_000,
+  })
+
   const { data: unusedItems } = useQuery({
     queryKey: ['stats', 'unused'],
     queryFn: () => api.stats.unused(30),
@@ -276,6 +282,58 @@ export default function Dashboard() {
         }
       </div>
 
+
+      {/* Claude 사용량 요약 카드 */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden mb-4">
+        <div className="px-4 py-3 border-b border-zinc-800">
+          <span className="text-xs font-medium text-zinc-400">{t('dashboard.usage')}</span>
+        </div>
+        <div className="grid grid-cols-3 divide-x divide-zinc-800">
+          {/* 주간 */}
+          <div className="px-4 py-3">
+            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">{t('dashboard.weekly')}</p>
+            <p className="font-mono text-lg font-semibold text-zinc-100 leading-none">
+              {claudeUsage?.weekly.sessions ?? '—'}
+            </p>
+            <p className="font-mono text-[10px] text-zinc-500 mt-1">세션</p>
+            <p className="font-mono text-xs text-emerald-400 mt-0.5">
+              ${claudeUsage?.weekly.cost.toFixed(2) ?? '—'}
+            </p>
+          </div>
+          {/* 월간 */}
+          <div className="px-4 py-3">
+            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">{t('dashboard.monthly')}</p>
+            <p className="font-mono text-lg font-semibold text-zinc-100 leading-none">
+              {claudeUsage?.monthly.sessions ?? '—'}
+            </p>
+            <p className="font-mono text-[10px] text-zinc-500 mt-1">세션</p>
+            <p className="font-mono text-xs text-emerald-400 mt-0.5">
+              ${claudeUsage?.monthly.cost.toFixed(2) ?? '—'}
+            </p>
+          </div>
+          {/* 일평균 + 모델 분포 */}
+          <div className="px-4 py-3">
+            <p className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider mb-1">{t('dashboard.dailyAvg')}</p>
+            <p className="font-mono text-lg font-semibold text-zinc-100 leading-none">
+              ${claudeUsage?.daily_avg_cost.toFixed(2) ?? '—'}
+            </p>
+            <p className="font-mono text-[10px] text-zinc-500 mt-1">/day</p>
+            {/* 모델별 비율 */}
+            {claudeUsage?.model_breakdown && Object.keys(claudeUsage.model_breakdown).length > 0 && (() => {
+              const breakdown = claudeUsage.model_breakdown
+              const totalCost = Object.values(breakdown).reduce((s, v) => s + v.cost, 0)
+              return totalCost > 0 ? (
+                <p className="font-mono text-[10px] text-zinc-600 mt-1 leading-relaxed">
+                  {Object.entries(breakdown)
+                    .sort((a, b) => b[1].cost - a[1].cost)
+                    .map(([model, v]) => `${model} ${Math.round((v.cost / totalCost) * 100)}%`)
+                    .join(' · ')}
+                </p>
+              ) : null
+            })()}
+          </div>
+        </div>
+      </div>
 
       {/* Usage Stats 섹션 */}
       <div className="grid grid-cols-2 gap-4 mt-4">

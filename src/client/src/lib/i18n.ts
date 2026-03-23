@@ -143,6 +143,16 @@ const translations: Record<string, Record<Lang, string>> = {
   'sessions.selectSession': { ko: '세션을 선택하세요', en: 'Select a session' },
   'sessions.messages': { ko: '메시지', en: 'messages' },
   'sessions.deleteConfirm': { ko: '이 세션을 삭제하시겠습니까?', en: 'Delete this session?' },
+  'nav.claudeSettings': { ko: 'Claude 설정', en: 'Claude Settings' },
+  'claudeSettings.title': { ko: 'Claude 설정', en: 'Claude Settings' },
+  'claudeSettings.subtitle': { ko: '모델 및 연결 설정', en: 'Model and connection settings' },
+  'claudeSettings.model': { ko: '모델', en: 'Model' },
+  'claudeSettings.modelHint': { ko: '여기서 설정한 모델이 프로젝트 전역에 적용됩니다.', en: 'This model applies globally to all projects.' },
+  'claudeSettings.cliVersion': { ko: 'Claude CLI 버전', en: 'Claude CLI Version' },
+  'dashboard.usage': { ko: 'Claude 사용량', en: 'Claude Usage' },
+  'dashboard.weekly': { ko: '주간 (7일)', en: 'Weekly (7d)' },
+  'dashboard.monthly': { ko: '월간 (30일)', en: 'Monthly (30d)' },
+  'dashboard.dailyAvg': { ko: '일평균', en: 'Daily Avg' },
 }
 
 let currentLang: Lang = (localStorage.getItem('claude-hub-lang') as Lang) || 'ko'

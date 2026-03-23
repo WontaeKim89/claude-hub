@@ -21,6 +21,7 @@ import Templates from './pages/Templates'
 import ConfigDiff from './pages/ConfigDiff'
 import ProjectOverview from './pages/ProjectOverview'
 import Sessions from './pages/Sessions'
+import ClaudeSettings from './pages/ClaudeSettings'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -52,6 +53,7 @@ function AnimatedRoutes() {
         <Route path="/config-diff" element={<ConfigDiff />} />
         <Route path="/projects" element={<ProjectOverview />} />
         <Route path="/sessions" element={<Sessions />} />
+        <Route path="/claude-settings" element={<ClaudeSettings />} />
       </Routes>
     </div>
   )

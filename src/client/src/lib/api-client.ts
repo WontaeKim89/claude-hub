@@ -183,6 +183,17 @@ export const api = {
     status: () => request<ClaudeStatus>('/claude/status'),
   },
 
+  claudeSettings: {
+    get: () => request<{ model: string; plan: string; cli_version?: string }>('/claude/settings'),
+    updateModel: (model: string) => request<{ ok: boolean; model: string }>('/claude/settings/model', { method: 'PUT', body: JSON.stringify({ model }) }),
+    usage: () => request<{
+      weekly: { sessions: number; tokens_in: number; tokens_out: number; cost: number };
+      monthly: { sessions: number; tokens_in: number; tokens_out: number; cost: number };
+      daily_avg_cost: number;
+      model_breakdown: Record<string, { input: number; output: number; cost: number }>;
+    }>('/claude/usage'),
+  },
+
   analysis: {
     skills: () => request<AnalysisResult>('/analysis/skills', { method: 'POST' }),
     plugins: () => request<AnalysisResult>('/analysis/plugins', { method: 'POST' }),
@@ -216,6 +227,15 @@ export const api = {
           path: string
         }>
       }>>('/wizard/project-overviews'),
+    projectTree: (path: string) =>
+      request<{ project_name: string; project_path: string; nodes: unknown[] }>(
+        `/wizard/project-tree?path=${encodeURIComponent(path)}`
+      ),
+    compact: (path: string) =>
+      request<{ original_lines: number; compacted: string; compacted_lines: number; path: string }>(
+        '/wizard/compact',
+        { method: 'POST', body: JSON.stringify({ path }) }
+      ),
   },
 
   cost: {
