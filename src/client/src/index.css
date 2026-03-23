@@ -69,3 +69,10 @@ body {
   transform: translateY(0);
   transition: opacity 200ms ease-out, transform 200ms ease-out;
 }
+
+/* Wizard analysis progress bar */
+@keyframes progress {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}

@@ -14,13 +14,13 @@ import {
   Brain,
   Users,
   Store,
-  Wand2,
   Activity,
   DollarSign,
   FileStack,
   GitCompare,
   FolderKanban,
   MessageSquare,
+  FlaskConical,
 } from 'lucide-react'
 import { useLang } from '../../hooks/useLang'
 import { Logo } from './Logo'
@@ -53,7 +53,6 @@ const navGroups: NavGroup[] = [
     title: 'Tools',
     titleKey: 'nav.tools',
     items: [
-      { label: 'Wizard', labelKey: 'nav.wizard', to: '/wizard', icon: Wand2 },
       { label: 'Projects', labelKey: 'nav.projects', to: '/projects', icon: FolderKanban },
     ],
   },
@@ -108,6 +107,13 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Templates', labelKey: 'nav.templates', to: '/templates', icon: FileStack },
       { label: 'Config Diff', labelKey: 'nav.configDiff', to: '/config-diff', icon: GitCompare },
+    ],
+  },
+  {
+    title: 'Labs',
+    titleKey: 'nav.labs',
+    items: [
+      { label: 'Wizard', labelKey: 'nav.wizard', to: '/wizard', icon: FlaskConical },
     ],
   },
 ]
