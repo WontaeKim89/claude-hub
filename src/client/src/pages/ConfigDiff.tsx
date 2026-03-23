@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { GitCompare } from 'lucide-react'
+import { GitCompare, ArrowRight } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useLang } from '../hooks/useLang'
 import { DiffViewer } from '../components/shared/DiffViewer'
@@ -155,8 +155,9 @@ export default function ConfigDiff() {
                         <button
                           onClick={() => syncMutation.mutate({ source: projectA, target: projectB })}
                           disabled={syncMutation.isPending}
-                          className="text-[11px] text-amber-400 hover:text-amber-300 disabled:opacity-40 transition-colors"
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors disabled:opacity-40"
                         >
+                          <ArrowRight size={12} />
                           {t('configDiff.copyAtoB')}
                         </button>
                       )}

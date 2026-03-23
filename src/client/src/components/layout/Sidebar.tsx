@@ -8,7 +8,6 @@ import {
   Brain,
   Users,
   Store,
-  Activity,
   DollarSign,
   FileStack,
   GitCompare,
@@ -80,7 +79,6 @@ const navGroups: NavGroup[] = [
     title: 'Monitor',
     titleKey: 'nav.monitor',
     items: [
-      { label: 'Live Monitor', labelKey: 'nav.liveMonitor', to: '/monitor', icon: Activity },
       { label: 'Sessions', labelKey: 'nav.sessions', to: '/sessions', icon: MessageSquare },
       { label: 'Cost', labelKey: 'nav.cost', to: '/cost', icon: DollarSign },
     ],

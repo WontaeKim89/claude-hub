@@ -8,7 +8,6 @@ import Marketplace from './pages/Marketplace'
 import Memory from './pages/Memory'
 import Teams from './pages/Teams'
 import Wizard from './pages/Wizard'
-import Monitor from './pages/Monitor'
 import Cost from './pages/Cost'
 import Templates from './pages/Templates'
 import ConfigDiff from './pages/ConfigDiff'
@@ -43,7 +42,7 @@ function AnimatedRoutes() {
         <Route path="/memory" element={<Memory />} />
         <Route path="/teams" element={<Teams />} />
         <Route path="/wizard" element={<Wizard />} />
-        <Route path="/monitor" element={<Monitor />} />
+        <Route path="/monitor" element={<Navigate to="/sessions" replace />} />
         <Route path="/cost" element={<Cost />} />
         <Route path="/templates" element={<Templates />} />
         <Route path="/config-diff" element={<ConfigDiff />} />

@@ -1,16 +1,67 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { FileStack, Tag, Trash2, Download, Check } from 'lucide-react'
+import { FileStack, Tag, Trash2, Download, Check, X } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useLang } from '../hooks/useLang'
 import type { HarnessTemplate, MemoryProject } from '../lib/types'
 
 type Tab = 'community' | 'my' | 'export'
 
+function TemplateDetailModal({ template, onClose, onApply }: { template: HarnessTemplate; onClose: () => void; onApply: () => void }) {
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[700px] max-h-[80vh] flex flex-col">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+          <div>
+            <span className="text-sm font-medium text-zinc-100">{template.display_name || template.name}</span>
+            {template.builtin && <span className="ml-2 text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">built-in</span>}
+          </div>
+          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300"><X size={16} /></button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <p className="text-xs text-zinc-400">{template.description}</p>
+
+          {/* CLAUDE.md 내용 */}
+          <div>
+            <h3 className="text-xs font-mono text-zinc-500 mb-2">CLAUDE.md</h3>
+            <pre className="bg-zinc-950 border border-zinc-800 rounded p-3 text-xs text-zinc-300 font-mono whitespace-pre-wrap max-h-60 overflow-y-auto">{template.claude_md || '(없음)'}</pre>
+          </div>
+
+          {/* Hooks */}
+          {template.hooks?.length > 0 && (
+            <div>
+              <h3 className="text-xs font-mono text-zinc-500 mb-2">Hooks ({template.hooks.length})</h3>
+              {template.hooks.map((h, i) => (
+                <div key={i} className="text-xs font-mono text-zinc-400 bg-zinc-950 border border-zinc-800 rounded px-3 py-1.5 mb-1">
+                  <span className="text-emerald-400">{h.event}</span> → <span className="text-zinc-300">{h.command}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Tags */}
+          {(template.tags ?? []).length > 0 && (
+            <div className="flex gap-1.5 flex-wrap">
+              {(template.tags ?? []).map(tag => (
+                <span key={tag} className="px-2 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-400 rounded">{tag}</span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t border-zinc-800">
+          <button onClick={onClose} className="px-3 py-1.5 text-xs text-zinc-400 border border-zinc-700 rounded">닫기</button>
+          <button onClick={onApply} className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded">적용</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Templates() {
   const { t } = useLang()
   const qc = useQueryClient()
   const [activeTab, setActiveTab] = useState<Tab>('community')
+  const [detailTemplate, setDetailTemplate] = useState<HarnessTemplate | null>(null)
   const [applyTarget, setApplyTarget] = useState<string>('')
   const [applyingTemplate, setApplyingTemplate] = useState<string | null>(null)
   const [appliedTemplate, setAppliedTemplate] = useState<string | null>(null)
@@ -143,6 +194,7 @@ export default function Templates() {
                   applying={applyingTemplate === tmpl.name}
                   applied={appliedTemplate === tmpl.name}
                   onApply={handleApply}
+                  onDetail={setDetailTemplate}
                 />
               ))}
             </div>
@@ -166,11 +218,24 @@ export default function Templates() {
                   applied={appliedTemplate === tmpl.name}
                   onApply={handleApply}
                   onDelete={() => deleteMutation.mutate(tmpl.name)}
+                  onDetail={setDetailTemplate}
                 />
               ))}
             </div>
           )}
         </div>
+      )}
+
+      {/* 템플릿 상세 모달 */}
+      {detailTemplate && (
+        <TemplateDetailModal
+          template={detailTemplate}
+          onClose={() => setDetailTemplate(null)}
+          onApply={() => {
+            handleApply(detailTemplate)
+            setDetailTemplate(null)
+          }}
+        />
       )}
 
       {/* 내보내기 탭 */}
@@ -247,11 +312,15 @@ interface TemplateCardProps {
   applied: boolean
   onApply: (tmpl: HarnessTemplate) => void
   onDelete?: () => void
+  onDetail: (tmpl: HarnessTemplate) => void
 }
 
-function TemplateCard({ tmpl, applyTarget, applying, applied, onApply, onDelete }: TemplateCardProps) {
+function TemplateCard({ tmpl, applyTarget, applying, applied, onApply, onDelete, onDetail }: TemplateCardProps) {
   return (
-    <div className="border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-colors">
+    <div
+      className="border border-zinc-800 rounded-lg p-4 hover:border-zinc-700 transition-colors cursor-pointer"
+      onClick={() => onDetail(tmpl)}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-1">
@@ -275,7 +344,7 @@ function TemplateCard({ tmpl, applyTarget, applying, applied, onApply, onDelete 
         <div className="flex items-center gap-1.5 shrink-0">
           {onDelete && (
             <button
-              onClick={onDelete}
+              onClick={(e) => { e.stopPropagation(); onDelete() }}
               className="p-1.5 text-zinc-600 hover:text-red-400 transition-colors"
               title="삭제"
             >
@@ -283,7 +352,7 @@ function TemplateCard({ tmpl, applyTarget, applying, applied, onApply, onDelete 
             </button>
           )}
           <button
-            onClick={() => onApply(tmpl)}
+            onClick={(e) => { e.stopPropagation(); onApply(tmpl) }}
             disabled={!applyTarget || applying}
             className={`px-3 py-1.5 text-xs rounded transition-colors ${
               applied

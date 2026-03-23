@@ -209,7 +209,43 @@ export default function Wizard() {
 
       {/* 단계 1: 프로젝트 선택 */}
       {step === 'select' && (
-        <div className="space-y-4">
+        <>
+          {/* Wizard 설명 */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 mb-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-center shrink-0">
+                <Wand2 size={24} className="text-emerald-400" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-zinc-100">프로젝트 맞춤 환경을 자동으로 구성합니다</h3>
+                <div className="text-xs text-zinc-400 leading-relaxed space-y-1.5">
+                  <p>Wizard는 프로젝트의 코드, README, 기술 스택을 분석하고, 기존 개발 패턴(전역 CLAUDE.md, Memory)을 참조하여 최적의 프로젝트 설정을 자동 생성합니다.</p>
+                </div>
+                <div className="flex gap-4 mt-3">
+                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    프로젝트 CLAUDE.md 자동 생성
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
+                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
+                    Hooks/MCP 서버 추천
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
+                    <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+                    AI 기반 분석
+                  </div>
+                </div>
+                <div className="bg-zinc-800/50 rounded px-3 py-2 mt-2">
+                  <p className="text-[10px] text-zinc-500 font-mono leading-relaxed">
+                    참조 항목: README.md · pyproject.toml/package.json · 전역 CLAUDE.md · MEMORY.md · 프로젝트 파일 구조
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 프로젝트 선택 UI */}
+          <div className="space-y-4">
           {projects.length > 0 && (
             <div>
               <label className="block font-mono text-xs text-zinc-500 mb-1.5">
@@ -259,7 +295,8 @@ export default function Wizard() {
             <FlaskConical size={13} />
             {t('wizard.analyze')}
           </button>
-        </div>
+          </div>
+        </>
       )}
 
       {/* 단계 2: 분석 진행 애니메이션 */}
