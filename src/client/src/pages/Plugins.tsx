@@ -29,7 +29,7 @@ function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (
 }
 
 
-export default function Plugins() {
+export default function Plugins({ embedded }: { embedded?: boolean }) {
   const qc = useQueryClient()
   const [uninstallTarget, setUninstallTarget] = useState<PluginSummary | null>(null)
   const [showAnalysis, setShowAnalysis] = useState(false)
@@ -55,22 +55,35 @@ export default function Plugins() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-1.5">
-          <div>
-            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Plugins</h2>
-            <p className="mt-0.5 text-xs text-zinc-500">Manage installed Claude plugins</p>
+      {!embedded && (
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-center gap-1.5">
+            <div>
+              <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Plugins</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">Manage installed Claude plugins</p>
+            </div>
+            <InfoTooltip {...CATEGORY_INFO.plugins} />
           </div>
-          <InfoTooltip {...CATEGORY_INFO.plugins} />
+          <button
+            onClick={() => setShowAnalysis(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors duration-150"
+          >
+            <BarChart2 size={13} strokeWidth={2} />
+            사용량 분석
+          </button>
         </div>
-        <button
-          onClick={() => setShowAnalysis(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors duration-150"
-        >
-          <BarChart2 size={13} strokeWidth={2} />
-          사용량 분석
-        </button>
-      </div>
+      )}
+      {embedded && (
+        <div className="flex items-center justify-end gap-2 mb-6">
+          <button
+            onClick={() => setShowAnalysis(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors duration-150"
+          >
+            <BarChart2 size={13} strokeWidth={2} />
+            사용량 분석
+          </button>
+        </div>
+      )}
 
       {isLoading ? (
         <TableSkeleton rows={4} cols={5} />

@@ -16,6 +16,7 @@ const translations: Record<string, Record<Lang, string>> = {
   'nav.marketplace': { ko: '마켓플레이스', en: 'Marketplace' },
   'nav.overview': { ko: '개요', en: 'Overview' },
   'nav.extensions': { ko: '확장', en: 'Extensions' },
+  'nav.extensionsPage': { ko: '확장 기능', en: 'Extensions' },
   'nav.configuration': { ko: '구성', en: 'Configuration' },
   'nav.content': { ko: '콘텐츠', en: 'Content' },
   'nav.store': { ko: '스토어', en: 'Store' },

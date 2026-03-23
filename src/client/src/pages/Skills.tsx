@@ -292,7 +292,7 @@ function EditSkillModal({ skill, onClose }: { skill: SkillSummary; onClose: () =
 }
 
 
-export default function Skills() {
+export default function Skills({ embedded }: { embedded?: boolean }) {
   const qc = useQueryClient()
   const { t } = useLang()
   const [filter, setFilter] = useState<FilterTab>('all')
@@ -335,17 +335,37 @@ export default function Skills() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-1.5">
-          <div>
-            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">
-              {`${t('skills.title')}${!isLoading ? ` (${skills.length})` : ''}`}
-            </h2>
-            <p className="mt-0.5 text-xs text-zinc-500">{t('skills.subtitle')}</p>
+      {!embedded && (
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-center gap-1.5">
+            <div>
+              <h2 className="text-base font-semibold text-zinc-100 tracking-tight">
+                {`${t('skills.title')}${!isLoading ? ` (${skills.length})` : ''}`}
+              </h2>
+              <p className="mt-0.5 text-xs text-zinc-500">{t('skills.subtitle')}</p>
+            </div>
+            <InfoTooltip {...CATEGORY_INFO.skills} />
           </div>
-          <InfoTooltip {...CATEGORY_INFO.skills} />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAnalysis(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors duration-150"
+            >
+              <BarChart2 size={13} strokeWidth={2} />
+              사용량 분석
+            </button>
+            <button
+              onClick={() => setShowNew(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors duration-150"
+            >
+              <Plus size={13} strokeWidth={2} />
+              {t('skills.newSkill')}
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+      )}
+      {embedded && (
+        <div className="flex items-center justify-end gap-2 mb-6">
           <button
             onClick={() => setShowAnalysis(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors duration-150"
@@ -361,7 +381,7 @@ export default function Skills() {
             {t('skills.newSkill')}
           </button>
         </div>
-      </div>
+      )}
 
       {/* Filter + Search */}
       <div className="flex items-center gap-3 mb-4">

@@ -172,7 +172,7 @@ function HookFormModal({
   )
 }
 
-export default function Hooks() {
+export default function Hooks({ embedded }: { embedded?: boolean }) {
   const qc = useQueryClient()
   const [showAdd, setShowAdd] = useState(false)
   const [editTarget, setEditTarget] = useState<FlatHook | null>(null)
@@ -245,15 +245,28 @@ export default function Hooks() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-1.5">
-          <div>
-            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Hooks</h2>
-            <p className="mt-0.5 text-xs text-zinc-500">Event-driven shell commands for Claude lifecycle events</p>
+      {!embedded && (
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-center gap-1.5">
+            <div>
+              <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Hooks</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">Event-driven shell commands for Claude lifecycle events</p>
+            </div>
+            <InfoTooltip {...CATEGORY_INFO.hooks} />
           </div>
-          <InfoTooltip {...CATEGORY_INFO.hooks} />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAdd(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+            >
+              <Plus size={13} strokeWidth={2} />
+              Add Hook
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+      )}
+      {embedded && (
+        <div className="flex items-center justify-end gap-2 mb-6">
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
@@ -262,7 +275,7 @@ export default function Hooks() {
             Add Hook
           </button>
         </div>
-      </div>
+      )}
 
       {isLoading ? (
         <TableSkeleton rows={4} cols={4} />

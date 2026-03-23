@@ -1,15 +1,9 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Sidebar } from './components/layout/Sidebar'
 import Dashboard from './pages/Dashboard'
-import Skills from './pages/Skills'
 import Settings from './pages/Settings'
 import ClaudeMd from './pages/ClaudeMd'
-import Plugins from './pages/Plugins'
-import Agents from './pages/Agents'
-import Commands from './pages/Commands'
-import Hooks from './pages/Hooks'
-import Mcp from './pages/Mcp'
 import Keybindings from './pages/Keybindings'
 import Marketplace from './pages/Marketplace'
 import Memory from './pages/Memory'
@@ -22,6 +16,7 @@ import ConfigDiff from './pages/ConfigDiff'
 import ProjectOverview from './pages/ProjectOverview'
 import Sessions from './pages/Sessions'
 import ClaudeSettings from './pages/ClaudeSettings'
+import Extensions from './pages/Extensions'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } },
@@ -34,14 +29,16 @@ function AnimatedRoutes() {
     <div key={location.pathname} className="animate-fade-in">
       <Routes location={location}>
         <Route path="/" element={<Dashboard />} />
-        <Route path="/skills" element={<Skills />} />
+        <Route path="/extensions" element={<Extensions />} />
+        {/* 이전 개별 라우트 — /extensions 로 리다이렉트 */}
+        <Route path="/skills" element={<Navigate to="/extensions" replace />} />
+        <Route path="/plugins" element={<Navigate to="/extensions" replace />} />
+        <Route path="/agents" element={<Navigate to="/extensions" replace />} />
+        <Route path="/commands" element={<Navigate to="/extensions" replace />} />
+        <Route path="/hooks" element={<Navigate to="/extensions" replace />} />
+        <Route path="/mcp" element={<Navigate to="/extensions" replace />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/claude-md" element={<ClaudeMd />} />
-        <Route path="/plugins" element={<Plugins />} />
-        <Route path="/agents" element={<Agents />} />
-        <Route path="/commands" element={<Commands />} />
-        <Route path="/hooks" element={<Hooks />} />
-        <Route path="/mcp" element={<Mcp />} />
         <Route path="/keybindings" element={<Keybindings />} />
         <Route path="/marketplace" element={<Marketplace />} />
         <Route path="/memory" element={<Memory />} />

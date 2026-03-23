@@ -257,7 +257,7 @@ function EditServerModal({ server, onClose }: { server: McpServer; onClose: () =
   )
 }
 
-export default function Mcp() {
+export default function Mcp({ embedded }: { embedded?: boolean }) {
   const qc = useQueryClient()
   const [showAdd, setShowAdd] = useState(false)
   const [editServer, setEditServer] = useState<McpServer | null>(null)
@@ -284,15 +284,28 @@ export default function Mcp() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-1.5">
-          <div>
-            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">MCP Servers</h2>
-            <p className="mt-0.5 text-xs text-zinc-500">Manage Model Context Protocol servers</p>
+      {!embedded && (
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-center gap-1.5">
+            <div>
+              <h2 className="text-base font-semibold text-zinc-100 tracking-tight">MCP Servers</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">Manage Model Context Protocol servers</p>
+            </div>
+            <InfoTooltip {...CATEGORY_INFO.mcp} />
           </div>
-          <InfoTooltip {...CATEGORY_INFO.mcp} />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAdd(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+            >
+              <Plus size={13} strokeWidth={2} />
+              Add Server
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+      )}
+      {embedded && (
+        <div className="flex items-center justify-end gap-2 mb-6">
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
@@ -301,7 +314,7 @@ export default function Mcp() {
             Add Server
           </button>
         </div>
-      </div>
+      )}
 
       {isLoading ? (
         <TableSkeleton rows={3} cols={4} />

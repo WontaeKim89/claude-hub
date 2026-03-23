@@ -177,7 +177,7 @@ function EditAgentModal({ agent, onClose }: { agent: AgentSummary; onClose: () =
   )
 }
 
-export default function Agents() {
+export default function Agents({ embedded }: { embedded?: boolean }) {
   const qc = useQueryClient()
   const [showNew, setShowNew] = useState(false)
   const [editAgent, setEditAgent] = useState<AgentSummary | null>(null)
@@ -198,15 +198,28 @@ export default function Agents() {
 
   return (
     <div>
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-1.5">
-          <div>
-            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Agents</h2>
-            <p className="mt-0.5 text-xs text-zinc-500">Manage your claude sub-agents</p>
+      {!embedded && (
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex items-center gap-1.5">
+            <div>
+              <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Agents</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">Manage your claude sub-agents</p>
+            </div>
+            <InfoTooltip {...CATEGORY_INFO.agents} />
           </div>
-          <InfoTooltip {...CATEGORY_INFO.agents} />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowNew(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+            >
+              <Plus size={13} strokeWidth={2} />
+              New Agent
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+      )}
+      {embedded && (
+        <div className="flex items-center justify-end gap-2 mb-6">
           <button
             onClick={() => setShowNew(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
@@ -215,7 +228,7 @@ export default function Agents() {
             New Agent
           </button>
         </div>
-      </div>
+      )}
 
       {isLoading ? (
         <TableSkeleton rows={3} cols={4} />

@@ -2,13 +2,8 @@ import { NavLink } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   LayoutDashboard,
-  Sparkles,
-  Puzzle,
-  Bot,
-  Terminal,
+  Blocks,
   Settings,
-  Webhook,
-  Server,
   Keyboard,
   FileText,
   Brain,
@@ -61,10 +56,7 @@ const navGroups: NavGroup[] = [
     title: 'Extensions',
     titleKey: 'nav.extensions',
     items: [
-      { label: 'Skills', labelKey: 'nav.skills', to: '/skills', icon: Sparkles, shortcut: '⌘2' },
-      { label: 'Plugins', labelKey: 'nav.plugins', to: '/plugins', icon: Puzzle, shortcut: '⌘3' },
-      { label: 'Agents', labelKey: 'nav.agents', to: '/agents', icon: Bot, shortcut: '⌘4' },
-      { label: 'Commands', labelKey: 'nav.commands', to: '/commands', icon: Terminal },
+      { label: '확장 기능', labelKey: 'nav.extensionsPage', to: '/extensions', icon: Blocks },
     ],
   },
   {
@@ -73,8 +65,6 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Claude 설정', labelKey: 'nav.claudeSettings', to: '/claude-settings', icon: Cpu },
       { label: 'Settings', labelKey: 'nav.settings', to: '/settings', icon: Settings },
-      { label: 'Hooks', labelKey: 'nav.hooks', to: '/hooks', icon: Webhook },
-      { label: 'MCP Servers', labelKey: 'nav.mcp', to: '/mcp', icon: Server },
       { label: 'Keybindings', labelKey: 'nav.keybindings', to: '/keybindings', icon: Keyboard },
     ],
   },
