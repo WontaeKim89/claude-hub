@@ -8,10 +8,6 @@ import {
   Server,
   FolderOpen,
   History,
-  Plus,
-  FileText,
-  Store,
-  ArrowRight,
   AlertTriangle,
   RefreshCw,
   Info,
@@ -19,11 +15,10 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api-client'
 import { BackupHistory } from '../components/shared/BackupHistory'
-import { StatusDot } from '../components/shared/StatusDot'
 import { Skeleton } from '../components/shared/Skeleton'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import { useLang } from '../hooks/useLang'
-import type { DashboardData, HealthResult } from '../lib/types'
+import type { DashboardData } from '../lib/types'
 
 // stat 카드 border 색상 매핑
 const ACCENT_COLORS = {
@@ -107,26 +102,6 @@ function StatCardSkeleton() {
   )
 }
 
-interface QuickActionProps {
-  icon: React.ElementType
-  label: string
-  to: string
-}
-
-function QuickAction({ icon: Icon, label, to }: QuickActionProps) {
-  const navigate = useNavigate()
-  return (
-    <button
-      onClick={() => navigate(to)}
-      className="group flex items-center gap-2.5 px-3 py-2 w-full text-left rounded text-xs text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/50 transition-all duration-150"
-    >
-      <Icon size={13} strokeWidth={1.5} className="text-zinc-600 group-hover:text-emerald-400 transition-colors duration-150 shrink-0" />
-      <span>{label}</span>
-      <ArrowRight size={11} strokeWidth={1.5} className="ml-auto text-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
-    </button>
-  )
-}
-
 // Usage bar: 상대 너비로 히트 수를 시각화하는 단일 행
 function UsageBar({ name, hitCount, maxCount, accent }: { name: string; hitCount: number; maxCount: number; accent: 'emerald' | 'teal' }) {
   const pct = maxCount > 0 ? (hitCount / maxCount) * 100 : 0
@@ -173,11 +148,6 @@ export default function Dashboard() {
     queryFn: () => api.dashboard.get(),
   })
 
-  const { data: health, isLoading: healthLoading } = useQuery<HealthResult[]>({
-    queryKey: ['health'],
-    queryFn: () => api.health.get(),
-  })
-
   const { data: topSkills } = useQuery({
     queryKey: ['stats', 'skills'],
     queryFn: () => api.stats.topSkills(10),
@@ -221,7 +191,7 @@ export default function Dashboard() {
     setDeleteTarget(null)
   }
 
-  const isLoading = dashLoading || healthLoading
+  const isLoading = dashLoading
 
   const stats: StatCardProps[] = [
     {
@@ -270,9 +240,6 @@ export default function Dashboard() {
     },
   ]
 
-  const errorCount = health?.filter((r) => !r.valid).length ?? 0
-  const totalCount = health?.length ?? 0
-
   return (
     <div>
       <div className="flex items-start justify-between mb-6">
@@ -309,85 +276,6 @@ export default function Dashboard() {
         }
       </div>
 
-      {/* Middle row: Quick Actions + Validation Status */}
-      <div className="grid grid-cols-2 gap-4 mb-4">
-        {/* Quick Actions */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-          <div className="px-4 py-3 border-b border-zinc-800">
-            <span className="text-xs font-medium text-zinc-400">Quick Actions</span>
-          </div>
-          <div className="p-2">
-            <QuickAction icon={Plus} label="New Skill" to="/skills" />
-            <QuickAction icon={Bot} label="New Agent" to="/agents" />
-            <QuickAction icon={FileText} label="Edit CLAUDE.md" to="/claude-md" />
-            <QuickAction icon={Store} label="Browse Marketplace" to="/marketplace" />
-          </div>
-        </div>
-
-        {/* Validation Status */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-medium text-zinc-400">{t('dashboard.validation')}</span>
-              {!isLoading && totalCount > 0 && (
-                <span className="font-mono text-[10px] text-zinc-600 bg-zinc-800 px-1.5 py-0.5 rounded">
-                  {totalCount}
-                </span>
-              )}
-            </div>
-            {!isLoading && (
-              errorCount > 0 ? (
-                <span className="font-mono text-xs text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded">
-                  {errorCount} issue{errorCount > 1 ? 's' : ''}
-                </span>
-              ) : totalCount > 0 ? (
-                <span className="font-mono text-xs text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded">
-                  {t('dashboard.allValid')}
-                </span>
-              ) : null
-            )}
-          </div>
-
-          {isLoading ? (
-            <div className="p-3 space-y-2">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Skeleton className="h-2 w-2 rounded-full" />
-                  <Skeleton className="h-3 flex-1" />
-                </div>
-              ))}
-            </div>
-          ) : health && health.length > 0 ? (
-            <div className="overflow-y-auto max-h-44">
-              <table className="w-full text-xs">
-                <tbody>
-                  {health.map((result, i) => (
-                    <tr
-                      key={i}
-                      className={`border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/30 transition-colors duration-150 ${i % 2 === 0 ? '' : 'bg-zinc-900/50'}`}
-                    >
-                      <td className="px-3 py-2 w-6">
-                        <StatusDot variant={result.valid ? 'emerald' : 'amber'} />
-                      </td>
-                      <td className="px-2 py-2 font-mono text-zinc-400 max-w-[120px]">
-                        <span
-                          className="block truncate"
-                          title={result.target}
-                        >
-                          {result.target}
-                        </span>
-                      </td>
-                      <td className="px-2 py-2 text-zinc-500 text-[10px]">{result.message}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="px-4 py-4 text-xs text-zinc-600">No validation results available.</p>
-          )}
-        </div>
-      </div>
 
       {/* Usage Stats 섹션 */}
       <div className="grid grid-cols-2 gap-4 mt-4">

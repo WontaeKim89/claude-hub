@@ -440,7 +440,7 @@ export default function Skills() {
                           className="p-1 text-zinc-600 hover:text-zinc-300 transition-colors duration-150"
                           title={isCustom ? 'Edit' : 'View'}
                         >
-                          {isCustom ? <Edit2 size={13} strokeWidth={1.5} /> : <Eye size={13} strokeWidth={1.5} />}
+                          {isCustom ? <Edit2 size={16} strokeWidth={1.5} /> : <Eye size={18} strokeWidth={1.5} />}
                         </button>
                         {isCustom && (
                           <button
