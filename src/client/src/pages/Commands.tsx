@@ -42,7 +42,7 @@ function NewCommandModal({ onClose }: { onClose: () => void }) {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-r px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+                className="flex-1 bg-zinc-800 border border-zinc-700 rounded-r px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
                 placeholder="my-command"
               />
             </div>
@@ -59,7 +59,7 @@ function NewCommandModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending || !name.trim()}
-            className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+            className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
           >
             {mutation.isPending ? 'Creating...' : 'Create'}
           </button>
@@ -117,7 +117,7 @@ function EditCommandModal({ command, onClose }: { command: CommandSummary; onClo
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
-            className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+            className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
           >
             {mutation.isPending ? 'Saving...' : 'Save'}
           </button>
@@ -159,7 +159,7 @@ export default function Commands() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowNew(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors"
           >
             <Plus size={13} strokeWidth={2} />
             New Command
@@ -192,7 +192,7 @@ export default function Commands() {
                   className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/30 transition-colors duration-150"
                 >
                   <td className="px-4 py-3">
-                    <span className="font-mono text-emerald-400">/{cmd.name}</span>
+                    <span className="font-mono text-fuchsia-400">/{cmd.name}</span>
                   </td>
                   <td className="px-4 py-3 text-zinc-600 truncate max-w-md">
                     {cmd.content_preview}

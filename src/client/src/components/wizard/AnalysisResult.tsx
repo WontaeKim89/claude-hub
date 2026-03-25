@@ -58,7 +58,7 @@ export function AnalysisResult({ result, onApply, isApplying }: Props) {
             {result.tech_stack.map((tech) => (
               <span
                 key={tech}
-                className="px-2 py-0.5 text-xs font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded"
+                className="px-2 py-0.5 text-xs font-mono bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20 rounded"
               >
                 {tech}
               </span>
@@ -78,7 +78,7 @@ export function AnalysisResult({ result, onApply, isApplying }: Props) {
               onClick={(e) => { e.stopPropagation(); setClaudeMdEnabled((v) => !v) }}
               className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
                 claudeMdEnabled
-                  ? 'bg-emerald-600 border-emerald-600'
+                  ? 'bg-fuchsia-600 border-fuchsia-600'
                   : 'border-zinc-600 bg-transparent'
               }`}
             >
@@ -113,7 +113,7 @@ export function AnalysisResult({ result, onApply, isApplying }: Props) {
                   onClick={() => toggleHook(idx)}
                   className={`mt-0.5 w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
                     selectedHooks.has(idx)
-                      ? 'bg-emerald-600 border-emerald-600'
+                      ? 'bg-fuchsia-600 border-fuchsia-600'
                       : 'border-zinc-600 bg-transparent'
                   }`}
                 >
@@ -158,7 +158,7 @@ export function AnalysisResult({ result, onApply, isApplying }: Props) {
         <button
           onClick={handleApply}
           disabled={isApplying || (!claudeMdEnabled && selectedHooks.size === 0)}
-          className="px-4 py-2 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors disabled:opacity-50"
+          className="px-4 py-2 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors disabled:opacity-50"
         >
           {isApplying ? '적용 중...' : t('wizard.apply')}
         </button>

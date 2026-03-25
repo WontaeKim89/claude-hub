@@ -47,7 +47,7 @@ function NewAgentModal({ onClose }: { onClose: () => void }) {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
                 placeholder="my-agent"
               />
             </div>
@@ -56,7 +56,7 @@ function NewAgentModal({ onClose }: { onClose: () => void }) {
               <select
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500/50"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-fuchsia-500/50"
               >
                 <option value="sonnet">claude-sonnet</option>
                 <option value="opus">claude-opus</option>
@@ -69,7 +69,7 @@ function NewAgentModal({ onClose }: { onClose: () => void }) {
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-fuchsia-500/50"
               placeholder="What does this agent do?"
             />
           </div>
@@ -79,7 +79,7 @@ function NewAgentModal({ onClose }: { onClose: () => void }) {
               <input
                 value={tools}
                 onChange={(e) => setTools(e.target.value)}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
                 placeholder="Read, Grep, Bash"
               />
             </div>
@@ -89,7 +89,7 @@ function NewAgentModal({ onClose }: { onClose: () => void }) {
                 type="number"
                 value={maxTurns}
                 onChange={(e) => setMaxTurns(Number(e.target.value))}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
                 min={1}
                 max={100}
               />
@@ -107,7 +107,7 @@ function NewAgentModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending || !name.trim()}
-            className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+            className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
           >
             {mutation.isPending ? 'Creating...' : 'Create'}
           </button>
@@ -167,7 +167,7 @@ function EditAgentModal({ agent, onClose }: { agent: AgentSummary; onClose: () =
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
-            className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+            className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
           >
             {mutation.isPending ? 'Saving...' : 'Save'}
           </button>
@@ -210,7 +210,7 @@ export default function Agents({ embedded }: { embedded?: boolean }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowNew(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors"
             >
               <Plus size={13} strokeWidth={2} />
               New Agent
@@ -222,7 +222,7 @@ export default function Agents({ embedded }: { embedded?: boolean }) {
         <div className="flex items-center justify-end gap-2 mb-6">
           <button
             onClick={() => setShowNew(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors"
           >
             <Plus size={13} strokeWidth={2} />
             New Agent

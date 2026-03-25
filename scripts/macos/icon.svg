@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" fill="none">
+  <!-- 배경 (macOS 스타일 둥근 사각형) -->
+  <rect width="1024" height="1024" rx="228" fill="#111113"/>
+  <rect x="8" y="8" width="1008" height="1008" rx="224" stroke="#27272a" stroke-width="4"/>
+
+  <!-- 세 개의 원 (R8: Rose → Fuchsia → Violet) -->
+  <circle cx="320" cy="512" r="120" fill="#fb7185" fill-opacity="0.9"/>
+  <circle cx="512" cy="512" r="120" fill="#e879f9" fill-opacity="0.6"/>
+  <circle cx="704" cy="512" r="120" fill="#a78bfa" fill-opacity="0.4"/>
+
+  <!-- 미세한 하이라이트 -->
+  <circle cx="320" cy="480" r="40" fill="white" fill-opacity="0.08"/>
+  <circle cx="512" cy="480" r="35" fill="white" fill-opacity="0.05"/>
+  <circle cx="704" cy="480" r="30" fill="white" fill-opacity="0.03"/>
+</svg>

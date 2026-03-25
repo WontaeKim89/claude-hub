@@ -27,4 +27,6 @@ async def update_settings(body: SettingsUpdate, request: Request):
         editor.write_json(path=settings_path, data=body.data, last_mtime=body.last_mtime)
     except ConflictError as e:
         raise HTTPException(status_code=409, detail=str(e))
+    from claude_hub.services.scanner import invalidate_settings_cache
+    invalidate_settings_cache()
     return {"ok": True}

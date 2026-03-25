@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Info } from 'lucide-react'
 
 interface InfoTooltipProps {
@@ -9,9 +9,20 @@ interface InfoTooltipProps {
 
 export function InfoTooltip({ title, description, detail }: InfoTooltipProps) {
   const [visible, setVisible] = useState(false)
+  const triggerRef = useRef<HTMLDivElement>(null)
+  const [position, setPosition] = useState<'right' | 'left'>('right')
+
+  useEffect(() => {
+    if (visible && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect()
+      // 오른쪽 공간이 300px 미만이면 왼쪽으로 표시
+      setPosition(window.innerWidth - rect.right < 300 ? 'left' : 'right')
+    }
+  }, [visible])
 
   return (
     <div
+      ref={triggerRef}
       className="relative flex items-center"
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
@@ -20,10 +31,11 @@ export function InfoTooltip({ title, description, detail }: InfoTooltipProps) {
 
       {visible && (
         <div
-          className="absolute left-5 top-0 z-50 w-[280px] bg-zinc-900 border border-emerald-500/30 rounded-md shadow-lg p-3"
-          style={{ minWidth: 280 }}
+          className={`absolute top-0 z-50 w-[280px] bg-zinc-900 border border-fuchsia-500/30 rounded-md shadow-lg p-3 ${
+            position === 'left' ? 'right-6' : 'left-6'
+          }`}
         >
-          <p className="text-emerald-400 text-[0.75rem] font-bold mb-1">{title}</p>
+          <p className="text-fuchsia-400 text-[0.75rem] font-bold mb-1">{title}</p>
           <p className="text-zinc-400 text-[0.7rem] leading-relaxed">{description}</p>
           {detail && (
             <>

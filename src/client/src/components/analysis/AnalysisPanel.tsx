@@ -19,7 +19,7 @@ function formatAnalyzedAt(raw: string): string {
 function ScoreBadge({ score, maxScore }: { score: number; maxScore: number }) {
   const pct = maxScore > 0 ? score / maxScore : 0
   const colorClass =
-    pct >= 0.8 ? 'text-emerald-400' :
+    pct >= 0.8 ? 'text-fuchsia-400' :
     pct >= 0.5 ? 'text-zinc-200' :
     pct >= 0.2 ? 'text-amber-400' :
     'text-red-400'
@@ -38,7 +38,7 @@ function UsageBar({ hits, maxHits }: { hits: number; maxHits: number }) {
     <div className="flex items-center gap-2">
       <div className="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
         <div
-          className="h-full bg-emerald-500/60 rounded-full"
+          className="h-full bg-fuchsia-500/60 rounded-full"
           style={{ width: `${width}%` }}
         />
       </div>
@@ -257,7 +257,15 @@ export function AnalysisPanel({ type, onClose }: Props) {
                           className="border-b border-zinc-800/40 last:border-0 hover:bg-zinc-800/20 transition-colors"
                         >
                           <td className="px-3 py-3">
-                            <span className="font-mono text-zinc-600">{idx + 1}</span>
+                            {idx === 0 ? (
+                              <span className="text-sm" title="1st">🥇</span>
+                            ) : idx === 1 ? (
+                              <span className="text-sm" title="2nd">🥈</span>
+                            ) : idx === 2 ? (
+                              <span className="text-sm" title="3rd">🥉</span>
+                            ) : (
+                              <span className="font-mono text-zinc-600">{idx + 1}</span>
+                            )}
                           </td>
                           <SkillNameCell item={item} />
                           <td className="px-3 py-3">
@@ -268,9 +276,16 @@ export function AnalysisPanel({ type, onClose }: Props) {
                           </td>
                           {result!.claude_connected && (
                             <td className="px-3 py-3">
-                              <p className="text-zinc-500 text-xs max-w-[220px] truncate" title={item.ai_comment}>
-                                {item.ai_comment || '—'}
-                              </p>
+                              <div className="relative group/ai">
+                                <p className="text-zinc-500 text-xs max-w-[220px] truncate cursor-default">
+                                  {item.ai_comment || '—'}
+                                </p>
+                                {item.ai_comment && (
+                                  <div className="absolute left-0 bottom-full mb-2 z-50 hidden group-hover/ai:block w-[360px] bg-zinc-800 border border-zinc-700 rounded-lg shadow-xl p-3 pointer-events-none">
+                                    <p className="text-xs text-zinc-200 leading-relaxed whitespace-pre-wrap">{item.ai_comment}</p>
+                                  </div>
+                                )}
+                              </div>
                             </td>
                           )}
                           <td className="px-3 py-3">

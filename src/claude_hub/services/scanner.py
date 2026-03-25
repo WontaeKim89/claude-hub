@@ -1,6 +1,7 @@
 """~/.claude/ 디렉토리 구조 스캔 서비스."""
 import json
 import re
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -14,6 +15,27 @@ from claude_hub.utils.paths import ClaudePaths
 # 민감 키 탐지 패턴 (env 딕셔너리의 키 이름 기준)
 _SENSITIVE_KEY = re.compile(r"(token|key|secret|password)", re.IGNORECASE)
 
+# TTL 캐시 (60초)
+_cache: dict[str, tuple[float, object]] = {}
+_CACHE_TTL = 60.0
+
+
+def _cached(key: str, fn):
+    """TTL 기반 인메모리 캐시."""
+    now = time.time()
+    if key in _cache:
+        ts, val = _cache[key]
+        if now - ts < _CACHE_TTL:
+            return val
+    val = fn()
+    _cache[key] = (now, val)
+    return val
+
+
+def invalidate_settings_cache():
+    """settings.json 관련 캐시 무효화. 설정 변경 후 호출."""
+    _cache.pop("settings_json", None)
+
 
 @dataclass
 class ScannerService:
@@ -23,7 +45,19 @@ class ScannerService:
     def _paths(self) -> ClaudePaths:
         return ClaudePaths(claude_dir=self.claude_dir)
 
+    def _read_settings_json(self) -> dict:
+        """settings.json을 한번만 읽고 캐시."""
+        def _load():
+            p = self._paths.settings_path
+            if p.exists():
+                return json.loads(p.read_text(encoding="utf-8"))
+            return {}
+        return _cached("settings_json", _load)
+
     def scan_skills(self) -> list[SkillSummary]:
+        return _cached("scan_skills", self._scan_skills_impl)
+
+    def _scan_skills_impl(self) -> list[SkillSummary]:
         skills_dir = self._paths.skills_dir
         if not skills_dir.exists():
             return []
@@ -49,6 +83,9 @@ class ScannerService:
         return results
 
     def scan_agents(self) -> list[AgentSummary]:
+        return _cached("scan_agents", self._scan_agents_impl)
+
+    def _scan_agents_impl(self) -> list[AgentSummary]:
         agents_dir = self._paths.agents_dir
         if not agents_dir.exists():
             return []
@@ -110,17 +147,10 @@ class ScannerService:
         }
 
     def read_hooks(self) -> dict:
-        paths = self._paths
-        if not paths.settings_path.exists():
-            return {}
-        settings = json.loads(paths.settings_path.read_text())
-        return settings.get("hooks", {})
+        return self._read_settings_json().get("hooks", {})
 
     def read_mcp_servers(self) -> list[dict]:
-        paths = self._paths
-        if not paths.settings_path.exists():
-            return []
-        settings = json.loads(paths.settings_path.read_text())
+        settings = self._read_settings_json()
         raw = settings.get("mcpServers", {})
         results = []
         for name, config in raw.items():
@@ -182,6 +212,9 @@ class ScannerService:
         return list(groups.values())
 
     def scan_plugins(self) -> list[PluginSummary]:
+        return _cached("scan_plugins", self._scan_plugins_impl)
+
+    def _scan_plugins_impl(self) -> list[PluginSummary]:
         paths = self._paths
         installed_path = paths.installed_plugins_path
         if not installed_path.exists():
@@ -377,10 +410,6 @@ class ScannerService:
         claude_md = project_dir / "CLAUDE.md"
         tree["nodes"].append(_file_node("CLAUDE.md", claude_md, warn_lines=200))
 
-        # README.md
-        readme = project_dir / "README.md"
-        tree["nodes"].append(_file_node("README.md", readme))
-
         # .claude/ project directory
         claude_node: dict = {"name": ".claude/", "type": "dir", "children": []}
 
@@ -413,13 +442,6 @@ class ScannerService:
         if tests_dir.exists():
             test_count = len(list(tests_dir.rglob("test_*")))
             tree["nodes"].append({"name": "tests/", "type": "dir", "count": test_count, "children": []})
-
-        # 패키지 관리자
-        for pm in ["pyproject.toml", "package.json", "Cargo.toml", "go.mod"]:
-            pm_path = project_dir / pm
-            if pm_path.exists():
-                tree["nodes"].append(_file_node(pm, pm_path))
-                break
 
         return tree
 

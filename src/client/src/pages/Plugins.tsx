@@ -16,7 +16,7 @@ function Toggle({ enabled, onChange, disabled }: { enabled: boolean; onChange: (
       onClick={() => onChange(!enabled)}
       disabled={disabled}
       className={`relative inline-flex h-4 w-7 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors disabled:opacity-50 ${
-        enabled ? 'bg-emerald-500' : 'bg-zinc-700'
+        enabled ? 'bg-fuchsia-500' : 'bg-zinc-700'
       }`}
     >
       <span

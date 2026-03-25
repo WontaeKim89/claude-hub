@@ -14,16 +14,39 @@ interface HitItem {
 // 히트 수가 낮은 항목 기준 (전체 최대값의 10% 미만)
 const LOW_USAGE_THRESHOLD = 0.1
 
-function HitBar({ name, hitCount, maxCount }: { name: string; hitCount: number; maxCount: number }) {
+function RankBadge({ rank }: { rank: number }) {
+  if (rank <= 3) {
+    const colors = [
+      'bg-amber-500/20 text-amber-400 border-amber-500/30',
+      'bg-zinc-400/15 text-zinc-400 border-zinc-500/30',
+      'bg-orange-500/15 text-orange-400 border-orange-500/30',
+    ]
+    return (
+      <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold border ${colors[rank - 1]}`}>
+        {rank}
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-mono text-zinc-600">
+      {rank}
+    </span>
+  )
+}
+
+function HitBar({ rank, name, hitCount, maxCount }: { rank: number; name: string; hitCount: number; maxCount: number }) {
   const pct = maxCount > 0 ? (hitCount / maxCount) * 100 : 0
   const isLowUsage = maxCount > 0 && hitCount / maxCount < LOW_USAGE_THRESHOLD
 
   return (
-    <div className="flex items-center gap-3 py-1.5">
+    <div className="flex items-center gap-2.5 py-1.5">
+      {/* 랭킹 번호 */}
+      <RankBadge rank={rank} />
+
       {/* 이름 열 — 고정 너비, 우측 정렬, 말줄임 */}
       <span
         className="font-mono text-xs text-zinc-400 shrink-0 truncate text-right"
-        style={{ width: 140 }}
+        style={{ width: 130 }}
         title={name}
       >
         {name}
@@ -35,7 +58,7 @@ function HitBar({ name, hitCount, maxCount }: { name: string; hitCount: number; 
           className={`h-full rounded-full transition-all duration-300 ${
             isLowUsage
               ? 'bg-amber-500/60'
-              : 'bg-gradient-to-r from-emerald-600/80 to-emerald-400/80'
+              : 'bg-gradient-to-r from-fuchsia-600/80 to-fuchsia-400/80'
           }`}
           style={{ width: `${Math.max(pct, 1)}%` }}
         />
@@ -46,7 +69,7 @@ function HitBar({ name, hitCount, maxCount }: { name: string; hitCount: number; 
         {isLowUsage && (
           <AlertTriangle size={10} strokeWidth={1.5} className="text-amber-500 shrink-0" />
         )}
-        <span className={`font-mono text-xs ${isLowUsage ? 'text-amber-400' : 'text-emerald-400'}`}>
+        <span className={`font-mono text-xs ${isLowUsage ? 'text-amber-400' : 'text-fuchsia-400'}`}>
           {hitCount}
         </span>
       </div>
@@ -98,7 +121,7 @@ export function HitStatsChart() {
               onClick={() => setActiveTab(tab.key)}
               className={`font-mono text-xs px-3 py-3 border-b-2 transition-colors duration-150 ${
                 activeTab === tab.key
-                  ? 'border-emerald-500 text-zinc-100'
+                  ? 'border-fuchsia-500 text-zinc-100'
                   : 'border-transparent text-zinc-500 hover:text-zinc-300'
               }`}
             >
@@ -122,7 +145,7 @@ export function HitStatsChart() {
               <button
                 onClick={() => syncMutation.mutate()}
                 disabled={syncMutation.isPending}
-                className="flex items-center gap-1.5 text-xs text-emerald-500 hover:text-emerald-400 border border-zinc-800 hover:border-zinc-600 px-2 py-1 rounded transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 text-xs text-fuchsia-500 hover:text-fuchsia-400 border border-zinc-800 hover:border-zinc-600 px-2 py-1 rounded transition-colors disabled:opacity-50"
               >
                 <RefreshCw size={11} strokeWidth={1.5} className={syncMutation.isPending ? 'animate-spin' : ''} />
                 Sync 실행
@@ -130,9 +153,10 @@ export function HitStatsChart() {
             )}
           </div>
         ) : (
-          activeData!.map((item) => (
+          activeData!.map((item, idx) => (
             <HitBar
               key={item.name}
+              rank={idx + 1}
               name={item.name}
               hitCount={item.hit_count}
               maxCount={maxCount}

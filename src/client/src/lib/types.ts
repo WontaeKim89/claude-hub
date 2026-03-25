@@ -37,6 +37,9 @@ export interface ClaudeMdEntry {
   path: string
   exists: boolean
   decoded_path?: string
+  project_name?: string
+  is_worktree?: boolean
+  parent?: string | null
 }
 
 export interface PluginAssets {

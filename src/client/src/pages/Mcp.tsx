@@ -47,7 +47,7 @@ function EnvEditor({ entries, onChange }: EnvEditorProps) {
               onChange(updated)
             }}
             placeholder="KEY"
-            className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+            className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
           />
           <input
             value={entry.value}
@@ -56,7 +56,7 @@ function EnvEditor({ entries, onChange }: EnvEditorProps) {
               onChange(updated)
             }}
             placeholder="value"
-            className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+            className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
           />
           <button
             onClick={() => onChange(entries.filter((_, idx) => idx !== i))}
@@ -68,7 +68,7 @@ function EnvEditor({ entries, onChange }: EnvEditorProps) {
       ))}
       <button
         onClick={() => onChange([...entries, { key: '', value: '' }])}
-        className="text-xs font-mono text-teal-500 hover:text-teal-400 transition-colors"
+        className="text-xs font-mono text-violet-500 hover:text-violet-400 transition-colors"
       >
         + add env var
       </button>
@@ -126,7 +126,7 @@ function AddServerModal({ onClose }: { onClose: () => void }) {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="github"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
             />
           </div>
           <div>
@@ -135,7 +135,7 @@ function AddServerModal({ onClose }: { onClose: () => void }) {
               value={form.command}
               onChange={(e) => setForm({ ...form, command: e.target.value })}
               placeholder="npx"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
             />
           </div>
           <div>
@@ -144,7 +144,7 @@ function AddServerModal({ onClose }: { onClose: () => void }) {
               value={form.args}
               onChange={(e) => setForm({ ...form, args: e.target.value })}
               placeholder="-y, @modelcontextprotocol/server-github"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
             />
           </div>
           <div>
@@ -162,7 +162,7 @@ function AddServerModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending || !form.name.trim() || !form.command.trim()}
-            className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+            className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
           >
             {mutation.isPending ? 'Adding...' : 'Add Server'}
           </button>
@@ -220,7 +220,7 @@ function EditServerModal({ server, onClose }: { server: McpServer; onClose: () =
             <input
               value={form.command}
               onChange={(e) => setForm({ ...form, command: e.target.value })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
             />
           </div>
           <div>
@@ -228,7 +228,7 @@ function EditServerModal({ server, onClose }: { server: McpServer; onClose: () =
             <input
               value={form.args}
               onChange={(e) => setForm({ ...form, args: e.target.value })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
             />
           </div>
           <div>
@@ -247,7 +247,7 @@ function EditServerModal({ server, onClose }: { server: McpServer; onClose: () =
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
-            className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+            className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
           >
             {mutation.isPending ? 'Saving...' : 'Save'}
           </button>
@@ -296,7 +296,7 @@ export default function Mcp({ embedded }: { embedded?: boolean }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowAdd(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors"
             >
               <Plus size={13} strokeWidth={2} />
               Add Server
@@ -308,7 +308,7 @@ export default function Mcp({ embedded }: { embedded?: boolean }) {
         <div className="flex items-center justify-end gap-2 mb-6">
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors"
           >
             <Plus size={13} strokeWidth={2} />
             Add Server

@@ -15,6 +15,11 @@ class WizardResult:
     claude_md: str
     hooks: list[dict]
     mcp_suggestions: list[dict]
+    project_settings: dict | None = None
+    memory_files: dict | None = None
+    skills: list[dict] | None = None
+    agents: list[dict] | None = None
+    commands: list[dict] | None = None
 
 
 def analyze_project(project_path: str, paths: ClaudePaths) -> WizardResult:
@@ -33,22 +38,53 @@ def analyze_project(project_path: str, paths: ClaudePaths) -> WizardResult:
     if paths.skills_dir.exists():
         installed_skills = [d.name for d in paths.skills_dir.iterdir() if d.is_dir()]
 
-    # 프롬프트를 간결하게 구성 (긴 프롬프트는 CLI timeout 유발)
     readme_summary = context.get("readme", "")[:500]
     structure_summary = json.dumps(context.get("structure", [])[:15], ensure_ascii=False)
     tech_stack = _detect_tech_stack(project_dir)
 
-    prompt = f"""프로젝트 "{project_dir.name}"의 CLAUDE.md를 생성하세요.
+    # 풀 하네스 프롬프트 — Anthropic 공식 Best Practices 기반
+    # https://code.claude.com/docs/en/best-practices
+    prompt = f"""Generate a FULL Claude Code harness for project "{project_dir.name}".
 
-기술스택: {', '.join(tech_stack)}
-README 요약: {readme_summary[:300]}
-구조: {structure_summary[:500]}
+Based on Anthropic's official Claude Code Best Practices (https://code.claude.com/docs/en/best-practices):
 
-JSON으로만 응답하세요:
-{{"tech_stack": ["..."], "claude_md": "# 프로젝트명\\n## 구조\\n...\\n## 코드 규칙\\n...\\n## 실행 방법\\n...", "hooks": [], "mcp_suggestions": []}}"""
+Tech stack: {', '.join(tech_stack)}
+README: {readme_summary[:300]}
+Structure: {structure_summary[:500]}
+
+Generate ALL of these components as JSON:
+
+1. "claude_md" — CLAUDE.md content. Include ONLY: bash commands Claude can't guess, code style rules differing from defaults, testing instructions, repo etiquette, architectural decisions, common gotchas. Keep concise.
+
+2. "hooks" — Array of hooks. Use official hook events:
+   - PostToolUse (matcher: "Edit|Write") for auto-lint/test after file changes
+   - PreToolUse (matcher: "Bash") for dangerous command prevention if needed
+   - SessionStart for environment setup if needed
+   Each: {{"event": "...", "matcher": "...", "command": "...", "reason": "..."}}
+
+3. "project_settings" — .claude/settings.json permissions:
+   {{"permissions": {{"allow": ["Bash(npm *)"], "deny": ["Bash(rm -rf *)"]}}}}
+
+4. "memory_files" — Project memory files:
+   {{"MEMORY.md": "# Project Memory\\n## Architecture\\n## Key Decisions", "fixes.md": "# Error Fixes\\n## Known Issues"}}
+
+5. "skills" — Project-specific skills (1-3 most useful):
+   [{{"name": "...", "description": "...", "content": "---\\nname: ...\\ndescription: ...\\n---\\n# ..."}}]
+
+6. "agents" — Specialized subagents (1-2):
+   [{{"name": "...", "description": "...", "model": "sonnet", "tools": "Read,Grep,Glob", "content": "You are a..."}}]
+
+7. "commands" — Custom slash commands (0-2):
+   [{{"name": "...", "content": "..."}}]
+
+8. "mcp_servers" — MCP server configs if relevant (github, filesystem, etc.)
+
+9. "tech_stack" — Detected tech stack array.
+
+Respond with JSON ONLY."""
 
     try:
-        proc = run_claude("-p", prompt, "--output-format", "json", timeout=60)
+        proc = run_claude("-p", prompt, "--output-format", "json", timeout=30)
         if proc.returncode == 0 and proc.stdout.strip():
             data = _parse_claude_json_response(proc.stdout)
             if data:
@@ -57,7 +93,12 @@ JSON으로만 응답하세요:
                     tech_stack=data.get("tech_stack", tech_stack),
                     claude_md=data.get("claude_md", ""),
                     hooks=data.get("hooks", []),
-                    mcp_suggestions=data.get("mcp_suggestions", []),
+                    mcp_suggestions=data.get("mcp_suggestions", data.get("mcp_servers", [])),
+                    project_settings=data.get("project_settings"),
+                    memory_files=data.get("memory_files"),
+                    skills=data.get("skills"),
+                    agents=data.get("agents"),
+                    commands=data.get("commands"),
                 )
     except subprocess.TimeoutExpired:
         pass
@@ -76,12 +117,26 @@ JSON으로만 응답하세요:
         desc = readme.split("\n")[0] if readme else ""
         fallback_md = f"# {project_dir.name}\n\n{desc}\n\n## 기술 스택\n\n{stack_str}\n\n## 실행 방법\n\n(수동으로 작성해주세요)"
 
+    # 기술스택 기반 기본 Hooks 추천
+    fallback_hooks = []
+    if any(s in ["Node.js", "TypeScript", "React"] for s in detected_stack):
+        fallback_hooks.append({"event": "PostToolUse", "matcher": "Edit|Write", "command": "npm run lint 2>/dev/null || true", "reason": "Auto-lint after file changes"})
+    elif any(s in ["Python", "FastAPI", "Django"] for s in detected_stack):
+        fallback_hooks.append({"event": "PostToolUse", "matcher": "Edit|Write", "command": "python -m py_compile 2>/dev/null || true", "reason": "Syntax check after file changes"})
+    elif any(s in ["Go"] for s in detected_stack):
+        fallback_hooks.append({"event": "PostToolUse", "matcher": "Edit|Write", "command": "go vet ./... 2>/dev/null || true", "reason": "Vet after file changes"})
+
     return WizardResult(
         project_path=str(project_dir),
         tech_stack=detected_stack,
         claude_md=fallback_md,
-        hooks=[],
+        hooks=fallback_hooks,
         mcp_suggestions=[],
+        project_settings={"permissions": {"deny": ["Bash(rm -rf *)", "Bash(rm -rf /)"]}},
+        memory_files={
+            "MEMORY.md": f"# {project_dir.name} Memory\n\n## Architecture\n\n## Key Decisions\n\n## Patterns\n",
+            "fixes.md": f"# {project_dir.name} Error Fixes\n\n## Known Issues\n",
+        },
     )
 
 

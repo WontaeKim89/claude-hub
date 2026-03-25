@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
-import { FlaskConical, Wand2 } from 'lucide-react'
+import { FlaskConical, Wand2, ChevronRight, FolderOpen, FileSearch, Sparkles, Check, ArrowLeft } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useLang } from '../hooks/useLang'
 import { AnalysisResult } from '../components/wizard/AnalysisResult'
 import type { WizardResult, MemoryProject } from '../lib/types'
 
-type Step = 'select' | 'analyzing' | 'result' | 'done'
+// 위자드 전체 흐름: intro → select → confirm → analyzing → result → done
+type WizardStep = 'intro' | 'select' | 'confirm' | 'analyzing' | 'result' | 'done'
 
 const ANALYSIS_STEPS = [
   { icon: '📁', label: '프로젝트 구조 분석', detail: 'src/, tests/, docs/ 스캔' },
@@ -19,6 +20,59 @@ const ANALYSIS_STEPS = [
 
 type StepStatus = 'waiting' | 'running' | 'done'
 
+// 상단 스텝 인디케이터
+function StepIndicator({ current }: { current: WizardStep }) {
+  const steps = [
+    { key: 'intro', label: '소개' },
+    { key: 'select', label: '프로젝트 선택' },
+    { key: 'confirm', label: '참조 확인' },
+    { key: 'analyzing', label: '분석' },
+    { key: 'result', label: '결과' },
+  ] as const
+
+  const order = ['intro', 'select', 'confirm', 'analyzing', 'result', 'done']
+  const currentIdx = order.indexOf(current)
+
+  return (
+    <div className="flex items-center gap-1 mb-8">
+      {steps.map((s, i) => {
+        const stepIdx = order.indexOf(s.key)
+        const isDone = currentIdx > stepIdx
+        const isActive = currentIdx === stepIdx || (current === 'done' && s.key === 'result')
+
+        return (
+          <div key={s.key} className="flex items-center gap-1">
+            {i > 0 && (
+              <div className={`w-8 h-px mx-1 ${isDone ? 'bg-fuchsia-500' : 'bg-zinc-800'}`} />
+            )}
+            <div className="flex items-center gap-1.5">
+              <div
+                className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
+                  isDone
+                    ? 'bg-fuchsia-500 text-white'
+                    : isActive
+                      ? 'bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/40'
+                      : 'bg-zinc-800 text-zinc-600 border border-zinc-700'
+                }`}
+              >
+                {isDone ? <Check size={12} strokeWidth={3} /> : i + 1}
+              </div>
+              <span
+                className={`text-[11px] font-mono hidden sm:inline ${
+                  isActive ? 'text-zinc-200' : isDone ? 'text-fuchsia-400' : 'text-zinc-600'
+                }`}
+              >
+                {s.label}
+              </span>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// 분석 진행 애니메이션
 function AnalysisProgress({ currentStep }: { currentStep: number }) {
   return (
     <div className="space-y-3">
@@ -31,23 +85,20 @@ function AnalysisProgress({ currentStep }: { currentStep: number }) {
             key={i}
             className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-300 ${
               status === 'running'
-                ? 'bg-emerald-500/5 border border-emerald-500/20'
+                ? 'bg-fuchsia-500/5 border border-fuchsia-500/20'
                 : status === 'done'
                   ? 'bg-zinc-800/30'
                   : 'opacity-40'
             }`}
           >
-            {/* 아이콘: 완료 시 체크 표시 */}
             <span className="text-base shrink-0">
               {status === 'done' ? '✓' : step.icon}
             </span>
-
-            {/* 텍스트 + 진행 바 */}
             <div className="flex-1 min-w-0">
               <div
                 className={`text-xs font-medium ${
                   status === 'done'
-                    ? 'text-emerald-400'
+                    ? 'text-fuchsia-400'
                     : status === 'running'
                       ? 'text-zinc-100'
                       : 'text-zinc-500'
@@ -56,25 +107,21 @@ function AnalysisProgress({ currentStep }: { currentStep: number }) {
                 {step.label}
               </div>
               <div className="text-[10px] text-zinc-600 mt-0.5">{step.detail}</div>
-
-              {/* 현재 실행 중인 단계에만 진행 바 표시 */}
               {status === 'running' && (
                 <div className="mt-2 h-1 bg-zinc-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-emerald-500 rounded-full"
+                    className="h-full bg-fuchsia-500 rounded-full"
                     style={{ animation: 'progress 2s ease-in-out infinite' }}
                   />
                 </div>
               )}
             </div>
-
-            {/* 상태 인디케이터 */}
             <div className="shrink-0">
               {status === 'done' && (
-                <span className="text-emerald-400 text-xs">✓</span>
+                <span className="text-fuchsia-400 text-xs">✓</span>
               )}
               {status === 'running' && (
-                <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-fuchsia-500 border-t-transparent rounded-full animate-spin" />
               )}
             </div>
           </div>
@@ -84,17 +131,31 @@ function AnalysisProgress({ currentStep }: { currentStep: number }) {
   )
 }
 
+// 참조 파일 목록 (confirm 단계)
+const REFERENCE_FILES = [
+  { category: '프로젝트 파일', items: [
+    { name: 'README.md', desc: '프로젝트 설명, 실행 방법, 기술 스택' },
+    { name: 'pyproject.toml / package.json', desc: '의존성, 빌드 설정, 스크립트' },
+    { name: 'src/, tests/, docs/', desc: '디렉토리 구조 분석' },
+  ]},
+  { category: '전역 Claude 설정', items: [
+    { name: '~/.claude/CLAUDE.md', desc: '전역 개발 지시문, 코딩 스타일' },
+    { name: '~/.claude/projects/*/memory/', desc: '프로젝트별 메모리, 학습된 패턴' },
+  ]},
+  { category: '기존 프로젝트 설정 (있는 경우)', items: [
+    { name: '{project}/CLAUDE.md', desc: '기존 프로젝트 CLAUDE.md (병합 참고)' },
+  ]},
+]
+
 export default function Wizard() {
   const { t } = useLang()
-  const [step, setStep] = useState<Step>('select')
+  const [step, setStep] = useState<WizardStep>('intro')
   const [selectedPath, setSelectedPath] = useState('')
   const [customPath, setCustomPath] = useState('')
   const [result, setResult] = useState<WizardResult | null>(null)
   const [currentAnalysisStep, setCurrentAnalysisStep] = useState(0)
 
-  // 타이머 ref: 클린업용
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  // API 응답 완료 여부 ref: 타이머와 비동기로 동기화
   const apiDoneRef = useRef(false)
   const apiResultRef = useRef<WizardResult | null>(null)
 
@@ -112,7 +173,6 @@ export default function Wizard() {
       setStep('analyzing')
     },
     onSuccess: (data) => {
-      // API 응답 도착: 타이머가 마지막 단계까지 도달하면 결과를 보여줌
       apiDoneRef.current = true
       apiResultRef.current = data
     },
@@ -129,21 +189,14 @@ export default function Wizard() {
     timerRef.current = setInterval(() => {
       setCurrentAnalysisStep((prev) => {
         const next = prev + 1
-
-        // 마지막 단계(5)에서 API 응답이 도착하면 결과 화면으로 전환
         if (next >= ANALYSIS_STEPS.length) {
           if (timerRef.current) clearInterval(timerRef.current)
-
           if (apiDoneRef.current && apiResultRef.current) {
             setResult(apiResultRef.current)
             setStep('result')
-          } else {
-            // API가 아직 안 왔으면 마지막 단계에서 대기 (인터벌 중단)
-            // API onSuccess에서 직접 처리
           }
           return ANALYSIS_STEPS.length - 1
         }
-
         return next
       })
     }, 1600)
@@ -153,7 +206,7 @@ export default function Wizard() {
     }
   }, [step])
 
-  // 타이머가 마지막 단계에 멈춘 채 API 응답을 기다리는 경우 처리
+  // 타이머가 마지막 단계에서 API 응답 대기
   useEffect(() => {
     if (
       step === 'analyzing' &&
@@ -173,27 +226,17 @@ export default function Wizard() {
 
   const activePath = customPath.trim() || selectedPath
 
-  const handleAnalyze = () => {
+  const handleStartAnalysis = () => {
     if (!activePath) return
     analyzeMutation.mutate(activePath)
   }
 
-  if (step === 'done') {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 gap-4">
-        <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
-          <Wand2 size={20} className="text-emerald-400" />
-        </div>
-        <p className="text-sm text-zinc-200 font-medium">설정이 적용되었습니다.</p>
-        <p className="text-xs text-zinc-500">{result?.project_path}</p>
-        <button
-          onClick={() => { setStep('select'); setResult(null) }}
-          className="mt-2 px-4 py-2 text-xs text-zinc-400 hover:text-zinc-200 border border-zinc-800 hover:border-zinc-700 rounded transition-colors"
-        >
-          다른 프로젝트 분석
-        </button>
-      </div>
-    )
+  const resetWizard = () => {
+    setStep('intro')
+    setSelectedPath('')
+    setCustomPath('')
+    setResult(null)
+    setCurrentAnalysisStep(0)
   }
 
   return (
@@ -201,68 +244,91 @@ export default function Wizard() {
       {/* 헤더 */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
-          <FlaskConical size={16} className="text-emerald-400" strokeWidth={1.5} />
+          <FlaskConical size={16} className="text-fuchsia-400" strokeWidth={1.5} />
           <h2 className="text-base font-semibold text-zinc-100 tracking-tight">{t('wizard.title')}</h2>
         </div>
         <p className="text-xs text-zinc-500">{t('wizard.subtitle')}</p>
       </div>
 
-      {/* 단계 1: 프로젝트 선택 */}
-      {step === 'select' && (
-        <>
-          {/* Wizard 설명 */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 mb-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center justify-center shrink-0">
-                <Wand2 size={24} className="text-emerald-400" />
+      {/* 스텝 인디케이터 */}
+      <StepIndicator current={step} />
+
+      {/* Step 1: 소개 */}
+      {step === 'intro' && (
+        <div className="space-y-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
+            <div className="flex items-start gap-5">
+              <div className="w-14 h-14 bg-gradient-to-br from-fuchsia-500/20 to-violet-500/20 border border-fuchsia-500/20 rounded-xl flex items-center justify-center shrink-0">
+                <Wand2 size={28} className="text-fuchsia-400" />
               </div>
-              <div className="space-y-2">
-                <h3 className="text-sm font-semibold text-zinc-100">프로젝트 맞춤 환경을 자동으로 구성합니다</h3>
-                <div className="text-xs text-zinc-400 leading-relaxed space-y-1.5">
-                  <p>Wizard는 프로젝트의 코드, README, 기술 스택을 분석하고, 기존 개발 패턴(전역 CLAUDE.md, Memory)을 참조하여 최적의 프로젝트 설정을 자동 생성합니다.</p>
-                </div>
-                <div className="flex gap-4 mt-3">
-                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    프로젝트 CLAUDE.md 자동 생성
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
-                    <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
-                    Hooks/MCP 서버 추천
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[11px] text-zinc-500">
-                    <span className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-                    AI 기반 분석
-                  </div>
-                </div>
-                <div className="bg-zinc-800/50 rounded px-3 py-2 mt-2">
-                  <p className="text-[10px] text-zinc-500 font-mono leading-relaxed">
-                    참조 항목: README.md · pyproject.toml/package.json · 전역 CLAUDE.md · MEMORY.md · 프로젝트 파일 구조
-                  </p>
+              <div className="space-y-3">
+                <h3 className="text-base font-semibold text-zinc-100">프로젝트 맞춤 환경을 자동으로 구성합니다</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  Wizard는 프로젝트의 코드, README, 기술 스택을 분석하고,
+                  기존 개발 패턴(전역 CLAUDE.md, Memory)을 참조하여
+                  최적의 프로젝트 설정을 AI가 자동 생성합니다.
+                </p>
+
+                <div className="grid grid-cols-3 gap-3 mt-4">
+                  {[
+                    { icon: <FileSearch size={16} />, label: 'CLAUDE.md 자동 생성', color: 'fuchsia' },
+                    { icon: <Sparkles size={16} />, label: 'Hooks/MCP 추천', color: 'violet' },
+                    { icon: <Wand2 size={16} />, label: 'AI 기반 분석', color: 'purple' },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-lg bg-${item.color}-500/5 border border-${item.color}-500/10`}
+                    >
+                      <span className="text-fuchsia-400">{item.icon}</span>
+                      <span className="text-[10px] text-zinc-400 text-center">{item.label}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* 프로젝트 선택 UI */}
-          <div className="space-y-4">
+          <button
+            onClick={() => setStep('select')}
+            className="w-full flex items-center justify-center gap-2 px-5 py-3 text-sm bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg transition-colors"
+          >
+            시작하기
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* Step 2: 프로젝트 선택 */}
+      {step === 'select' && (
+        <div className="space-y-5">
+          <div className="flex items-center gap-2 mb-2">
+            <button onClick={() => setStep('intro')} className="text-zinc-600 hover:text-zinc-300 transition-colors">
+              <ArrowLeft size={16} />
+            </button>
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-100">분석할 프로젝트를 선택하세요</h3>
+              <p className="text-[11px] text-zinc-500 mt-0.5">Claude Code 세션이 있는 프로젝트 또는 새 경로를 입력하세요</p>
+            </div>
+          </div>
+
           {projects.length > 0 && (
             <div>
-              <label className="block font-mono text-xs text-zinc-500 mb-1.5">
-                {t('wizard.selectProject')}
+              <label className="flex items-center gap-1.5 font-mono text-xs text-zinc-500 mb-2">
+                <FolderOpen size={12} />
+                기존 프로젝트
               </label>
-              <div className="space-y-1 max-h-48 overflow-y-auto border border-zinc-800 rounded-md p-1">
+              <div className="space-y-1 max-h-56 overflow-y-auto border border-zinc-800 rounded-lg p-1.5">
                 {projects.map((p) => (
                   <button
                     key={p.encoded}
                     onClick={() => { setSelectedPath(p.decoded); setCustomPath('') }}
-                    className={`w-full text-left px-3 py-2 rounded text-xs font-mono transition-colors ${
+                    className={`w-full text-left px-3 py-2.5 rounded-md text-xs font-mono transition-all ${
                       selectedPath === p.decoded && !customPath
-                        ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
-                        : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200'
+                        ? 'bg-fuchsia-600/15 text-fuchsia-400 border border-fuchsia-500/30'
+                        : 'text-zinc-400 hover:bg-zinc-800/60 hover:text-zinc-200 border border-transparent'
                     }`}
                   >
-                    {p.decoded}
+                    <div className="truncate">{p.decoded}</div>
                   </button>
                 ))}
               </div>
@@ -270,61 +336,127 @@ export default function Wizard() {
           )}
 
           <div>
-            <label className="block font-mono text-xs text-zinc-500 mb-1.5">
-              {t('wizard.newPath')}
-            </label>
+            <label className="block font-mono text-xs text-zinc-500 mb-1.5">직접 입력</label>
             <input
               value={customPath}
               onChange={(e) => { setCustomPath(e.target.value); setSelectedPath('') }}
               placeholder="/path/to/project"
-              className="w-full bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2.5 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50 transition-colors"
             />
           </div>
 
           {analyzeMutation.isError && (
-            <p className="text-xs text-red-400 bg-red-400/10 rounded px-3 py-2">
+            <p className="text-xs text-red-400 bg-red-400/10 rounded-lg px-3 py-2">
               {(analyzeMutation.error as Error).message}
             </p>
           )}
 
           <button
-            onClick={handleAnalyze}
+            onClick={() => setStep('confirm')}
             disabled={!activePath}
-            className="flex items-center gap-2 px-4 py-2 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-2 px-5 py-3 text-sm bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <FlaskConical size={13} />
-            {t('wizard.analyze')}
+            다음
+            <ChevronRight size={16} />
           </button>
-          </div>
-        </>
+        </div>
       )}
 
-      {/* 단계 2: 분석 진행 애니메이션 */}
+      {/* Step 3: 참조 파일 확인 + 생성 확인 */}
+      {step === 'confirm' && (
+        <div className="space-y-5">
+          <div className="flex items-center gap-2 mb-2">
+            <button onClick={() => setStep('select')} className="text-zinc-600 hover:text-zinc-300 transition-colors">
+              <ArrowLeft size={16} />
+            </button>
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-100">참조 파일 및 생성 경로 확인</h3>
+              <p className="text-[11px] text-zinc-500 mt-0.5">아래 파일들을 분석하여 설정을 생성합니다</p>
+            </div>
+          </div>
+
+          {/* 선택된 프로젝트 */}
+          <div className="bg-zinc-800/40 border border-zinc-700/50 rounded-lg px-4 py-3">
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">대상 프로젝트</p>
+            <p className="text-xs font-mono text-fuchsia-400">{activePath}</p>
+          </div>
+
+          {/* 참조 파일 목록 */}
+          <div className="space-y-3">
+            {REFERENCE_FILES.map((group) => (
+              <div key={group.category} className="border border-zinc-800 rounded-lg overflow-hidden">
+                <div className="px-4 py-2 bg-zinc-800/30">
+                  <p className="text-[11px] text-zinc-400 font-medium">{group.category}</p>
+                </div>
+                <div className="divide-y divide-zinc-800/50">
+                  {group.items.map((item) => (
+                    <div key={item.name} className="flex items-start gap-3 px-4 py-2.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-500 mt-1.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-mono text-zinc-300">{item.name}</p>
+                        <p className="text-[10px] text-zinc-600 mt-0.5">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 저장 경로 */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3">
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-2">생성될 파일</p>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-mono">
+                <span className="text-fuchsia-400">→</span>
+                <span className="text-zinc-300">{activePath}/CLAUDE.md</span>
+                <span className="text-zinc-600 text-[10px]">(프로젝트 CLAUDE.md)</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-mono">
+                <span className="text-violet-400">→</span>
+                <span className="text-zinc-300">~/.claude/settings.json</span>
+                <span className="text-zinc-600 text-[10px]">(Hooks 추가, 선택 시)</span>
+              </div>
+            </div>
+          </div>
+
+          {/* 생성 버튼 */}
+          <button
+            onClick={handleStartAnalysis}
+            className="w-full flex items-center justify-center gap-2 px-5 py-3 text-sm bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg transition-colors"
+          >
+            <Sparkles size={16} />
+            AI 분석 및 설정 생성
+          </button>
+        </div>
+      )}
+
+      {/* Step 4: 분석 진행 */}
       {step === 'analyzing' && (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <p className="text-xs text-zinc-500 font-mono">{activePath}</p>
+          <div className="bg-zinc-800/30 rounded-lg px-4 py-2.5 mb-2">
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">분석 중</p>
+            <p className="text-xs text-zinc-300 font-mono truncate">{activePath}</p>
           </div>
           <AnalysisProgress currentStep={currentAnalysisStep} />
         </div>
       )}
 
-      {/* 단계 3: 결과 */}
+      {/* Step 5: 결과 */}
       {step === 'result' && result && (
         <div>
-          {/* 분석 완료 요약 헤더 */}
-          <div className="mb-4 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/15">
-            <p className="text-xs text-emerald-400 font-medium mb-1">
-              분석 완료 — {ANALYSIS_STEPS.length}개 항목 참조
-            </p>
-            <p className="text-[10px] text-zinc-500">
-              {ANALYSIS_STEPS.map((s) => s.icon).join(' · ')}
-            </p>
+          <div className="mb-5 p-4 rounded-lg bg-gradient-to-r from-fuchsia-500/5 to-violet-500/5 border border-fuchsia-500/15">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-fuchsia-500/20 flex items-center justify-center">
+                <Check size={16} className="text-fuchsia-400" />
+              </div>
+              <div>
+                <p className="text-sm text-zinc-100 font-medium">분석 완료</p>
+                <p className="text-[10px] text-zinc-500 font-mono mt-0.5">{result.project_path}</p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 mb-4">
-            <p className="text-xs text-zinc-500 font-mono">{result.project_path}</p>
-          </div>
           <AnalysisResult
             result={result}
             onApply={(data) => applyMutation.mutate(data)}
@@ -335,6 +467,52 @@ export default function Wizard() {
               {(applyMutation.error as Error).message}
             </p>
           )}
+        </div>
+      )}
+
+      {/* Step 6: 완료 */}
+      {step === 'done' && (
+        <div className="flex flex-col items-center justify-center py-16 gap-5">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center">
+              <Check size={28} className="text-fuchsia-400" />
+            </div>
+            <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-fuchsia-500 flex items-center justify-center">
+              <Sparkles size={10} className="text-white" />
+            </div>
+          </div>
+          <div className="text-center space-y-1.5">
+            <p className="text-sm text-zinc-100 font-semibold">설정이 적용되었습니다</p>
+            <p className="text-xs text-zinc-500 font-mono">{result?.project_path}/CLAUDE.md</p>
+          </div>
+
+          {/* 생성된 내용 미리보기 */}
+          {result && (
+            <div className="w-full max-w-md mt-2">
+              <div className="border border-zinc-800 rounded-lg overflow-hidden">
+                <div className="px-4 py-2 bg-zinc-800/30 flex items-center gap-2">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 rounded-full bg-red-500/60" />
+                    <span className="w-2 h-2 rounded-full bg-amber-500/60" />
+                    <span className="w-2 h-2 rounded-full bg-green-500/60" />
+                  </div>
+                  <span className="text-[10px] text-zinc-500 font-mono">CLAUDE.md</span>
+                </div>
+                <div className="px-4 py-3 max-h-40 overflow-y-auto">
+                  <pre className="text-[11px] text-zinc-400 font-mono whitespace-pre-wrap leading-relaxed">
+                    {result.claude_md.slice(0, 500)}{result.claude_md.length > 500 ? '\n...' : ''}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={resetWizard}
+            className="mt-4 px-5 py-2.5 text-xs text-zinc-400 hover:text-zinc-200 border border-zinc-800 hover:border-zinc-600 rounded-lg transition-colors"
+          >
+            다른 프로젝트 분석
+          </button>
         </div>
       )}
     </div>

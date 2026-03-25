@@ -5,16 +5,13 @@ import {
   Blocks,
   Keyboard,
   FileText,
-  Brain,
-  Users,
   Store,
-  DollarSign,
   FileStack,
-  GitCompare,
   FolderKanban,
   MessageSquare,
   FlaskConical,
   Cpu,
+  Settings,
 } from 'lucide-react'
 import { useLang } from '../../hooks/useLang'
 import { Logo } from './Logo'
@@ -41,15 +38,15 @@ const navGroups: NavGroup[] = [
     titleKey: 'nav.overview',
     items: [
       { label: 'Dashboard', labelKey: 'nav.dashboard', to: '/', icon: LayoutDashboard, shortcut: '⌘1' },
-      { label: 'Claude 설정', labelKey: 'nav.claudeSettings', to: '/claude-settings', icon: Cpu },
-      { label: 'Keybindings', labelKey: 'nav.keybindings', to: '/keybindings', icon: Keyboard },
+      { label: 'Projects', labelKey: 'nav.projects', to: '/projects', icon: FolderKanban },
     ],
   },
   {
-    title: 'Tools',
-    titleKey: 'nav.tools',
+    title: 'Context',
+    titleKey: 'nav.contextMgmt',
     items: [
-      { label: 'Projects', labelKey: 'nav.projects', to: '/projects', icon: FolderKanban },
+      { label: 'Context', labelKey: 'nav.contextMgmt', to: '/context', icon: FileText },
+      { label: 'Templates', labelKey: 'nav.templates', to: '/templates', icon: FileStack },
     ],
   },
   {
@@ -57,21 +54,6 @@ const navGroups: NavGroup[] = [
     titleKey: 'nav.extensions',
     items: [
       { label: '확장 기능', labelKey: 'nav.extensionsPage', to: '/extensions', icon: Blocks },
-    ],
-  },
-  {
-    title: 'Content',
-    titleKey: 'nav.content',
-    items: [
-      { label: 'CLAUDE.md', labelKey: 'nav.claudemd', to: '/claude-md', icon: FileText },
-      { label: 'Memory', labelKey: 'nav.memory', to: '/memory', icon: Brain },
-      { label: 'Teams', labelKey: 'nav.teams', to: '/teams', icon: Users },
-    ],
-  },
-  {
-    title: 'Store',
-    titleKey: 'nav.store',
-    items: [
       { label: 'Marketplace', labelKey: 'nav.marketplace', to: '/marketplace', icon: Store },
     ],
   },
@@ -80,15 +62,6 @@ const navGroups: NavGroup[] = [
     titleKey: 'nav.monitor',
     items: [
       { label: 'Sessions', labelKey: 'nav.sessions', to: '/sessions', icon: MessageSquare },
-      { label: 'Cost', labelKey: 'nav.cost', to: '/cost', icon: DollarSign },
-    ],
-  },
-  {
-    title: 'Sync',
-    titleKey: 'nav.sync',
-    items: [
-      { label: 'Templates', labelKey: 'nav.templates', to: '/templates', icon: FileStack },
-      { label: 'Config Diff', labelKey: 'nav.configDiff', to: '/config-diff', icon: GitCompare },
     ],
   },
   {
@@ -96,6 +69,9 @@ const navGroups: NavGroup[] = [
     titleKey: 'nav.labs',
     items: [
       { label: 'Wizard', labelKey: 'nav.wizard', to: '/wizard', icon: FlaskConical },
+      { label: 'Claude 설정', labelKey: 'nav.claudeSettings', to: '/claude-settings', icon: Cpu },
+      { label: 'Keybindings', labelKey: 'nav.keybindings', to: '/keybindings', icon: Keyboard },
+      { label: 'Hub 설정', labelKey: 'nav.hubSettings', to: '/hub-settings', icon: Settings },
     ],
   },
 ]
@@ -138,14 +114,14 @@ export function Sidebar() {
                   end={item.to === '/'}
                   className={({ isActive }) =>
                     isActive
-                      ? 'group flex items-center gap-2.5 px-3 py-1.5 text-xs text-emerald-400 bg-emerald-400/8 border-l-2 border-emerald-400'
+                      ? 'group flex items-center gap-2.5 px-3 py-1.5 text-xs text-fuchsia-400 bg-fuchsia-400/8 border-l-2 border-fuchsia-400'
                       : 'group flex items-center gap-2.5 px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 border-l-2 border-transparent transition-colors duration-150'
                   }
                 >
                   {({ isActive }) => (
                     <>
                       {isActive && (
-                        <span className="w-1 h-1 rounded-full bg-emerald-400 shrink-0 -ml-0.5 mr-0" />
+                        <span className="w-1 h-1 rounded-full bg-fuchsia-400 shrink-0 -ml-0.5 mr-0" />
                       )}
                       <Icon size={14} strokeWidth={1.5} className="shrink-0" />
                       <span className="flex-1">{t(item.labelKey)}</span>
@@ -171,7 +147,7 @@ export function Sidebar() {
             onClick={lang === 'en' ? toggleLang : undefined}
             className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 ${
               lang === 'ko'
-                ? 'bg-emerald-500/20 text-emerald-400 shadow-sm shadow-emerald-500/10'
+                ? 'bg-fuchsia-500/20 text-fuchsia-400 shadow-sm shadow-fuchsia-500/10'
                 : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
@@ -182,7 +158,7 @@ export function Sidebar() {
             onClick={lang === 'ko' ? toggleLang : undefined}
             className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-full text-[11px] font-medium transition-all duration-200 ${
               lang === 'en'
-                ? 'bg-emerald-500/20 text-emerald-400 shadow-sm shadow-emerald-500/10'
+                ? 'bg-fuchsia-500/20 text-fuchsia-400 shadow-sm shadow-fuchsia-500/10'
                 : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
@@ -193,7 +169,7 @@ export function Sidebar() {
 
         {/* Claude 연결 상태 */}
         <div className="flex items-center gap-1.5">
-          <span className={`text-xs leading-none ${claudeStatus?.connected ? 'text-emerald-400' : 'text-zinc-600'}`}>●</span>
+          <span className={`text-xs leading-none ${claudeStatus?.connected ? 'text-fuchsia-400' : 'text-zinc-600'}`}>●</span>
           <span className="font-mono text-xs text-zinc-500">
             {claudeStatus?.connected ? t('common.connected') : 'Claude CLI'}
           </span>

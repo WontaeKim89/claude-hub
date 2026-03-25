@@ -6,16 +6,33 @@ import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
 import { useLang } from '../hooks/useLang'
 
-const MODEL_OPTIONS = [
-  'claude-opus-4-5',
-  'claude-sonnet-4-5',
-  'claude-haiku-4-5',
-  'claude-opus-4',
-  'claude-sonnet-4',
-  'claude-3-5-sonnet-20241022',
-  'claude-3-5-haiku-20241022',
-  'claude-3-opus-20240229',
+// Claude Code /model 명령어에서 제공하는 모델 목록
+const MODEL_OPTIONS: { value: string; label: string }[] = [
+  { value: 'claude-opus-4-6-20250319', label: 'Claude Opus 4.6' },
+  { value: 'claude-sonnet-4-6-20250318', label: 'Claude Sonnet 4.6' },
+  { value: 'claude-opus-4-5-20250414', label: 'Claude Opus 4.5' },
+  { value: 'claude-sonnet-4-5-20250514', label: 'Claude Sonnet 4.5' },
+  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5' },
+  { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
+  { value: 'claude-3-5-haiku-20241022', label: 'Claude 3.5 Haiku' },
+  { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
 ]
+
+// Claude Code 내부 단축 표기 → 사람이 읽기 쉬운 레이블 매핑
+const MODEL_ALIAS_MAP: Record<string, string> = {
+  'opus[1m]': 'Claude Opus 4.6 (1M context)',
+  'opus': 'Claude Opus 4.6',
+  'sonnet': 'Claude Sonnet 4.6',
+  'haiku': 'Claude Haiku 4.5',
+  'sonnet[1m]': 'Claude Sonnet 4.6 (1M context)',
+}
+
+function resolveModelLabel(value: string): string {
+  if (MODEL_ALIAS_MAP[value]) return MODEL_ALIAS_MAP[value]
+  const found = MODEL_OPTIONS.find((m) => m.value === value)
+  if (found) return found.label
+  return value
+}
 
 // claude auth status --text 출력에서 이메일과 플랜 정보 추출
 function parseAuthDetails(details: string): { email: string | null; plan: string | null } {
@@ -114,7 +131,7 @@ export default function ClaudeSettings() {
         {/* 인증 정보 섹션 */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
           <div className="px-4 py-3 border-b border-zinc-800">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">{t('claudeSettings.auth')}</span>
+            <span className="text-sm font-semibold text-zinc-200">{t('claudeSettings.auth')}</span>
           </div>
           <div className="px-4 py-4">
             {authLoading ? (
@@ -126,12 +143,12 @@ export default function ClaudeSettings() {
               <div className="space-y-3">
                 {/* 인증 상태 표시 */}
                 <div className="flex items-center gap-2">
-                  <span className={`text-sm leading-none ${authStatus?.authenticated ? 'text-emerald-400' : 'text-red-400'}`}>●</span>
+                  <span className={`text-sm leading-none ${authStatus?.authenticated ? 'text-fuchsia-400' : 'text-red-400'}`}>●</span>
                   <span className="font-mono text-sm text-zinc-100">
                     {authStatus?.authenticated ? t('claudeSettings.authenticated') : t('claudeSettings.notAuthenticated')}
                   </span>
                   {parsedAuth.plan && (
-                    <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/20">
+                    <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-fuchsia-500/15 text-fuchsia-400 border border-fuchsia-500/20">
                       {parsedAuth.plan}
                     </span>
                   )}
@@ -164,7 +181,7 @@ export default function ClaudeSettings() {
                     <button
                       onClick={() => loginMutation.mutate()}
                       disabled={loginMutation.isPending}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border border-emerald-600 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border border-fuchsia-600 text-fuchsia-400 hover:bg-fuchsia-600 hover:text-white rounded transition-colors disabled:opacity-50"
                     >
                       <LogIn size={12} />
                       {t('claudeSettings.login')}
@@ -173,7 +190,7 @@ export default function ClaudeSettings() {
                 </div>
 
                 {authMsg && (
-                  <p className="text-[11px] text-emerald-400 font-mono">{authMsg}</p>
+                  <p className="text-[11px] text-fuchsia-400 font-mono">{authMsg}</p>
                 )}
               </div>
             )}
@@ -183,7 +200,7 @@ export default function ClaudeSettings() {
         {/* 모델 설정 섹션 */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
           <div className="px-4 py-3 border-b border-zinc-800">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">{t('claudeSettings.model')}</span>
+            <span className="text-sm font-semibold text-zinc-200">{t('claudeSettings.model')}</span>
           </div>
           <div className="px-4 py-4">
             {isLoading ? (
@@ -193,21 +210,21 @@ export default function ClaudeSettings() {
                 value={currentModel}
                 onChange={(e) => mutation.mutate(e.target.value)}
                 disabled={mutation.isPending}
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500 disabled:opacity-50 transition-colors"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-md px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500 disabled:opacity-50 transition-colors"
               >
                 {/* 현재 모델이 목록에 없을 경우를 위한 fallback 옵션 */}
-                {currentModel && !MODEL_OPTIONS.includes(currentModel) && (
-                  <option value={currentModel}>{currentModel}</option>
+                {currentModel && !MODEL_OPTIONS.some((m) => m.value === currentModel) && (
+                  <option value={currentModel}>{resolveModelLabel(currentModel)}</option>
                 )}
                 {MODEL_OPTIONS.map((m) => (
-                  <option key={m} value={m}>{m}</option>
+                  <option key={m.value} value={m.value}>{m.label}</option>
                 ))}
               </select>
             )}
             <p className="mt-2 text-[11px] text-zinc-600">{t('claudeSettings.modelHint')}</p>
 
             {success && (
-              <p className="mt-2 text-xs text-emerald-400 font-mono">저장됨</p>
+              <p className="mt-2 text-xs text-fuchsia-400 font-mono">저장됨</p>
             )}
             {error && (
               <p className="mt-2 text-xs text-red-400 font-mono">{error}</p>
@@ -218,7 +235,7 @@ export default function ClaudeSettings() {
         {/* 원격 제어 섹션 */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
           <div className="px-4 py-3 border-b border-zinc-800">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-500">{t('claudeSettings.remote')}</span>
+            <span className="text-sm font-semibold text-zinc-200">{t('claudeSettings.remote')}</span>
           </div>
           <div className="px-4 py-4 space-y-3">
             {/* 원격 작업 실행 */}
@@ -228,12 +245,12 @@ export default function ClaudeSettings() {
                 placeholder={t('claudeSettings.taskPlaceholder')}
                 value={remoteTask}
                 onChange={(e) => setRemoteTask(e.target.value)}
-                className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-3 py-1.5 text-xs font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50"
+                className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-3 py-1.5 text-xs font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-fuchsia-500/50"
               />
               <button
                 onClick={() => remoteStartMutation.mutate()}
                 disabled={remoteStartMutation.isPending || !remoteTask.trim()}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border border-emerald-600 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded transition-colors disabled:opacity-50 shrink-0"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border border-fuchsia-600 text-fuchsia-400 hover:bg-fuchsia-600 hover:text-white rounded transition-colors disabled:opacity-50 shrink-0"
               >
                 <Radio size={12} />
                 {t('claudeSettings.remoteStart')}
@@ -251,7 +268,7 @@ export default function ClaudeSettings() {
             </button>
 
             {remoteMsg && (
-              <p className="text-[11px] text-emerald-400 font-mono">{remoteMsg}</p>
+              <p className="text-[11px] text-fuchsia-400 font-mono">{remoteMsg}</p>
             )}
           </div>
         </div>

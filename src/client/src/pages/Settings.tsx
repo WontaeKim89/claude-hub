@@ -11,11 +11,11 @@ import type { SettingsData, DiffResult } from '../lib/types'
 type Tab = 'global' | 'local' | 'raw'
 
 const MODEL_OPTIONS = [
-  'claude-opus-4-5',
-  'claude-sonnet-4-5',
-  'claude-haiku-4-5',
-  'claude-opus-4',
-  'claude-sonnet-4',
+  'claude-opus-4-6-20250319',
+  'claude-sonnet-4-6-20250318',
+  'claude-opus-4-5-20250414',
+  'claude-sonnet-4-5-20250514',
+  'claude-haiku-4-5-20251001',
   'claude-3-5-sonnet-20241022',
   'claude-3-5-haiku-20241022',
   'claude-3-opus-20240229',
@@ -104,7 +104,7 @@ export default function Settings() {
             onClick={() => { setTab(t.key); setError('') }}
             className={`px-4 py-2 text-xs font-mono transition-colors duration-150 border-b-2 -mb-px ${
               tab === t.key
-                ? 'border-emerald-500 text-emerald-400'
+                ? 'border-fuchsia-500 text-fuchsia-400'
                 : 'border-transparent text-zinc-500 hover:text-zinc-300'
             }`}
           >
@@ -114,7 +114,7 @@ export default function Settings() {
       </div>
 
       {error && <p className="text-xs text-red-400 bg-red-400/10 rounded px-3 py-2 mb-4">{error}</p>}
-      {success && <p className="text-xs text-emerald-400 bg-emerald-400/10 rounded px-3 py-2 mb-4">Saved successfully.</p>}
+      {success && <p className="text-xs text-fuchsia-400 bg-fuchsia-400/10 rounded px-3 py-2 mb-4">Saved successfully.</p>}
 
       {isLoading && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 max-w-xl space-y-4">
@@ -134,11 +134,11 @@ export default function Settings() {
           <div>
             <label className="block font-mono text-xs text-zinc-500 mb-1.5">model</label>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+              <span className="w-2 h-2 rounded-full bg-fuchsia-400 shrink-0" />
               <select
                 value={currentModel}
                 onChange={(e) => handleModelChange(e.target.value)}
-                className="bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50 transition-colors duration-150"
+                className="bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50 transition-colors duration-150"
               >
                 {MODEL_OPTIONS.map((m) => (
                   <option key={m} value={m}>{m}</option>
@@ -185,7 +185,7 @@ export default function Settings() {
             <button
               onClick={handleRawSave}
               disabled={mutation.isPending}
-              className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+              className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
             >
               {mutation.isPending ? 'Saving...' : 'Save'}
             </button>

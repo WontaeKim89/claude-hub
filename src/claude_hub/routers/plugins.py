@@ -4,6 +4,7 @@ import json
 import os
 
 from fastapi import APIRouter, HTTPException, Request
+from claude_hub.services.scanner import invalidate_settings_cache
 from pydantic import BaseModel
 
 from claude_hub.models.plugin import PluginSummary, PluginToggle
@@ -60,7 +61,7 @@ async def toggle_plugin(name: str, body: PluginToggle, request: Request):
         editor.write_json(path=settings_path, data=settings, last_mtime=last_mtime)
     except ConflictError as e:
         raise HTTPException(status_code=409, detail=str(e))
-
+    invalidate_settings_cache()
     return {"ok": True}
 
 

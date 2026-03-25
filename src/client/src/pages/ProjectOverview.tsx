@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  FolderKanban, Loader2, X, Save, ChevronRight,
+  FolderKanban, Loader2, X, Save, Star, Trash2, FlaskConical, ChevronRight, Check,
   FileText, FolderOpen, FileCode, Settings2, TestTube, BookOpen, Brain, Pencil, Shrink, FolderDot, GitBranch
 } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useLang } from '../hooks/useLang'
+import { useEscClose } from '../hooks/useEscClose'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
 import { CATEGORY_INFO } from '../lib/category-info'
@@ -64,29 +65,17 @@ function countExisting(nodes: TreeNode[]): number {
   return count
 }
 
-function countWarnings(nodes: TreeNode[]): number {
-  let count = 0
-  for (const node of nodes) {
-    if (node.type === 'file' && node.needs_compact) {
-      count++
-    } else if (node.type === 'dir' && node.children) {
-      count += countWarnings(node.children)
-    }
-  }
-  return count
-}
-
 // 파일명에 따른 아이콘 매핑
 function getFileIcon(name: string, isDir: boolean, exists: boolean) {
   if (isDir) {
     if (name.includes('memory')) return <Brain size={14} className="text-violet-400" />
     if (name.includes('docs')) return <BookOpen size={14} className="text-blue-400" />
     if (name.includes('test')) return <TestTube size={14} className="text-amber-400" />
-    if (name.includes('.claude')) return <FolderDot size={14} className="text-emerald-400" />
+    if (name.includes('.claude')) return <FolderDot size={14} className="text-fuchsia-400" />
     return <FolderOpen size={14} className="text-zinc-400" />
   }
   const color = exists ? 'text-zinc-300' : 'text-zinc-600'
-  if (name === 'CLAUDE.md') return <Settings2 size={14} className="text-emerald-400" />
+  if (name === 'CLAUDE.md') return <Settings2 size={14} className="text-fuchsia-400" />
   if (name === 'MEMORY.md') return <Brain size={14} className="text-violet-400" />
   if (name === 'README.md') return <BookOpen size={14} className="text-blue-400" />
   if (name.endsWith('.toml') || name.endsWith('.json')) return <FileCode size={14} className={color} />
@@ -144,7 +133,7 @@ function TreeNodeRow({
         {isFile && (node as FileNode).exists && (
           <span
             className={`font-mono text-[10px] ${
-              (node as FileNode).needs_compact ? 'text-amber-400' : 'text-emerald-400'
+              (node as FileNode).needs_compact ? 'text-amber-400' : 'text-fuchsia-400'
             }`}
           >
             {(node as FileNode).needs_compact ? '⚠' : '●'} {(node as FileNode).lines}줄
@@ -162,7 +151,7 @@ function TreeNodeRow({
           {isFile && (node as FileNode).exists && (
             <button
               onClick={() => onEdit(node as FileNode)}
-              className="inline-flex items-center gap-0.5 text-[10px] text-emerald-500 hover:text-emerald-400 px-1.5 py-0.5 rounded hover:bg-emerald-500/10 transition-colors"
+              className="inline-flex items-center gap-0.5 text-[10px] text-fuchsia-500 hover:text-fuchsia-400 px-1.5 py-0.5 rounded hover:bg-fuchsia-500/10 transition-colors"
             >
               <Pencil size={10} /> 편집
             </button>
@@ -198,6 +187,7 @@ function TreeNodeRow({
 // 권한 토글 버튼 컴포넌트
 function PermissionToggle({ projectPath }: { projectPath: string }) {
   const qc = useQueryClient()
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const { data } = useQuery({
     queryKey: ['permissions-status', projectPath],
@@ -207,22 +197,35 @@ function PermissionToggle({ projectPath }: { projectPath: string }) {
 
   const toggleMutation = useMutation({
     mutationFn: (enabled: boolean) => api.wizard.togglePermissions(projectPath, enabled),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['permissions-status', projectPath] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['permissions-status', projectPath] })
+      setShowConfirm(false)
+    },
   })
 
   const allAllowed = data?.all_allowed ?? false
 
+  const handleToggleClick = () => {
+    if (allAllowed) {
+      // 해제는 바로 실행
+      toggleMutation.mutate(false)
+    } else {
+      // 활성화는 확인 팝업
+      setShowConfirm(true)
+    }
+  }
+
   return (
     <div
       className="flex items-center gap-1.5"
-      onClick={(e) => e.stopPropagation()} // 카드 토글 이벤트 차단
+      onClick={(e) => e.stopPropagation()}
     >
       <span className="text-[10px] text-zinc-500 font-mono">전체 권한</span>
       <button
-        onClick={() => toggleMutation.mutate(!allAllowed)}
+        onClick={handleToggleClick}
         disabled={toggleMutation.isPending}
         className={`relative w-8 h-4 rounded-full transition-colors disabled:opacity-50 ${
-          allAllowed ? 'bg-emerald-500' : 'bg-zinc-700'
+          allAllowed ? 'bg-fuchsia-500' : 'bg-zinc-700'
         }`}
         title={allAllowed ? '전체 권한 허용 중 (클릭으로 해제)' : '전체 권한 해제 (클릭으로 허용)'}
       >
@@ -232,81 +235,590 @@ function PermissionToggle({ projectPath }: { projectPath: string }) {
           }`}
         />
       </button>
+
+      {/* 전체 권한 활성화 확인 팝업 */}
+      {showConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          onClick={() => setShowConfirm(false)}
+        >
+          <div
+            className="bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl w-[420px] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 pt-5 pb-3">
+              <h3 className="text-sm font-semibold text-zinc-100">전체 권한 허용</h3>
+              <p className="text-xs text-zinc-400 mt-2.5 leading-relaxed">
+                이 프로젝트의 <code className="text-fuchsia-400 bg-zinc-800 px-1 py-0.5 rounded text-[11px]">.claude/settings.local.json</code>에
+                다음 권한을 일괄 추가합니다:
+              </p>
+              <div className="mt-3 bg-zinc-800/60 border border-zinc-700/50 rounded-md px-3 py-2.5">
+                <ul className="space-y-1">
+                  {['Bash(*)', 'Read(*)', 'Edit(*)', 'Write(*)', 'WebFetch(*)', 'WebSearch'].map((p) => (
+                    <li key={p} className="font-mono text-[11px] text-zinc-300 flex items-center gap-2">
+                      <span className="w-1 h-1 rounded-full bg-fuchsia-500 shrink-0" />
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <p className="text-[11px] text-amber-500/80 mt-3 leading-relaxed">
+                Claude Code가 이 프로젝트에서 확인 없이 모든 도구를 실행할 수 있게 됩니다.
+                신뢰할 수 있는 프로젝트에서만 사용하세요.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 px-5 py-3 border-t border-zinc-800">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="px-3 py-1.5 text-xs text-zinc-400 hover:text-zinc-200 border border-zinc-700 hover:border-zinc-600 rounded transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => toggleMutation.mutate(true)}
+                disabled={toggleMutation.isPending}
+                className="px-3 py-1.5 text-xs text-white bg-fuchsia-600 hover:bg-fuchsia-500 rounded transition-colors disabled:opacity-50"
+              >
+                {toggleMutation.isPending ? '적용 중...' : '실행'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
 // 프로젝트 카드 (아코디언)
-function ProjectCard({
-  project,
-  defaultOpen,
-  isWorktree,
-  onEdit,
-  onCompact,
-  onDelete,
-}: {
-  project: ProjectTree
-  defaultOpen: boolean
-  isWorktree?: boolean
-  onEdit: (node: FileNode) => void
-  onCompact: (path: string) => void
-  onDelete: (node: FileNode) => void
-}) {
-  const [open, setOpen] = useState(defaultOpen)
+// Inline Harness Wizard — 프로젝트 현황에서 직접 실행
+// Inline Harness Wizard
+type WizardPhase = 'files' | 'references' | 'confirm' | 'generating' | 'preview' | 'done'
 
-  const totalFiles = countFiles(project.nodes)
-  const existingFiles = countExisting(project.nodes)
-  const warningCount = countWarnings(project.nodes)
+const GENERATE_MESSAGES = [
+  '프로젝트 구조를 분석하고 있습니다...',
+  'README.md와 문서를 읽고 있습니다...',
+  '기술 스택을 감지하고 있습니다...',
+  '참조 프로젝트의 설정을 분석하고 있습니다...',
+  '최적의 CLAUDE.md를 작성하고 있습니다...',
+  'Hook 설정을 구성하고 있습니다...',
+  '거의 완료되었습니다. 잠시만 기다려주세요...',
+]
+
+function InlineWizardModal({
+  projectPath,
+  projectName,
+  allProjects,
+  onClose,
+  onApplied,
+}: {
+  projectPath: string
+  projectName: string
+  allProjects: ProjectTree[]
+  onClose: () => void
+  onApplied: () => void
+}) {
+  const { t } = useLang()
+  useEscClose(onClose)
+  const [phase, setPhase] = useState<WizardPhase>('files')
+  const [referenceProjects, setReferenceProjects] = useState<string[]>([])
+  const [result, setResult] = useState<{
+    tech_stack: string[]
+    claude_md: string
+    hooks: Array<{ event: string; command: string; reason: string; matcher?: string }>
+    mcp_suggestions: Array<{ name: string; reason: string }> | Record<string, unknown>
+    project_settings: Record<string, unknown> | null
+    memory_files: Record<string, string> | null
+    skills: Array<{ name: string; description: string; content: string }>
+    agents: Array<{ name: string; description: string; model: string; tools: string; content: string }>
+    commands: Array<{ name: string; content: string }>
+  } | null>(null)
+  const [previewFile, setPreviewFile] = useState<string | null>(null)
+  const [editedClaudeMd, setEditedClaudeMd] = useState('')
+  const [selectedHooks, setSelectedHooks] = useState<Set<number>>(new Set())
+  // 파일 제외 기능: 체크된 항목만 반영
+  const [enabledSections, setEnabledSections] = useState<Set<string>>(
+    new Set(['claude_md', 'hooks', 'project_settings', 'memory_files', 'skills', 'agents', 'commands', 'mcp_servers'])
+  )
+  const toggleSection = (key: string) => {
+    setEnabledSections((prev) => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n })
+  }
+  const [error, setError] = useState('')
+  const [genStep, setGenStep] = useState(0)
+  const [genMsg, setGenMsg] = useState(GENERATE_MESSAGES[0])
+
+  // 프로젝트의 참고 파일 목록
+  const contextFiles = [
+    { category: '프로젝트 파일', items: [
+      { name: 'README.md', icon: '📖' },
+      { name: 'pyproject.toml / package.json', icon: '📦' },
+      { name: '디렉토리 구조', icon: '📁' },
+    ]},
+    { category: '전역 Claude 설정', items: [
+      { name: '~/.claude/CLAUDE.md', icon: '📝' },
+      { name: '~/.claude/settings.json', icon: '⚙️' },
+    ]},
+    { category: '기존 프로젝트 설정', items: [
+      { name: `${projectName}/CLAUDE.md (기존)`, icon: '📄' },
+      { name: `${projectName}/.claude/memory/`, icon: '🧠' },
+    ]},
+  ]
+
+  const toggleRef = (path: string) => {
+    setReferenceProjects((prev) =>
+      prev.includes(path) ? prev.filter((p) => p !== path) : [...prev, path]
+    )
+  }
+
+  const startGenerate = async () => {
+    setPhase('generating')
+    setGenStep(0)
+    setGenMsg(GENERATE_MESSAGES[0])
+
+    const msgTimer = setInterval(() => {
+      setGenStep((s) => {
+        const next = Math.min(s + 1, GENERATE_MESSAGES.length - 1)
+        setGenMsg(GENERATE_MESSAGES[next])
+        return next
+      })
+    }, 2000)
+
+    try {
+      const resp = await fetch('/api/wizard/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_path: projectPath, reference_projects: referenceProjects }),
+      })
+      const data = await resp.json()
+      clearInterval(msgTimer)
+      setResult(data)
+      setEditedClaudeMd(data.claude_md || '')
+      setSelectedHooks(new Set(data.hooks?.map((_: unknown, i: number) => i) ?? []))
+      setPhase('preview')
+    } catch {
+      clearInterval(msgTimer)
+      setError(t('wizard.analyzeFailed'))
+      setPhase('files')
+    }
+  }
+
+  const applyResult = async () => {
+    if (!result) return
+    try {
+      const body: Record<string, unknown> = { project_path: projectPath }
+      if (enabledSections.has('claude_md')) body.claude_md = editedClaudeMd
+      if (enabledSections.has('hooks')) body.hooks = result.hooks.filter((_, i) => selectedHooks.has(i))
+      if (enabledSections.has('project_settings') && result.project_settings) body.project_settings = result.project_settings
+      if (enabledSections.has('memory_files') && result.memory_files) body.memory_files = result.memory_files
+      if (enabledSections.has('skills') && result.skills?.length) body.skills = result.skills
+      if (enabledSections.has('agents') && result.agents?.length) body.agents = result.agents
+      if (enabledSections.has('commands') && result.commands?.length) body.commands = result.commands
+      if (enabledSections.has('mcp_servers') && result.mcp_suggestions && !Array.isArray(result.mcp_suggestions)) body.mcp_servers = result.mcp_suggestions
+      await fetch('/api/wizard/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      setPhase('done')
+      onApplied()
+    } catch {
+      setError(t('wizard.applyFailed'))
+    }
+  }
 
   return (
-    <div className={`bg-zinc-900 border rounded-md overflow-hidden ${isWorktree ? 'border-zinc-700/50 ml-6' : 'border-zinc-800'}`}>
-      {/* 헤더 - 클릭 시 토글 */}
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-4 py-3 hover:bg-zinc-800/30 transition-colors"
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <ChevronRight
-            size={14}
-            className={`text-zinc-600 transition-transform shrink-0 ${open ? 'rotate-90' : ''}`}
-          />
-          {isWorktree && (
-            <GitBranch size={12} className="text-zinc-500 shrink-0" strokeWidth={1.5} />
-          )}
-          <span className="font-mono text-sm text-zinc-100 font-medium shrink-0">
-            {project.project_name}
-          </span>
-          {isWorktree && (
-            <span className="font-mono text-[10px] px-1.5 py-0.5 bg-zinc-800 text-zinc-500 rounded">worktree</span>
-          )}
-          <span
-            className="font-mono text-[10px] text-zinc-600 truncate"
-            title={project.project_path}
-          >
-            {project.project_path}
-          </span>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-lg w-[720px] max-h-[85vh] flex flex-col">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800 shrink-0">
+          <div className="flex items-center gap-2">
+            <FlaskConical size={15} className="text-fuchsia-400" />
+            <span className="text-sm font-semibold text-zinc-100">Harness Wizard</span>
+            <span className="font-mono text-[10px] text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded">{projectName}</span>
+          </div>
+          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300"><X size={16} /></button>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <PermissionToggle projectPath={project.project_path} />
-          <span className="font-mono text-[10px] text-emerald-400">
-            {existingFiles}/{totalFiles} files
-          </span>
-          {warningCount > 0 && (
-            <span className="font-mono text-[10px] text-amber-400">
-              ⚠ {warningCount} need compact
-            </span>
-          )}
-        </div>
-      </button>
 
-      {/* 트리 바디 */}
-      {open && (
-        <div className="px-2 pb-3 border-t border-zinc-800/50">
-          {project.nodes.map((node, i) => (
-            <TreeNodeRow key={i} node={node} depth={0} onEdit={onEdit} onCompact={onCompact} onDelete={onDelete} />
-          ))}
+        <div className="flex-1 overflow-y-auto p-5">
+          {error && (
+            <div className="flex items-center gap-2 text-xs text-red-400 bg-red-400/10 rounded px-3 py-2 mb-4">
+              <span>{error}</span>
+              <button onClick={() => setError('')} className="ml-auto text-red-500 hover:text-red-300"><X size={12} /></button>
+            </div>
+          )}
+
+          {/* Step 1: 참고 파일 확인 */}
+          {phase === 'files' && (
+            <div className="space-y-5">
+              {/* 스텝 인디케이터 */}
+              <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600">
+                <span className="text-fuchsia-400 font-medium">1. {t('wizard.refFiles')}</span>
+                <span>→</span>
+                <span>2. {t('wizard.refProjects')}</span>
+                <span>→</span>
+                <span>3. Confirm</span>
+              </div>
+
+              {/* 공식 지침 기반 배너 */}
+              <div className="bg-fuchsia-500/5 border border-fuchsia-500/20 rounded-lg px-4 py-3 mb-4">
+                <p className="text-xs text-zinc-200 font-medium mb-1">
+                  Based on Anthropic&apos;s Official Best Practices
+                </p>
+                <p className="text-[10px] text-zinc-400 leading-relaxed">
+                  This wizard generates a <strong className="text-fuchsia-400">full harness</strong> (CLAUDE.md, Hooks, Permissions, Skills, Agents, Memory, Commands, MCP)
+                  following the{' '}
+                  <a href="https://code.claude.com/docs/en/best-practices" target="_blank" rel="noopener noreferrer"
+                    className="text-fuchsia-400 underline hover:text-fuchsia-300">
+                    official Claude Code Best Practices guide
+                  </a>.
+                </p>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-zinc-200 mb-1">{t('wizard.refFiles')}</h3>
+                <p className="text-[10px] text-zinc-500 mb-3">
+                  AI가 다음 파일과 설정을 분석하여 최적의 Claude harness를 생성합니다.
+                </p>
+                <div className="space-y-3">
+                  {contextFiles.map((cat) => (
+                    <div key={cat.category}>
+                      <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5">{cat.category}</p>
+                      <div className="space-y-0.5">
+                        {cat.items.map((item) => (
+                          <div key={item.name} className="flex items-center gap-2.5 px-3 py-2 rounded-md bg-zinc-800/40 border border-zinc-800/60">
+                            <span className="text-base">{item.icon}</span>
+                            <span className="font-mono text-[11px] text-zinc-300">{item.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button onClick={onClose} className="flex-1 py-2.5 text-xs border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-md transition-colors">
+                  {t('wizard.cancel')}
+                </button>
+                <button
+                  onClick={() => setPhase('references')}
+                  className="flex-1 py-2.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium rounded-md transition-colors"
+                >
+                  다음 →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: 참조 프로젝트 선택 */}
+          {phase === 'references' && (
+            <div className="space-y-5">
+              {/* 스텝 인디케이터 */}
+              <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600">
+                <span className="text-zinc-500">1. {t('wizard.refFiles')}</span>
+                <span>→</span>
+                <span className="text-fuchsia-400 font-medium">2. {t('wizard.refProjects')}</span>
+                <span>→</span>
+                <span>3. Confirm</span>
+              </div>
+
+              <div>
+                <h3 className="text-sm font-medium text-zinc-200 mb-1">{t('wizard.refProjects')}</h3>
+                <p className="text-[11px] text-zinc-500 mb-4 leading-relaxed">
+                  {t('wizard.refProjectsDesc')}
+                  <br />
+                  <span className="text-zinc-600">
+                    선택한 프로젝트의 CLAUDE.md, Memory, Hooks 설정이 참고 데이터에 추가됩니다.
+                  </span>
+                </p>
+
+                {allProjects.filter((p) => p.project_path !== projectPath).length === 0 ? (
+                  <div className="py-6 text-center text-xs text-zinc-600">다른 프로젝트가 없습니다.</div>
+                ) : (
+                  <div className="space-y-1 max-h-[280px] overflow-y-auto">
+                    {allProjects.filter((p) => p.project_path !== projectPath).map((p) => {
+                      const checked = referenceProjects.includes(p.project_path)
+                      const fileCount = countFiles(p.nodes)
+                      return (
+                        <label key={p.project_path} className={`flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer transition-all ${
+                          checked ? 'bg-fuchsia-500/8 border border-fuchsia-500/25' : 'bg-zinc-800/30 border border-transparent hover:bg-zinc-800/60'
+                        }`}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleRef(p.project_path)}
+                            className="accent-fuchsia-500"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <span className={`font-mono text-xs font-medium ${checked ? 'text-fuchsia-300' : 'text-zinc-300'}`}>
+                              {p.project_name}
+                            </span>
+                            <p className="font-mono text-[10px] text-zinc-600 mt-0.5">{fileCount} files</p>
+                          </div>
+                          {checked && (
+                            <span className="text-[9px] font-mono text-fuchsia-400/60 shrink-0">참고 반영</span>
+                          )}
+                        </label>
+                      )
+                    })}
+                  </div>
+                )}
+
+                {referenceProjects.length > 0 && (
+                  <div className="mt-3 px-3 py-2 bg-fuchsia-500/5 border border-fuchsia-500/20 rounded-md">
+                    <p className="text-[10px] text-fuchsia-400">
+                      {referenceProjects.length}{t('wizard.refCount')}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <button onClick={() => setPhase('files')} className="flex-1 py-2.5 text-xs border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-md transition-colors">
+                  ← 이전
+                </button>
+                <button
+                  onClick={() => setPhase('confirm')}
+                  className="flex-1 py-2.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium rounded-md transition-colors"
+                >
+                  다음 →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: 최종 확인 */}
+          {phase === 'confirm' && (
+            <div className="space-y-5">
+              {/* 스텝 인디케이터 */}
+              <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600">
+                <span className="text-zinc-500">1. {t('wizard.refFiles')}</span>
+                <span>→</span>
+                <span className="text-zinc-500">2. {t('wizard.refProjects')}</span>
+                <span>→</span>
+                <span className="text-fuchsia-400 font-medium">3. Confirm</span>
+              </div>
+
+              {/* 요약 */}
+              <div className="space-y-3">
+                <div className="bg-zinc-800/40 border border-zinc-700/50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-zinc-200 mb-3">생성 요약</h3>
+
+                  <div className="space-y-2 text-xs">
+                    <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/50">
+                      <span className="text-zinc-400">대상 프로젝트</span>
+                      <span className="font-mono text-zinc-200">{projectName}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/50">
+                      <span className="text-zinc-400">참고 파일</span>
+                      <span className="font-mono text-zinc-200">{contextFiles.reduce((s, c) => s + c.items.length, 0)}개</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/50">
+                      <span className="text-zinc-400">참조 프로젝트</span>
+                      <span className="font-mono text-zinc-200">{referenceProjects.length}개</span>
+                    </div>
+                    <div className="flex items-center justify-between py-1.5">
+                      <span className="text-zinc-400">생성할 파일</span>
+                      <span className="font-mono text-zinc-200">CLAUDE.md, Hooks, Memory</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-fuchsia-500/5 border border-fuchsia-500/20 rounded-lg px-4 py-3">
+                  <p className="text-xs text-zinc-300 leading-relaxed">
+                    위 데이터를 기반으로 <span className="text-fuchsia-400 font-medium">{projectName}</span> 프로젝트에 최적화된
+                    Claude 설정 파일을 AI가 생성합니다. 진행하시겠습니까?
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button onClick={() => setPhase('references')} className="flex-1 py-2.5 text-xs border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-md transition-colors">
+                  ← 이전
+                </button>
+                <button
+                  onClick={startGenerate}
+                  className="flex-1 py-2.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium rounded-md transition-colors"
+                >
+                  진행하기
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Phase 2: 생성 중 */}
+          {phase === 'generating' && (
+            <div className="py-10 flex flex-col items-center">
+              {/* 로딩 애니메이션 */}
+              <div className="relative w-16 h-16 mb-6">
+                <div className="absolute inset-0 rounded-full border-2 border-zinc-800" />
+                <div className="absolute inset-0 rounded-full border-2 border-fuchsia-500 border-t-transparent animate-spin" />
+                <FlaskConical size={20} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-fuchsia-400" />
+              </div>
+
+              {/* 진행 메시지 */}
+              <p className="text-sm text-zinc-200 mb-2 animate-fade-in" key={genStep}>{genMsg}</p>
+              <p className="text-[10px] text-zinc-600 mb-6">AI가 프로젝트에 최적화된 설정을 생성하고 있습니다</p>
+
+              {/* 프로그레스 바 */}
+              <div className="w-64 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-fuchsia-500 rounded-full transition-all duration-1000"
+                  style={{ width: `${Math.min(((genStep + 1) / GENERATE_MESSAGES.length) * 100, 95)}%` }}
+                />
+              </div>
+
+              {/* 진행 단계 */}
+              <div className="mt-6 space-y-1.5 w-full max-w-xs">
+                {GENERATE_MESSAGES.slice(0, genStep + 1).map((msg, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                      i < genStep ? 'bg-fuchsia-500/20' : 'bg-fuchsia-500/10'
+                    }`}>
+                      {i < genStep ? (
+                        <Check size={8} className="text-fuchsia-400" />
+                      ) : (
+                        <div className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse" />
+                      )}
+                    </div>
+                    <span className={`text-[10px] ${i < genStep ? 'text-zinc-500' : 'text-zinc-300'}`}>
+                      {msg.replace('...', '')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Phase 3: 결과 미리보기 */}
+          {phase === 'preview' && result && (() => {
+            // 파일 트리 항목 구성
+            const fileTree: Array<{ key: string; icon: string; label: string; detail: string; hasContent: boolean }> = [
+              { key: 'claude_md', icon: '📝', label: 'CLAUDE.md', detail: `${editedClaudeMd.split('\n').length} lines`, hasContent: true },
+            ]
+            if (result.project_settings) fileTree.push({ key: 'project_settings', icon: '⚙️', label: '.claude/settings.json', detail: 'permissions + hooks', hasContent: true })
+            if (result.hooks.length > 0) fileTree.push({ key: 'hooks', icon: '🔗', label: 'Hooks', detail: `${result.hooks.length} events`, hasContent: true })
+            if (result.memory_files && Object.keys(result.memory_files).length > 0) fileTree.push({ key: 'memory_files', icon: '🧠', label: 'memory/', detail: Object.keys(result.memory_files).join(', '), hasContent: false })
+            if (result.skills?.length) fileTree.push({ key: 'skills', icon: '⚡', label: '.claude/skills/', detail: result.skills.map((s) => s.name).join(', '), hasContent: true })
+            if (result.agents?.length) fileTree.push({ key: 'agents', icon: '🤖', label: '.claude/agents/', detail: result.agents.map((a) => a.name).join(', '), hasContent: true })
+            if (result.commands?.length) fileTree.push({ key: 'commands', icon: '📋', label: '.claude/commands/', detail: result.commands.map((c) => c.name).join(', '), hasContent: false })
+            if (result.mcp_suggestions && !Array.isArray(result.mcp_suggestions) && Object.keys(result.mcp_suggestions).length > 0) {
+              fileTree.push({ key: 'mcp_servers', icon: '🔌', label: 'MCP Servers', detail: Object.keys(result.mcp_suggestions).join(', '), hasContent: false })
+            }
+
+            return (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Check size={14} className="text-fuchsia-400" />
+                  <span className="text-sm font-medium text-zinc-200">{t('wizard.genDone')}</span>
+                  {result.tech_stack.length > 0 && (
+                    <div className="flex gap-1 ml-2">
+                      {result.tech_stack.map((tech) => (
+                        <span key={tech} className="px-1.5 py-0.5 text-[9px] font-mono bg-fuchsia-500/10 text-fuchsia-400 rounded">{tech}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-[10px] text-zinc-500">체크를 해제하면 해당 항목은 반영에서 제외됩니다.</p>
+
+                {/* 풀 하네스 파일 트리 */}
+                <div className="bg-zinc-800/50 border border-zinc-700/50 rounded-md overflow-hidden divide-y divide-zinc-700/30">
+                  {fileTree.map((item) => (
+                    <div key={item.key}>
+                      <div className="flex items-center gap-2 px-3 py-2.5 text-xs hover:bg-zinc-700/20 transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={enabledSections.has(item.key)}
+                          onChange={() => toggleSection(item.key)}
+                          className="accent-fuchsia-500"
+                        />
+                        <span className="text-base">{item.icon}</span>
+                        <button
+                          onClick={() => item.hasContent && setPreviewFile(previewFile === item.key ? null : item.key)}
+                          className="flex-1 flex items-center justify-between min-w-0"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`font-mono ${enabledSections.has(item.key) ? 'text-zinc-200' : 'text-zinc-600 line-through'}`}>{item.label}</span>
+                            <span className="text-[10px] text-zinc-500 truncate">{item.detail}</span>
+                          </div>
+                          {item.hasContent && <ChevronRight size={12} className={`text-zinc-600 transition-transform shrink-0 ${previewFile === item.key ? 'rotate-90' : ''}`} />}
+                        </button>
+                      </div>
+
+                      {/* 내용 미리보기 */}
+                      {previewFile === 'claude_md' && item.key === 'claude_md' && (
+                        <div className="border-t border-zinc-700/50">
+                          <MonacoWrapper value={editedClaudeMd} onChange={setEditedClaudeMd} height="250px" />
+                        </div>
+                      )}
+                      {previewFile === 'project_settings' && item.key === 'project_settings' && result.project_settings && (
+                        <div className="border-t border-zinc-700/50 p-3">
+                          <pre className="font-mono text-[10px] text-zinc-400 whitespace-pre-wrap">{JSON.stringify(result.project_settings, null, 2)}</pre>
+                        </div>
+                      )}
+                      {previewFile === 'hooks' && item.key === 'hooks' && (
+                        <div className="border-t border-zinc-700/50 p-3 space-y-1">
+                          {result.hooks.map((h, i) => (
+                            <label key={i} className={`flex items-start gap-2 p-2 rounded cursor-pointer ${selectedHooks.has(i) ? 'bg-fuchsia-500/5' : 'bg-zinc-800/50'}`}>
+                              <input type="checkbox" checked={selectedHooks.has(i)}
+                                onChange={() => setSelectedHooks((prev) => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n })}
+                                className="accent-fuchsia-500 mt-0.5" />
+                              <div>
+                                <span className="font-mono text-[10px] text-amber-400">{h.event}{h.matcher ? ` (${h.matcher})` : ''}</span>
+                                <p className="font-mono text-[10px] text-zinc-400">{h.command}</p>
+                                {h.reason && <p className="text-[9px] text-zinc-600">{h.reason}</p>}
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      )}
+                      {previewFile === 'skills' && item.key === 'skills' && result.skills?.map((s, i) => (
+                        <div key={i} className="border-t border-zinc-700/50 p-3">
+                          <p className="font-mono text-[10px] text-fuchsia-400 mb-1">{s.name}</p>
+                          <pre className="font-mono text-[10px] text-zinc-400 whitespace-pre-wrap max-h-40 overflow-y-auto">{s.content}</pre>
+                        </div>
+                      ))}
+                      {previewFile === 'agents' && item.key === 'agents' && result.agents?.map((a, i) => (
+                        <div key={i} className="border-t border-zinc-700/50 p-3">
+                          <p className="font-mono text-[10px] text-violet-400 mb-1">{a.name} ({a.model})</p>
+                          <pre className="font-mono text-[10px] text-zinc-400 whitespace-pre-wrap max-h-40 overflow-y-auto">{a.content}</pre>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="bg-zinc-800/40 border border-zinc-700/50 rounded-md px-4 py-3">
+                  <p className="text-xs text-zinc-300">
+                    선택된 {enabledSections.size}개 항목을 <span className="text-fuchsia-400 font-medium">{projectName}</span> 프로젝트에 반영하시겠습니까?
+                  </p>
+                </div>
+
+                <div className="flex gap-2">
+                  <button onClick={() => setPhase('files')} className="flex-1 py-2 text-xs border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-md transition-colors">
+                    {t('wizard.reanalyze')}
+                  </button>
+                  <button onClick={applyResult} className="flex-1 py-2 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium rounded-md transition-colors">
+                    {t('wizard.applyNow')}
+                  </button>
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* Phase 4: 완료 */}
+          {phase === 'done' && (
+            <div className="py-12 text-center">
+              <div className="w-14 h-14 bg-fuchsia-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check size={24} className="text-fuchsia-400" />
+              </div>
+              <h3 className="text-sm font-semibold text-zinc-100 mb-1">반영 완료</h3>
+              <p className="text-xs text-zinc-500 mb-6">{projectName} 프로젝트에 harness 설정이 적용되었습니다.</p>
+              <button onClick={onClose} className="px-6 py-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-md transition-colors">닫기</button>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -389,7 +901,7 @@ function FileEditorModal({
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
           <div className="flex flex-col gap-0.5 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-mono text-xs text-emerald-400">{fileName}</span>
+              <span className="font-mono text-xs text-fuchsia-400">{fileName}</span>
               <span className="font-mono text-[10px] text-zinc-500 bg-zinc-800/60 px-1.5 py-0.5 rounded">
                 편집 중
               </span>
@@ -399,11 +911,11 @@ function FileEditorModal({
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {saved && <span className="text-[10px] text-emerald-400">저장됨</span>}
+            {saved && <span className="text-[10px] text-fuchsia-400">저장됨</span>}
             <button
               onClick={() => setShowSaveConfirm(true)}
               disabled={saving || loading}
-              className="flex items-center gap-1 px-2.5 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors disabled:opacity-50"
+              className="flex items-center gap-1 px-2.5 py-1 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors disabled:opacity-50"
             >
               <Save size={12} />
               {saving ? '저장 중...' : '저장'}
@@ -447,6 +959,37 @@ export default function ProjectOverview() {
   // 편집 모달 상태
   const [editingNode, setEditingNode] = useState<FileNode | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<FileNode | null>(null)
+  const [selectedPath, setSelectedPath] = useState<string | null>(null)
+  const [deleteProjectTarget, setDeleteProjectTarget] = useState<{ name: string; encoded: string } | null>(null)
+  const [showWizard, setShowWizard] = useState(false)
+
+  // 즐겨찾기 (localStorage 기반)
+  const [favorites, setFavorites] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('claude-hub-favorite-projects')
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch { return new Set() }
+  })
+  const toggleFavorite = (path: string) => {
+    setFavorites((prev) => {
+      const next = new Set(prev)
+      if (next.has(path)) next.delete(path)
+      else next.add(path)
+      localStorage.setItem('claude-hub-favorite-projects', JSON.stringify([...next]))
+      return next
+    })
+  }
+
+  // 프로젝트 삭제 뮤테이션
+  const deleteProjectMutation = useMutation({
+    mutationFn: (encoded: string) => api.wizard.deleteProject(encoded),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['project-trees'] })
+      queryClient.invalidateQueries({ queryKey: ['projects-grouped'] })
+      setDeleteProjectTarget(null)
+      setSelectedPath(null)
+    },
+  })
 
   // compact 상태: 로딩 중인 경로, 결과 다이얼로그 표시용
   const [compactingPath, setCompactingPath] = useState<string | null>(null)
@@ -466,21 +1009,11 @@ export default function ProjectOverview() {
     staleTime: 60_000,
   })
 
-  // 프로젝트 목록 조회 후 각 project tree 조회
+  // 단일 API로 모든 프로젝트 트리 조회
   const { data: projects = [], isLoading, isError } = useQuery<ProjectTree[]>({
     queryKey: ['project-trees'],
     queryFn: async () => {
-      const overviews = await api.wizard.projectOverviews()
-      const trees = await Promise.all(
-        overviews.map(async (p) => {
-          try {
-            const tree = await api.wizard.projectTree(p.project_path)
-            return tree as ProjectTree
-          } catch {
-            return null
-          }
-        })
-      )
+      const trees = (await api.wizard.projectTreesAll()) as (ProjectTree | null)[]
       return trees.filter(Boolean) as ProjectTree[]
     },
     staleTime: 30_000,
@@ -539,11 +1072,11 @@ export default function ProjectOverview() {
   }
 
   return (
-    <div className="max-w-5xl">
+    <div>
       {/* 헤더 */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
-          <FolderKanban size={16} className="text-emerald-400" strokeWidth={1.5} />
+          <FolderKanban size={16} className="text-fuchsia-400" strokeWidth={1.5} />
           <h2 className="text-base font-semibold text-zinc-100 tracking-tight">
             {t('projects.title')}
           </h2>
@@ -554,6 +1087,10 @@ export default function ProjectOverview() {
           />
         </div>
         <p className="text-xs text-zinc-500">{t('projects.subtitle')}</p>
+        <p className="mt-2 text-[11px] text-zinc-600 bg-zinc-900 border border-zinc-800 rounded px-3 py-2 inline-block">
+          <span className="text-zinc-400">표시 기준:</span> <code className="font-mono text-fuchsia-400/80">~/.claude/projects/</code> 내에서
+          Claude Code가 세션을 생성한 프로젝트 (JSONL 또는 memory 디렉토리가 존재하는 프로젝트)
+        </p>
       </div>
 
       {/* 로딩 상태 */}
@@ -588,48 +1125,291 @@ export default function ProjectOverview() {
         </div>
       )}
 
-      {/* 프로젝트 카드 목록 — 워크트리는 부모 아래 들여쓰기 */}
-      {projects.length > 0 && (
-        <div className="flex flex-col gap-2">
-          {projects.map((project, i) => {
-            const isWorktree = worktreePaths.has(project.project_path)
-            // 워크트리는 부모 카드 바로 뒤에 렌더링하므로 독립 렌더링은 skip
-            if (isWorktree) return null
+      {/* 좌우 분할: 왼쪽 프로젝트 목록 + 오른쪽 트리 뷰 */}
+      {projects.length > 0 && (() => {
+        // 원본 프로젝트만 추출 (워크트리 제외)
+        const mainProjects = projects.filter((p) => !worktreePaths.has(p.project_path))
+        const activeProject = selectedPath
+          ? projects.find((p) => p.project_path === selectedPath) ?? mainProjects[0]
+          : mainProjects[0]
+        const activeGroup = activeProject
+          ? groupedProjects.find((g) => g.path === activeProject.project_path)
+          : null
+        const activeWorktrees = activeGroup
+          ? activeGroup.worktrees
+              .map((w) => projects.find((p) => p.project_path === w.decoded))
+              .filter(Boolean) as ProjectTree[]
+          : []
 
-            // 이 프로젝트에 속한 워크트리 목록
-            const group = groupedProjects.find((g) => g.path === project.project_path)
-            const worktreeTrees = group
-              ? group.worktrees
-                  .map((w) => projects.find((p) => p.project_path === w.decoded))
-                  .filter(Boolean) as ProjectTree[]
-              : []
-
-            return (
-              <div key={project.project_path} className="flex flex-col gap-1.5">
-                <ProjectCard
-                  project={project}
-                  defaultOpen={i === 0}
-                  isWorktree={false}
-                  onEdit={setEditingNode}
-                  onCompact={handleCompact}
-                  onDelete={(node) => setDeleteTarget(node)}
-                />
-                {worktreeTrees.map((wt) => (
-                  <ProjectCard
-                    key={wt.project_path}
-                    project={wt}
-                    defaultOpen={false}
-                    isWorktree={true}
-                    onEdit={setEditingNode}
-                    onCompact={handleCompact}
-                    onDelete={(node) => setDeleteTarget(node)}
-                  />
-                ))}
+        return (
+          <div className="flex gap-4 h-[calc(100vh-220px)]">
+            {/* 왼쪽: 프로젝트 목록 (즐겨찾기 상단 고정) */}
+            <div className="w-64 shrink-0 bg-zinc-900 border border-zinc-800 rounded-md flex flex-col overflow-hidden">
+              <div className="px-3 py-2 border-b border-zinc-800">
+                <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-wider">
+                  Projects ({mainProjects.length})
+                </span>
               </div>
-            )
-          })}
-        </div>
-      )}
+              <div className="flex-1 overflow-y-auto">
+                {(() => {
+                  const favProjects = mainProjects.filter((p) => favorites.has(p.project_path))
+                  const otherProjects = mainProjects.filter((p) => !favorites.has(p.project_path))
+
+                  const renderItem = (p: ProjectTree) => {
+                    const isActive = activeProject?.project_path === p.project_path
+                    const isFav = favorites.has(p.project_path)
+                    const group = groupedProjects.find((g) => g.path === p.project_path)
+                    const wtCount = group?.worktrees.length ?? 0
+                    const existing = countExisting(p.nodes)
+                    const total = countFiles(p.nodes)
+                    // encoded name 추출
+                    const encoded = groupedProjects.find((g) => g.path === p.project_path)?.main?.encoded
+                      ?? p.project_path.replace(/\//g, '-').replace(/^-/, '-')
+
+                    return (
+                      <div
+                        key={p.project_path}
+                        className={`flex items-center gap-1 border-b border-zinc-800/40 transition-colors group ${
+                          isActive
+                            ? 'bg-zinc-800/60 border-l-2 border-l-fuchsia-500'
+                            : 'border-l-2 border-l-transparent hover:bg-zinc-800/30'
+                        }`}
+                      >
+                        <button
+                          onClick={() => setSelectedPath(p.project_path)}
+                          className="flex-1 text-left px-3 py-2.5 min-w-0"
+                        >
+                          <p className="font-mono text-xs text-zinc-200 truncate font-medium">
+                            {isFav && <Star size={10} className="inline text-amber-400 mr-1 -mt-0.5" fill="currentColor" />}
+                            {p.project_name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="font-mono text-[10px] text-fuchsia-400/80">{existing}/{total}</span>
+                            {wtCount > 0 && (
+                              <span className="font-mono text-[10px] text-zinc-600 flex items-center gap-0.5">
+                                <GitBranch size={9} /> {wtCount}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                        <div className="flex flex-col gap-0.5 pr-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); toggleFavorite(p.project_path) }}
+                            className="p-0.5 text-zinc-600 hover:text-amber-400 transition-colors"
+                            title={isFav ? '즐겨찾기 해제' : '즐겨찾기'}
+                          >
+                            <Star size={11} fill={isFav ? 'currentColor' : 'none'} className={isFav ? 'text-amber-400' : ''} />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteProjectTarget({ name: p.project_name, encoded: encoded ?? '' }) }}
+                            className="p-0.5 text-zinc-600 hover:text-red-400 transition-colors"
+                            title="프로젝트 제거"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <>
+                      {favProjects.length > 0 && (
+                        <>
+                          <div className="px-3 py-1.5 bg-zinc-800/30">
+                            <span className="font-mono text-[9px] text-amber-400/70 uppercase tracking-widest flex items-center gap-1">
+                              <Star size={8} fill="currentColor" /> Favorites
+                            </span>
+                          </div>
+                          {favProjects.map(renderItem)}
+                        </>
+                      )}
+                      {otherProjects.length > 0 && (
+                        <>
+                          {favProjects.length > 0 && (
+                            <div className="px-3 py-1.5 bg-zinc-800/30">
+                              <span className="font-mono text-[9px] text-zinc-600 uppercase tracking-widest">Others</span>
+                            </div>
+                          )}
+                          {otherProjects.map(renderItem)}
+                        </>
+                      )}
+                    </>
+                  )
+                })()}
+              </div>
+
+              {/* Harness Wizard 카드 */}
+              {activeProject && (
+                <div className="px-3 py-3 border-t border-zinc-800 shrink-0">
+                  <button
+                    onClick={() => setShowWizard(true)}
+                    className="w-full bg-gradient-to-r from-fuchsia-500/8 to-violet-500/8 border border-fuchsia-500/25 rounded-lg p-3 hover:from-fuchsia-500/15 hover:to-violet-500/15 transition-all text-left"
+                  >
+                    <div className="flex items-center gap-2.5 mb-1.5">
+                      <FlaskConical size={15} className="text-fuchsia-400" />
+                      <span className="text-xs font-semibold text-zinc-200">Harness Wizard</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-500 leading-relaxed mb-2">
+                      {t('wizard.quickDesc')}
+                    </p>
+                    <div className="flex items-center gap-2 text-[9px] text-zinc-600">
+                      <span>📝</span><span>⚙️</span><span>🧠</span><span>⚡</span><span>🤖</span><span>🔌</span>
+                      <span className="ml-auto text-fuchsia-400/60">Official Guide →</span>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 오른쪽: 선택된 프로젝트 트리 (원본 + 워크트리 구분) */}
+            <div className="flex-1 bg-zinc-900 border border-zinc-800 rounded-md flex flex-col overflow-hidden">
+              {activeProject ? (
+                <>
+                  {/* 헤더 */}
+                  <div className="px-4 py-2.5 border-b border-zinc-800 shrink-0 flex items-center justify-between">
+                    <div className="min-w-0">
+                      <p className="font-mono text-sm text-zinc-100 font-medium">{activeProject.project_name}</p>
+                      <p className="font-mono text-[10px] text-zinc-600 truncate">{activeProject.project_path}</p>
+                    </div>
+                    <PermissionToggle projectPath={activeProject.project_path} />
+                  </div>
+
+                  {/* CLAUDE.md가 없는 프로젝트 → Wizard 추천 배너 */}
+                  {activeProject.nodes.every((n) => !(n.type === 'file' && n.name === 'CLAUDE.md' && n.exists)) &&
+                   !localStorage.getItem(`wizard-dismissed-${activeProject.project_path}`) && (
+                    <div className="mx-3 mt-3 mb-2 bg-gradient-to-r from-fuchsia-500/10 to-violet-500/10 border border-fuchsia-500/25 rounded-lg p-4 relative">
+                      <button
+                        onClick={() => {
+                          localStorage.setItem(`wizard-dismissed-${activeProject.project_path}`, '1')
+                          // force re-render
+                          setSelectedPath(activeProject.project_path)
+                        }}
+                        className="absolute top-2 right-2 text-zinc-600 hover:text-zinc-400 text-xs"
+                      >
+                        ✕
+                      </button>
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-fuchsia-500/15 rounded-lg flex items-center justify-center shrink-0">
+                          <FlaskConical size={20} className="text-fuchsia-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-zinc-100 mb-1">
+                            이 프로젝트에 Claude 설정이 없습니다
+                          </p>
+                          <p className="text-[11px] text-zinc-400 leading-relaxed mb-3">
+                            Harness Wizard가{' '}
+                            <a href="https://code.claude.com/docs/en/best-practices" target="_blank" rel="noopener noreferrer" className="text-fuchsia-400 underline">
+                              Anthropic 공식 가이드
+                            </a>
+                            {' '}기반으로 최적의 설정을 AI로 생성합니다.
+                          </p>
+                          <div className="flex items-center gap-3 mb-3 text-[10px] text-zinc-500">
+                            <span>📝 CLAUDE.md</span>
+                            <span>⚙️ Hooks</span>
+                            <span>🧠 Memory</span>
+                            <span>⚡ Skills</span>
+                            <span>🤖 Agents</span>
+                            <span>🔌 MCP</span>
+                          </div>
+                          <button
+                            onClick={() => setShowWizard(true)}
+                            className="px-4 py-2 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium rounded-md transition-colors"
+                          >
+                            Harness Wizard 실행
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 워크트리가 있으면 섹션 목차(TOC) 표시 */}
+                  {activeWorktrees.length > 0 && (
+                    <div className="px-4 py-2 border-b border-zinc-800 shrink-0 bg-zinc-900/80">
+                      <div className="flex items-center gap-3 overflow-x-auto scrollbar-none">
+                        {/* Main */}
+                        <button
+                          onClick={() => document.getElementById('section-main')?.scrollIntoView({ behavior: 'smooth' })}
+                          className="flex items-center gap-1.5 shrink-0 text-[11px] font-mono text-fuchsia-400 hover:text-fuchsia-300 transition-colors"
+                        >
+                          <FolderKanban size={11} />
+                          <span className="font-medium">main</span>
+                        </button>
+
+                        <span className="text-zinc-700 text-[10px]">/</span>
+
+                        {/* 각 워크트리 개별 표시 */}
+                        {activeWorktrees.map((wt, idx) => (
+                          <span key={wt.project_path} className="flex items-center gap-1.5 shrink-0">
+                            {idx > 0 && <span className="text-zinc-800 text-[10px]">·</span>}
+                            <button
+                              onClick={() => document.getElementById(`section-wt-${idx}`)?.scrollIntoView({ behavior: 'smooth' })}
+                              className="flex items-center gap-1 text-[11px] font-mono text-amber-400/80 hover:text-amber-300 transition-colors"
+                            >
+                              <GitBranch size={10} />
+                              {wt.project_name}
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 트리 본문 — 스크롤 */}
+                  <div className="flex-1 overflow-y-auto px-2 py-2">
+                    {/* 원본 레포 섹션 */}
+                    <div id="section-main" className="mb-3">
+                      <div className="flex items-center gap-2 px-2 py-1.5 mb-1">
+                        <FolderKanban size={12} className="text-fuchsia-400" />
+                        <span className="font-mono text-[11px] text-fuchsia-400 font-medium">Main Repository</span>
+                        <span className="font-mono text-[10px] text-zinc-600">
+                          {countExisting(activeProject.nodes)}/{countFiles(activeProject.nodes)} files
+                        </span>
+                      </div>
+                      <div className="border-l-2 border-fuchsia-500/30 ml-3">
+                        {activeProject.nodes.map((node, i) => (
+                          <TreeNodeRow key={i} node={node} depth={0} onEdit={setEditingNode} onCompact={handleCompact} onDelete={(node) => setDeleteTarget(node)} />
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 워크트리 섹션 */}
+                    {activeWorktrees.length > 0 && (
+                      <div id="section-worktrees" className="mt-4 pt-3 border-t border-zinc-800/50">
+                        <div className="flex items-center gap-2 px-2 py-1.5 mb-1">
+                          <GitBranch size={12} className="text-amber-400" />
+                          <span className="font-mono text-[11px] text-amber-400 font-medium">Worktrees</span>
+                          <span className="font-mono text-[10px] text-zinc-600">{activeWorktrees.length}</span>
+                        </div>
+                        {activeWorktrees.map((wt, wtIdx) => (
+                          <div key={wt.project_path} id={`section-wt-${wtIdx}`} className="mb-3">
+                            <div className="flex items-center gap-2 px-2 py-1 ml-3">
+                              <GitBranch size={10} className="text-zinc-500" />
+                              <span className="font-mono text-xs text-zinc-300">{wt.project_name}</span>
+                              <span className="font-mono text-[10px] text-zinc-600">
+                                {countExisting(wt.nodes)}/{countFiles(wt.nodes)} files
+                              </span>
+                            </div>
+                            <div className="border-l-2 border-amber-500/20 ml-3">
+                              {wt.nodes.map((node, i) => (
+                                <TreeNodeRow key={i} node={node} depth={0} onEdit={setEditingNode} onCompact={handleCompact} onDelete={(node) => setDeleteTarget(node)} />
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="font-mono text-xs text-zinc-600">프로젝트를 선택하세요</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
 
       {/* 파일 편집 모달 */}
       {editingNode && (
@@ -672,6 +1452,36 @@ export default function ProjectOverview() {
           onCancel={() => setDeleteTarget(null)}
         />
       )}
+
+      {/* 프로젝트 삭제 확인 */}
+      {deleteProjectTarget && (
+        <DangerDeleteDialog
+          title={`'${deleteProjectTarget.name}' 프로젝트를 제거하시겠습니까?`}
+          description="~/.claude/projects/ 내의 해당 프로젝트 디렉토리 (세션 로그, 메모리 등)가 모두 삭제됩니다."
+          confirmText={deleteProjectTarget.name}
+          onConfirm={() => deleteProjectMutation.mutate(deleteProjectTarget.encoded)}
+          onCancel={() => setDeleteProjectTarget(null)}
+        />
+      )}
+
+      {/* Inline Wizard 모달 */}
+      {showWizard && (() => {
+        const mainProjects = projects.filter((p) => !worktreePaths.has(p.project_path))
+        const active = selectedPath
+          ? projects.find((p) => p.project_path === selectedPath) ?? mainProjects[0]
+          : mainProjects[0]
+        return active ? (
+          <InlineWizardModal
+            projectPath={active.project_path}
+            projectName={active.project_name}
+            allProjects={mainProjects}
+            onClose={() => setShowWizard(false)}
+            onApplied={() => {
+              queryClient.invalidateQueries({ queryKey: ['project-trees'] })
+            }}
+          />
+        ) : null
+      })()}
     </div>
   )
 }

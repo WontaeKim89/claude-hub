@@ -12,6 +12,8 @@ class SaveTemplateRequest(BaseModel):
     claude_md: str = ""
     hooks: list[dict] = []
     mcp_servers: dict = {}
+    memory_files: dict = {}
+    skills: list[str] = []
     tags: list[str] = []
 
 
@@ -89,6 +91,37 @@ async def apply_template(name: str, body: ApplyRequest, request: Request):
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/templates/community/fetch")
+async def fetch_community():
+    """GitHub 커뮤니티 소스에서 템플릿 목록 fetch."""
+    from claude_hub.services.templates import fetch_community_templates
+    try:
+        results = await fetch_community_templates()
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/templates/community/import")
+async def import_from_url(request: Request):
+    """URL에서 템플릿 JSON을 import."""
+    import httpx
+    body = await request.json()
+    url = body.get("url", "")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL required")
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(url)
+            resp.raise_for_status()
+            data = resp.json()
+            from claude_hub.services.templates import save_template
+            name = save_template(data)
+            return {"imported": True, "name": name}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.post("/config/diff")

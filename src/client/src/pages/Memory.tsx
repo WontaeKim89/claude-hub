@@ -47,7 +47,7 @@ function NewFileModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="notes.md"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
             />
           </div>
           <div>
@@ -62,7 +62,7 @@ function NewFileModal({
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending || !name.trim()}
-            className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+            className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
           >
             {mutation.isPending ? 'Creating...' : 'Create'}
           </button>
@@ -72,7 +72,7 @@ function NewFileModal({
   )
 }
 
-export default function Memory() {
+export default function Memory({ embedded }: { embedded?: boolean }) {
   const qc = useQueryClient()
   const [selectedProject, setSelectedProject] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<string | null>(null)
@@ -163,18 +163,20 @@ export default function Memory() {
   return (
     <div>
       <div className="flex items-start justify-between mb-6">
-        <div className="flex items-center gap-1.5">
-          <div>
-            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Memory</h2>
-            <p className="mt-0.5 text-xs text-zinc-500">Project memory files managed by Claude</p>
+        {!embedded && (
+          <div className="flex items-center gap-1.5">
+            <div>
+              <h2 className="text-base font-semibold text-zinc-100 tracking-tight">Memory</h2>
+              <p className="mt-0.5 text-xs text-zinc-500">Project memory files managed by Claude</p>
+            </div>
+            <InfoTooltip {...CATEGORY_INFO.memory} />
           </div>
-          <InfoTooltip {...CATEGORY_INFO.memory} />
-        </div>
+        )}
         {selectedProject && (
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${embedded ? 'ml-auto' : ''}`}>
             <button
               onClick={() => setShowNew(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors"
             >
               <Plus size={13} strokeWidth={2} />
               New
@@ -195,7 +197,7 @@ export default function Memory() {
             <select
               value={selectedProject ?? ''}
               onChange={(e) => handleProjectChange(e.target.value)}
-              className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-xs font-mono text-zinc-300 focus:outline-none focus:border-emerald-500/50 w-full max-w-lg"
+              className="bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-xs font-mono text-zinc-300 focus:outline-none focus:border-fuchsia-500/50 w-full max-w-lg"
             >
               {projects.map((p) => (
                 <option key={p.encoded} value={p.encoded}>
@@ -219,7 +221,7 @@ export default function Memory() {
                           onClick={() => handleFileChange(f.name)}
                           className={`w-full text-left px-3 py-2 text-xs font-mono border-b border-zinc-800 last:border-0 truncate transition-colors ${
                             selectedFile === f.name
-                              ? 'text-emerald-400 bg-emerald-400/8'
+                              ? 'text-fuchsia-400 bg-fuchsia-400/8'
                               : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800'
                           }`}
                         >
@@ -250,7 +252,7 @@ export default function Memory() {
                     </div>
 
                     {error && <p className="text-xs text-red-400 bg-red-400/10 px-4 py-2">{error}</p>}
-                    {success && <p className="text-xs text-emerald-400 bg-emerald-400/10 px-4 py-2">Saved.</p>}
+                    {success && <p className="text-xs text-fuchsia-400 bg-fuchsia-400/10 px-4 py-2">Saved.</p>}
 
                     <div className="flex-1 overflow-hidden">
                       {contentLoading ? (
@@ -264,7 +266,7 @@ export default function Memory() {
                       <button
                         onClick={() => saveMutation.mutate()}
                         disabled={saveMutation.isPending || contentLoading}
-                        className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+                        className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
                       >
                         {saveMutation.isPending ? 'Saving...' : 'Save'}
                       </button>

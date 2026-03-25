@@ -14,7 +14,7 @@ function TemplateDetailModal({ template, onClose, onApply }: { template: Harness
         <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
           <div>
             <span className="text-sm font-medium text-zinc-100">{template.display_name || template.name}</span>
-            {template.builtin && <span className="ml-2 text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">built-in</span>}
+            {template.builtin && <span className="ml-2 text-[10px] text-fuchsia-400 bg-fuchsia-500/10 px-1.5 py-0.5 rounded">built-in</span>}
           </div>
           <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300"><X size={16} /></button>
         </div>
@@ -33,7 +33,7 @@ function TemplateDetailModal({ template, onClose, onApply }: { template: Harness
               <h3 className="text-xs font-mono text-zinc-500 mb-2">Hooks ({template.hooks.length})</h3>
               {template.hooks.map((h, i) => (
                 <div key={i} className="text-xs font-mono text-zinc-400 bg-zinc-950 border border-zinc-800 rounded px-3 py-1.5 mb-1">
-                  <span className="text-emerald-400">{h.event}</span> → <span className="text-zinc-300">{h.command}</span>
+                  <span className="text-fuchsia-400">{h.event}</span> → <span className="text-zinc-300">{h.command}</span>
                 </div>
               ))}
             </div>
@@ -50,7 +50,7 @@ function TemplateDetailModal({ template, onClose, onApply }: { template: Harness
         </div>
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-zinc-800">
           <button onClick={onClose} className="px-3 py-1.5 text-xs text-zinc-400 border border-zinc-700 rounded">닫기</button>
-          <button onClick={onApply} className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded">적용</button>
+          <button onClick={onApply} className="px-3 py-1.5 text-xs bg-fuchsia-600 text-white rounded">적용</button>
         </div>
       </div>
     </div>
@@ -139,7 +139,7 @@ export default function Templates() {
       {/* 헤더 */}
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
-          <FileStack size={16} className="text-emerald-400" strokeWidth={1.5} />
+          <FileStack size={16} className="text-fuchsia-400" strokeWidth={1.5} />
           <h2 className="text-base font-semibold text-zinc-100 tracking-tight">{t('templates.title')}</h2>
         </div>
         <p className="text-xs text-zinc-500">{t('templates.subtitle')}</p>
@@ -153,7 +153,7 @@ export default function Templates() {
             onClick={() => setActiveTab(tab.key)}
             className={`px-3 py-2 text-xs font-medium transition-colors ${
               activeTab === tab.key
-                ? 'text-emerald-400 border-b-2 border-emerald-400 -mb-px'
+                ? 'text-fuchsia-400 border-b-2 border-fuchsia-400 -mb-px'
                 : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
@@ -286,13 +286,13 @@ export default function Templates() {
                 <button
                   onClick={handleSaveExport}
                   disabled={!templateName.trim() || saveMutation.isPending}
-                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-xs text-white rounded transition-colors flex items-center gap-1.5"
+                  className="px-3 py-1.5 bg-fuchsia-600 hover:bg-fuchsia-500 disabled:opacity-40 text-xs text-white rounded transition-colors flex items-center gap-1.5"
                 >
                   <Download size={12} />
                   {t('templates.save')}
                 </button>
                 {savedMsg && (
-                  <span className="text-xs text-emerald-400 flex items-center gap-1">
+                  <span className="text-xs text-fuchsia-400 flex items-center gap-1">
                     <Check size={12} /> 저장됨
                   </span>
                 )}
@@ -326,7 +326,7 @@ function TemplateCard({ tmpl, applyTarget, applying, applied, onApply, onDelete,
           <div className="flex items-center gap-2 mb-1">
             <span className="text-sm font-medium text-zinc-200">{tmpl.display_name}</span>
             {tmpl.builtin && (
-              <span className="text-[10px] px-1.5 py-0.5 bg-emerald-500/15 text-emerald-400 rounded font-mono">built-in</span>
+              <span className="text-[10px] px-1.5 py-0.5 bg-fuchsia-500/15 text-fuchsia-400 rounded font-mono">built-in</span>
             )}
           </div>
           <p className="text-xs text-zinc-500 mb-2">{tmpl.description}</p>
@@ -356,7 +356,7 @@ function TemplateCard({ tmpl, applyTarget, applying, applied, onApply, onDelete,
             disabled={!applyTarget || applying}
             className={`px-3 py-1.5 text-xs rounded transition-colors ${
               applied
-                ? 'bg-emerald-600/20 text-emerald-400'
+                ? 'bg-fuchsia-600/20 text-fuchsia-400'
                 : 'bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-zinc-200'
             }`}
           >

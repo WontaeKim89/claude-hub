@@ -58,7 +58,7 @@ function EditKeybindingModal({ entry, onClose }: { entry: KeybindingEntry; onClo
               value={shortcut}
               onChange={(e) => setShortcut(e.target.value)}
               placeholder="Ctrl+Shift+P"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
             />
           </div>
         </div>
@@ -69,7 +69,7 @@ function EditKeybindingModal({ entry, onClose }: { entry: KeybindingEntry; onClo
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending}
-            className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+            className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
           >
             {mutation.isPending ? 'Saving...' : 'Save'}
           </button>
@@ -115,7 +115,7 @@ function AddKeybindingModal({ onClose }: { onClose: () => void }) {
               value={action}
               onChange={(e) => setAction(e.target.value)}
               placeholder="openFile"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
             />
           </div>
           <div>
@@ -124,7 +124,7 @@ function AddKeybindingModal({ onClose }: { onClose: () => void }) {
               value={shortcut}
               onChange={(e) => setShortcut(e.target.value)}
               placeholder="Ctrl+P"
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
             />
           </div>
         </div>
@@ -135,7 +135,7 @@ function AddKeybindingModal({ onClose }: { onClose: () => void }) {
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending || !action.trim() || !shortcut.trim()}
-            className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+            className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
           >
             {mutation.isPending ? 'Adding...' : 'Add'}
           </button>
@@ -181,11 +181,59 @@ export default function Keybindings() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors"
           >
             <Plus size={13} strokeWidth={2} />
             Add Keybinding
           </button>
+        </div>
+      </div>
+
+      {/* 키바인딩 기능 설명 */}
+      <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 mb-6 max-w-2xl">
+        <h3 className="text-sm font-semibold text-zinc-200 mb-3">키바인딩이란?</h3>
+        <p className="text-xs text-zinc-400 leading-relaxed mb-3">
+          Claude Code CLI에서 사용하는 <span className="text-zinc-200">키보드 단축키</span>를 커스터마이징하는 기능입니다.
+          자주 사용하는 동작에 원하는 키 조합을 매핑하여 작업 효율을 높일 수 있습니다.
+        </p>
+        <p className="text-xs text-zinc-400 leading-relaxed mb-4">
+          설정 파일: <code className="font-mono text-fuchsia-400 bg-zinc-800 px-1.5 py-0.5 rounded text-[11px]">~/.claude/keybindings.json</code>
+        </p>
+
+        <h4 className="text-xs font-semibold text-zinc-300 mb-2">사용 예시</h4>
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 text-xs">
+            <div className="flex gap-0.5 shrink-0">
+              <kbd className="px-1.5 py-0.5 font-mono bg-zinc-800 border border-zinc-700 rounded text-zinc-300 text-[11px]">Ctrl</kbd>
+              <span className="text-zinc-700 mx-0.5">+</span>
+              <kbd className="px-1.5 py-0.5 font-mono bg-zinc-800 border border-zinc-700 rounded text-zinc-300 text-[11px]">L</kbd>
+            </div>
+            <span className="text-zinc-500">→</span>
+            <span className="text-zinc-400">채팅 히스토리 초기화</span>
+          </div>
+          <div className="flex items-center gap-3 text-xs">
+            <div className="flex gap-0.5 shrink-0">
+              <kbd className="px-1.5 py-0.5 font-mono bg-zinc-800 border border-zinc-700 rounded text-zinc-300 text-[11px]">Ctrl</kbd>
+              <span className="text-zinc-700 mx-0.5">+</span>
+              <kbd className="px-1.5 py-0.5 font-mono bg-zinc-800 border border-zinc-700 rounded text-zinc-300 text-[11px]">R</kbd>
+            </div>
+            <span className="text-zinc-500">→</span>
+            <span className="text-zinc-400">이전 세션 resume</span>
+          </div>
+          <div className="flex items-center gap-3 text-xs">
+            <div className="flex gap-0.5 shrink-0">
+              <kbd className="px-1.5 py-0.5 font-mono bg-zinc-800 border border-zinc-700 rounded text-zinc-300 text-[11px]">Escape</kbd>
+            </div>
+            <span className="text-zinc-500">→</span>
+            <span className="text-zinc-400">현재 생성 중단 / 입력 취소</span>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-zinc-800">
+          <p className="text-[11px] text-zinc-600 leading-relaxed">
+            Action: 바인딩할 동작 이름 (예: clearHistory, resume, cancel) &nbsp;|&nbsp;
+            Shortcut: 키 조합 (예: Ctrl+L, Ctrl+Shift+P)
+          </p>
         </div>
       </div>
 

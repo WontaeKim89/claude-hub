@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { useEscClose } from '../../hooks/useEscClose'
 
 interface SaveConfirmDialogProps {
   oldContent: string
@@ -61,6 +62,7 @@ export function SaveConfirmDialog({
   onCancel,
   saving,
 }: SaveConfirmDialogProps) {
+  useEscClose(onCancel)
   const diffLines = buildDiffLines(oldContent, newContent)
   const hasChanges = diffLines.some((d) => d.type !== 'same')
   const addCount = diffLines.filter((d) => d.type === 'add').length
@@ -82,7 +84,7 @@ export function SaveConfirmDialog({
 
         {/* 변경 통계 */}
         <div className="flex items-center gap-3 px-4 py-2 border-b border-zinc-800/50">
-          {addCount > 0 && <span className="font-mono text-xs text-emerald-400">+{addCount} 추가</span>}
+          {addCount > 0 && <span className="font-mono text-xs text-fuchsia-400">+{addCount} 추가</span>}
           {removeCount > 0 && <span className="font-mono text-xs text-red-400">-{removeCount} 삭제</span>}
           {!hasChanges && <span className="font-mono text-xs text-zinc-500">변경 사항 없음</span>}
         </div>
@@ -108,7 +110,7 @@ export function SaveConfirmDialog({
                   key={idx}
                   className={`px-3 py-0.5 border-l-2 ${
                     line.type === 'add'
-                      ? 'bg-emerald-500/8 text-emerald-300 border-emerald-500'
+                      ? 'bg-fuchsia-500/8 text-fuchsia-300 border-fuchsia-500'
                       : 'bg-red-500/8 text-red-300 border-red-500'
                   }`}
                 >
@@ -133,7 +135,7 @@ export function SaveConfirmDialog({
             <button
               onClick={onConfirm}
               disabled={saving || !hasChanges}
-              className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors disabled:opacity-50"
+              className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors disabled:opacity-50"
             >
               {saving ? '저장 중...' : '저장'}
             </button>

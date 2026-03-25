@@ -35,6 +35,21 @@ export const api = {
       }),
     delete: (name: string) =>
       request<void>(`/skills/${encodeURIComponent(name)}`, { method: 'DELETE' }),
+    duplicates: () =>
+      request<Array<{
+        skill_a: string; skill_b: string
+        source_a: string; source_b: string
+        description_a: string; description_b: string
+        similarity: number; grade: 'red' | 'yellow'
+      }>>('/skills/duplicates/scan'),
+    compare: (skillA: string, skillB: string) =>
+      request<{
+        skill_a: { name: string; source: string; content: string; lines: number }
+        skill_b: { name: string; source: string; content: string; lines: number }
+        similarity: number
+        diff: string[]
+        matching_blocks: Array<{ a_start: number; b_start: number; size: number }>
+      }>(`/skills/duplicates/compare?skill_a=${encodeURIComponent(skillA)}&skill_b=${encodeURIComponent(skillB)}`),
   },
 
   settings: {
@@ -128,6 +143,15 @@ export const api = {
       return request<MarketplacePlugin[]>(`/marketplace/browse${query ? `?${query}` : ''}`)
     },
     mcp: () => request<Array<{ name: string; description: string; package: string; category: string; source: string; installed: boolean }>>('/marketplace/mcp'),
+    installMcp: (name: string, pkg: string) =>
+      request<{ ok: boolean; name: string }>('/marketplace/mcp/install', {
+        method: 'POST',
+        body: JSON.stringify({ name, package: pkg }),
+      }),
+    uninstallMcp: (name: string) =>
+      request<{ ok: boolean; name: string }>(`/marketplace/mcp/${encodeURIComponent(name)}`, {
+        method: 'DELETE',
+      }),
   },
 
   memory: {
@@ -187,7 +211,15 @@ export const api = {
   claudeSettings: {
     get: () => request<{ model: string; plan: string; cli_version?: string }>('/claude/settings'),
     updateModel: (model: string) => request<{ ok: boolean; model: string }>('/claude/settings/model', { method: 'PUT', body: JSON.stringify({ model }) }),
+    rateLimits: () => request<{
+      five_hour: { utilization: number; resets_at: string | null } | null;
+      seven_day: { utilization: number; resets_at: string | null } | null;
+      seven_day_sonnet: { utilization: number; resets_at: string | null } | null;
+      seven_day_opus: { utilization: number; resets_at: string | null } | null;
+      extra_usage: { is_enabled: boolean; monthly_limit: number | null; used_credits: number | null; utilization: number | null } | null;
+    }>('/claude/rate-limits'),
     usage: () => request<{
+      today: { sessions: number; tokens_in: number; tokens_out: number; cost: number; tool_calls: number; activity: { messages: number; sessions: number; tool_calls: number } | null };
       weekly: { sessions: number; tokens_in: number; tokens_out: number; cost: number };
       monthly: { sessions: number; tokens_in: number; tokens_out: number; cost: number };
       daily_avg_cost: number;
@@ -242,6 +274,10 @@ export const api = {
         '/wizard/compact',
         { method: 'POST', body: JSON.stringify({ path }) }
       ),
+    projectTreesAll: () =>
+      request<Array<{ project_name: string; project_path: string; nodes: unknown[] }>>('/wizard/project-trees-all'),
+    deleteProject: (encoded: string) =>
+      request<{ ok: boolean; deleted: string }>(`/projects/${encodeURIComponent(encoded)}`, { method: 'DELETE' }),
     projectsGrouped: () =>
       request<Array<{
         path: string
@@ -275,6 +311,8 @@ export const api = {
     delete: (name: string) => request(`/templates/${name}`, { method: 'DELETE' }),
     export: (projectPath: string) => request<HarnessTemplate>('/templates/export', { method: 'POST', body: JSON.stringify({ project_path: projectPath }) }),
     apply: (name: string, projectPath: string) => request(`/templates/${name}/apply`, { method: 'POST', body: JSON.stringify({ project_path: projectPath }) }),
+    community: () => request<HarnessTemplate[]>('/templates/community/fetch'),
+    importUrl: (url: string) => request<{ imported: boolean; name: string }>('/templates/community/import', { method: 'POST', body: JSON.stringify({ url }) }),
   },
 
   configDiff: {
@@ -284,7 +322,7 @@ export const api = {
 
   sessions: {
     list: (project?: string) =>
-      request<Array<{ id: string; project: string; file: string; size: number; modified: number; message_count: number; title: string }>>(
+      request<Array<{ id: string; project: string; project_path: string; file: string; size: number; modified: number; message_count: number; title: string }>>(
         `/sessions${project ? `?project=${encodeURIComponent(project)}` : ''}`
       ),
     messages: (sessionId: string, project?: string, limit = 200) =>
@@ -298,5 +336,13 @@ export const api = {
       }>(`/sessions/${sessionId}/messages?limit=${limit}${project ? `&project=${encodeURIComponent(project)}` : ''}`),
     delete: (sessionId: string) =>
       request<{ deleted: boolean }>(`/sessions/${sessionId}`, { method: 'DELETE' }),
+  },
+
+  hub: {
+    settings: () => request<{ autostart: boolean; tracker_installed: boolean; tracker_command: string }>('/hub/settings'),
+    setAutostart: (enabled: boolean) =>
+      request<{ ok: boolean; autostart: boolean }>(`/hub/settings/autostart?enabled=${enabled}`, { method: 'PUT' }),
+    installTracker: () =>
+      request<{ ok: boolean; command: string }>('/hub/settings/install-tracker', { method: 'POST' }),
   },
 }

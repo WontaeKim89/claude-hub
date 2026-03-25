@@ -61,6 +61,9 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.include_router(sessions.router, prefix="/api")
     app.include_router(claude_settings.router, prefix="/api")
 
+    from claude_hub.routers import hub_settings
+    app.include_router(hub_settings.router, prefix="/api")
+
     static_dir = Path(__file__).parent / "static"
     if static_dir.exists():
         from starlette.middleware import Middleware
@@ -116,12 +119,24 @@ def cli():
 
     args = parser.parse_args()
 
+    # 어떤 CLI 명령이든 실행 시 tracker hook 자동 설치
+    try:
+        _ensure_tracker_installed()
+    except Exception:
+        pass
+
     if args.command == "tracker":
         _run_tracker_command(args)
         return
 
-    # 기존 claude-hub 프로세스 정리 (포트 충돌 방지)
-    _kill_existing(args.port)
+    url = f"http://localhost:{args.port}"
+
+    # 이미 서버가 실행 중이면 브라우저에서 열고 종료
+    if _is_already_running(args.port):
+        print(f"[claude-hub] Already running at {url}")
+        import webbrowser
+        webbrowser.open(url)
+        return
 
     config = AppConfig(port=args.port, host=args.host, auto_open=not args.no_open)
     if args.claude_dir:
@@ -131,10 +146,22 @@ def cli():
         print("WARNING: Binding to 0.0.0.0 exposes this server to the network.")
 
     app = create_app(config)
-    url = f"http://localhost:{config.port}"
 
     # 시작 시 항상 tracker 자동 설정 (hook 설치 + 과거 로그 sync)
     _auto_setup_tracker(config)
+
+    # 자동실행 기본 설정 (최초 1회)
+    _auto_setup_autostart()
+
+    # 사용량 데이터 사전 계산 (warm-up) — 백그라운드
+    import threading
+    def _warmup():
+        from claude_hub.services.cost import CostService
+        from claude_hub.services.scanner import _cached
+        cost = CostService(paths=config.paths)
+        _cached("claude_usage", cost.get_combined_summary)
+        print("[claude-hub] Usage data pre-calculated.")
+    threading.Thread(target=_warmup, daemon=True).start()
 
     if args.app:
         _run_as_app(app, config, url)
@@ -146,22 +173,140 @@ def cli():
         uvicorn.run(app, host=config.host, port=config.port, log_level="warning")
 
 
-def _kill_existing(port: int):
-    """기존 claude-hub 프로세스가 있으면 종료 (좀비 프로세스 방지)."""
+def _is_already_running(port: int) -> bool:
+    """해당 포트에서 claude-hub 서버가 응답하는지 확인."""
+    import urllib.request
+    try:
+        urllib.request.urlopen(f"http://localhost:{port}/api/dashboard", timeout=2)
+        return True
+    except Exception:
+        return False
+
+
+def _activate_existing_window():
+    """이미 실행 중인 ClaudeHub 창 포커스. 없으면 새 --app 창 열기."""
     import subprocess
+
+    # 방법 1: 전용 Chrome 프로필 프로세스가 실행 중인지 확인
+    chrome_profile = str(Path.home() / ".claude-hub" / "chrome-profile")
     try:
         result = subprocess.run(
-            ["lsof", "-ti", f":{port}"],
-            capture_output=True, text=True, timeout=3
+            ["pgrep", "-f", f"user-data-dir={chrome_profile}"],
+            capture_output=True, text=True, timeout=3,
         )
-        pids = result.stdout.strip().split("\n")
-        current_pid = str(os.getpid())
-        for pid in pids:
-            pid = pid.strip()
-            if pid and pid != current_pid:
-                os.kill(int(pid), 9)
+        if result.returncode == 0 and result.stdout.strip():
+            # 프로세스 있음 → AppleScript로 해당 Chrome 활성화
+            script = '''
+            tell application "System Events"
+                set chromeProcs to every process whose name contains "Google Chrome"
+                if (count of chromeProcs) > 0 then
+                    set frontmost of (item 1 of chromeProcs) to true
+                end if
+            end tell
+            '''
+            subprocess.run(["osascript", "-e", script], capture_output=True, timeout=3)
+            return
     except Exception:
         pass
+
+    # 프로세스 없음 → 새 --app 창 열기
+    print("기존 브라우저 세션에서 여는 중입니다.")
+    _open_browser_app("http://localhost:3847")
+
+
+def _open_browser_app(url: str):
+    """Chrome --app 모드로 새 창 열기. 최초 실행 시에만 호출된다."""
+    import subprocess
+
+    chrome_paths = [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "/Applications/Chromium.app/Contents/MacOS/Chromium",
+        "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
+        "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    ]
+    chrome_profile = Path.home() / ".claude-hub" / "chrome-profile"
+    chrome_profile.mkdir(parents=True, exist_ok=True)
+
+    for chrome in chrome_paths:
+        if Path(chrome).exists():
+            subprocess.Popen([
+                chrome,
+                f"--app={url}",
+                f"--user-data-dir={chrome_profile}",
+                "--no-first-run",
+                "--disable-extensions",
+                "--disable-infobars",
+                "--no-default-browser-check",
+            ])
+            return
+    webbrowser.open(url)
+
+
+def _ensure_tracker_installed():
+    """CLI 진입 시 tracker hook이 설치되어 있는지 확인하고 없으면 설치."""
+    import json as _json
+    settings_path = Path.home() / ".claude" / "settings.json"
+    if not settings_path.exists():
+        return
+
+    data = _json.loads(settings_path.read_text(encoding="utf-8"))
+    post_hooks = data.get("hooks", {}).get("PostToolUse", [])
+    has_tracker = any(
+        "claude-hub-tracker" in h.get("command", "")
+        for g in post_hooks for h in g.get("hooks", [])
+    )
+    if has_tracker:
+        return
+
+    tracker_cmd = _find_tracker_command() + " record"
+    hooks = data.setdefault("hooks", {})
+    hooks.setdefault("PostToolUse", []).append(
+        {"hooks": [{"type": "command", "command": tracker_cmd}]}
+    )
+    settings_path.write_text(_json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"[claude-hub] Tracker hook auto-installed: {tracker_cmd}")
+
+
+def _find_tracker_command() -> str:
+    """claude-hub-tracker의 절대 경로를 탐색."""
+    import shutil
+    from pathlib import Path
+
+    found = shutil.which("claude-hub-tracker")
+    if found:
+        return found
+
+    # 프로젝트 .venv 내 탐색
+    candidates = [
+        Path(__file__).resolve().parent.parent.parent / ".venv" / "bin" / "claude-hub-tracker",
+        Path.home() / ".local" / "bin" / "claude-hub-tracker",
+    ]
+    for c in candidates:
+        if c.exists():
+            return str(c)
+
+    return "claude-hub-tracker"  # fallback
+
+
+def _auto_setup_autostart():
+    """최초 실행 시 자동실행 LaunchAgent 생성 (기본 활성화)."""
+    from claude_hub.routers.hub_settings import PLIST_PATH, HUB_SETTINGS_PATH
+    import json as _json
+
+    # hub-settings.json에 autostart 설정이 없으면 최초 → 자동 활성화
+    if HUB_SETTINGS_PATH.exists():
+        settings = _json.loads(HUB_SETTINGS_PATH.read_text())
+        if "autostart" in settings:
+            return  # 이미 사용자가 설정함
+
+    if not PLIST_PATH.exists():
+        import asyncio
+        from claude_hub.routers.hub_settings import toggle_autostart
+        try:
+            asyncio.get_event_loop().run_until_complete(toggle_autostart(enabled=True))
+            print("[claude-hub] Autostart enabled (default).")
+        except Exception:
+            pass
 
 
 def _auto_setup_tracker(config: AppConfig):
@@ -172,22 +317,36 @@ def _auto_setup_tracker(config: AppConfig):
 
     db = UsageDB(db_path=config.backup_dir / "usage.db")
     settings_path = config.paths.settings_path
+    tracker_cmd = _find_tracker_command() + " record"
 
-    # 1. Hook 자동 설치 (미설치 시)
+    # 1. Hook 자동 설치 또는 업데이트 (절대 경로)
     if settings_path.exists():
         data = _json.loads(settings_path.read_text(encoding="utf-8"))
         post_hooks = data.get("hooks", {}).get("PostToolUse", [])
+        modified = False
+
+        # 기존 상대 경로 hook을 절대 경로로 업데이트
+        for group in post_hooks:
+            for h in group.get("hooks", []):
+                if h.get("command") == "claude-hub-tracker record" and "claude-hub-tracker record" != tracker_cmd:
+                    h["command"] = tracker_cmd
+                    modified = True
+
+        # 미설치 시 새로 추가
         already = any(
-            any(h.get("command") == "claude-hub-tracker record" for h in g.get("hooks", []))
+            any("claude-hub-tracker" in h.get("command", "") for h in g.get("hooks", []))
             for g in post_hooks
         )
         if not already:
             hooks = data.setdefault("hooks", {})
             hooks.setdefault("PostToolUse", []).append(
-                {"hooks": [{"type": "command", "command": "claude-hub-tracker record"}]}
+                {"hooks": [{"type": "command", "command": tracker_cmd}]}
             )
+            modified = True
+
+        if modified:
             settings_path.write_text(_json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
-            print("[claude-hub] Tracker hook installed.")
+            print(f"[claude-hub] Tracker hook installed: {tracker_cmd}")
 
     # 2. 과거 로그 sync (DB가 비어있을 때만)
     overview = db.get_overview()
@@ -199,12 +358,10 @@ def _auto_setup_tracker(config: AppConfig):
 
 
 def _run_as_app(app, config: AppConfig, url: str):
-    """macOS 메뉴바 트레이 + 브라우저 앱 모드로 실행.
-    서버가 백그라운드에서 계속 실행되고, 메뉴바 아이콘으로 제어."""
+    """pywebview 네이티브 윈도우로 실행. Dock에 ClaudeHub 아이콘 표시."""
     import threading
     import time
     import urllib.request
-    import subprocess
 
     # uvicorn 서버를 별도 스레드에서 실행
     def start_server():
@@ -221,66 +378,23 @@ def _run_as_app(app, config: AppConfig, url: str):
         except Exception:
             time.sleep(0.2)
 
-    def open_browser():
-        """브라우저를 앱 모드로 열기 (Chrome --app 또는 기본 브라우저)."""
-        # Chrome/Chromium의 --app 모드 시도 (독립 창, 주소창 없음)
-        chrome_paths = [
-            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-            "/Applications/Chromium.app/Contents/MacOS/Chromium",
-            "/Applications/Brave Browser.app/Contents/MacOS/Brave Browser",
-            "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
-        ]
-        # claude-hub 전용 Chrome 프로필 (캐시 격리)
-        chrome_profile = Path.home() / ".claude-hub" / "chrome-profile"
-        chrome_profile.mkdir(parents=True, exist_ok=True)
+    print(f"[claude-hub] Running at {url}")
 
-        for chrome in chrome_paths:
-            if Path(chrome).exists():
-                subprocess.Popen([
-                    chrome,
-                    f"--app={url}",
-                    f"--user-data-dir={chrome_profile}",
-                    "--no-first-run",
-                    "--disable-extensions",
-                ])
-                return
-        # Chromium 계열 없으면 기본 브라우저
-        webbrowser.open(url)
-
-    # 브라우저 앱 창 열기
-    open_browser()
-
-    # macOS 메뉴바 트레이
     try:
-        import rumps
-
-        class ClaudeHubTray(rumps.App):
-            def __init__(self):
-                super().__init__("claude-hub", title="⬡", quit_button=None)
-                self.menu = [
-                    rumps.MenuItem("Open claude-hub", callback=self._open),
-                    rumps.MenuItem(f"Running on port {config.port}", callback=None),
-                    None,
-                    rumps.MenuItem("Quit", callback=self._quit),
-                ]
-
-            def _open(self, _):
-                open_browser()
-
-            def _quit(self, _):
-                rumps.quit_application()
-
-        print(f"[claude-hub] Running at {url}")
-        print("[claude-hub] Menu bar icon ⬡ active. Click to reopen.")
-
-        # rumps 메인 스레드 (macOS 필수)
-        tray = ClaudeHubTray()
-        tray.run()
-
+        import webview
+        webview.create_window(
+            "ClaudeHub",
+            url,
+            width=1280,
+            height=820,
+            min_size=(900, 600),
+        )
+        webview.start()
     except ImportError:
-        # rumps 없으면 서버만 포그라운드 유지
-        print(f"[claude-hub] Running at {url}")
-        print("[claude-hub] Press Ctrl+C to stop.")
+        # pywebview 없으면 브라우저로 fallback
+        print("[claude-hub] pywebview not found, opening in browser.")
+        import webbrowser
+        webbrowser.open(url)
         try:
             while True:
                 time.sleep(1)

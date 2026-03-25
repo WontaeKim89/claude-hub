@@ -115,7 +115,7 @@ function HookFormModal({
             <select
               value={form.eventType}
               onChange={(e) => setForm({ ...form, eventType: e.target.value as HookEventType })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
             >
               {EVENT_TYPES.map((t) => (
                 <option key={t} value={t}>{t}</option>
@@ -129,7 +129,7 @@ function HookFormModal({
             <input
               value={form.matcher}
               onChange={(e) => setForm({ ...form, matcher: e.target.value })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm text-zinc-100 font-mono focus:outline-none focus:border-fuchsia-500/50"
               placeholder="Bash|Edit"
             />
           </div>
@@ -138,7 +138,7 @@ function HookFormModal({
             <input
               value={form.command}
               onChange={(e) => setForm({ ...form, command: e.target.value })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:border-fuchsia-500/50"
               placeholder="echo hello"
             />
           </div>
@@ -150,7 +150,7 @@ function HookFormModal({
               type="number"
               value={form.timeout}
               onChange={(e) => setForm({ ...form, timeout: e.target.value })}
-              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:border-emerald-500/50"
+              className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 text-sm font-mono text-zinc-100 focus:outline-none focus:border-fuchsia-500/50"
               placeholder="2000"
             />
           </div>
@@ -162,7 +162,7 @@ function HookFormModal({
           <button
             onClick={() => onSave(form)}
             disabled={!form.command.trim()}
-            className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+            className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
           >
             Save
           </button>
@@ -257,7 +257,7 @@ export default function Hooks({ embedded }: { embedded?: boolean }) {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowAdd(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors"
             >
               <Plus size={13} strokeWidth={2} />
               Add Hook
@@ -269,7 +269,7 @@ export default function Hooks({ embedded }: { embedded?: boolean }) {
         <div className="flex items-center justify-end gap-2 mb-6">
           <button
             onClick={() => setShowAdd(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors"
           >
             <Plus size={13} strokeWidth={2} />
             Add Hook

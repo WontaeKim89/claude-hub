@@ -35,15 +35,14 @@ export function SkillChat({ onSave, onSwitchToManual }: Props) {
 
   const mutation = useMutation({
     mutationFn: (userMsg: string) => {
+      // messages에는 이미 handleSend에서 추가된 사용자 메시지가 포함됨
       const updated: Array<{ role: string; content: string }> = [
         ...messages.map((m) => ({ role: m.role, content: m.content })),
         { role: 'user', content: userMsg },
       ]
       return api.wizard.generateSkill(updated)
     },
-    onSuccess: (data: SkillGenResult, userMsg: string) => {
-      const userMessage: Message = { role: 'user', content: userMsg }
-
+    onSuccess: (data: SkillGenResult) => {
       let aiContent = ''
       if (data.skill_md) {
         aiContent = data.questions?.length > 0
@@ -63,7 +62,8 @@ export function SkillChat({ onSave, onSwitchToManual }: Props) {
         skill_name: data.name,
       }
 
-      setMessages((prev) => [...prev, userMessage, aiMessage])
+      // AI 응답만 추가 (사용자 메시지는 handleSend에서 이미 추가됨)
+      setMessages((prev) => [...prev, aiMessage])
     },
   })
 
@@ -71,6 +71,8 @@ export function SkillChat({ onSave, onSwitchToManual }: Props) {
     const text = input.trim()
     if (!text || mutation.isPending) return
     setInput('')
+    // 사용자 메시지를 즉시 UI에 표시
+    setMessages((prev) => [...prev, { role: 'user', content: text }])
     mutation.mutate(text)
   }
 
@@ -90,7 +92,7 @@ export function SkillChat({ onSave, onSwitchToManual }: Props) {
             {/* 아바타 */}
             <div
               className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                msg.role === 'assistant' ? 'bg-purple-500/20 text-purple-400' : 'bg-emerald-500/20 text-emerald-400'
+                msg.role === 'assistant' ? 'bg-purple-500/20 text-purple-400' : 'bg-fuchsia-500/20 text-fuchsia-400'
               }`}
             >
               {msg.role === 'assistant' ? <Bot size={13} /> : <User size={13} />}
@@ -101,7 +103,7 @@ export function SkillChat({ onSave, onSwitchToManual }: Props) {
               <div
                 className={`px-3 py-2 rounded-lg text-xs leading-relaxed ${
                   msg.role === 'user'
-                    ? 'bg-emerald-600/20 text-emerald-100 border border-emerald-500/20'
+                    ? 'bg-fuchsia-600/20 text-sky-100 border border-fuchsia-500/20'
                     : 'bg-zinc-800 text-zinc-200 border border-zinc-700'
                 }`}
               >
@@ -175,12 +177,12 @@ export function SkillChat({ onSave, onSwitchToManual }: Props) {
           onKeyDown={handleKeyDown}
           placeholder={t('wizard.chatPlaceholder')}
           rows={2}
-          className="flex-1 bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-xs text-zinc-100 font-mono resize-none focus:outline-none focus:border-emerald-500/50 placeholder-zinc-600"
+          className="flex-1 bg-zinc-900 border border-zinc-800 rounded px-3 py-2 text-xs text-zinc-100 font-mono resize-none focus:outline-none focus:border-fuchsia-500/50 placeholder-zinc-600"
         />
         <button
           onClick={handleSend}
           disabled={!input.trim() || mutation.isPending}
-          className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors disabled:opacity-50 self-end"
+          className="px-3 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors disabled:opacity-50 self-end"
         >
           <Send size={13} />
         </button>

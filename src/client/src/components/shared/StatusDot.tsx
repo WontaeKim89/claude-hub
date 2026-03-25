@@ -6,11 +6,11 @@ interface StatusDotProps {
 }
 
 const variantClasses: Record<DotVariant, string> = {
-  emerald: 'bg-emerald-400',
+  emerald: 'bg-fuchsia-400',
   amber: 'bg-amber-400',
   red: 'bg-red-400',
   zinc: 'bg-zinc-500',
-  teal: 'bg-teal-400',
+  teal: 'bg-violet-400',
 }
 
 export function StatusDot({ variant = 'zinc', className = '' }: StatusDotProps) {

@@ -1,4 +1,5 @@
 """~/.claude/ 경로 해석 유틸리티."""
+import functools
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -85,6 +86,7 @@ class ClaudePaths:
         return projects
 
 
+@functools.lru_cache(maxsize=256)
 def decode_project_path(encoded: str) -> str:
     """인코딩된 프로젝트 경로를 실제 경로로 복원.
     '-'가 디렉토리 구분자인지 이름의 일부인지 구분하기 위해
@@ -97,19 +99,24 @@ def decode_project_path(encoded: str) -> str:
     result = _resolve_path("/", raw)
     if result:
         return result
-    # fallback: 단순 치환 (존재하지 않는 경로)
-    return encoded.replace("-", "/")
+    # fallback: 부분 탐색 — 존재하는 가장 깊은 경로까지 복원하고 나머지는 그대로
+    partial = _resolve_partial("/", raw)
+    if partial:
+        return partial
+    return encoded
 
 
 def _resolve_path(base: str, remaining: str) -> str | None:
-    """하이픈으로 구분된 경로를 실제 파일시스템과 대조하여 복원."""
+    """하이픈으로 구분된 경로를 실제 파일시스템과 대조하여 복원.
+    가장 긴 매칭을 우선 시도하여 'Persnal_Project' 같은 언더스코어 포함
+    디렉토리명이 'Persnal'/'Project'로 잘못 분리되는 것을 방지."""
     import os
     if not remaining:
         return base if os.path.isdir(base) else None
 
     parts = remaining.split("-")
-    # 앞에서부터 하이픈을 하나씩 늘려가며 디렉토리 존재 여부 확인
-    for i in range(1, len(parts) + 1):
+    # 긴 이름부터 시도 (greedy) — 'claude-hub'이 'claude'+'hub'보다 우선
+    for i in range(len(parts), 0, -1):
         candidate_name = "-".join(parts[:i])
         candidate_path = os.path.join(base, candidate_name)
         if os.path.exists(candidate_path):
@@ -117,6 +124,28 @@ def _resolve_path(base: str, remaining: str) -> str | None:
             result = _resolve_path(candidate_path, rest)
             if result:
                 return result
+    return None
+
+
+def _resolve_partial(base: str, remaining: str) -> str | None:
+    """존재하는 가장 깊은 경로까지 복원, 나머지는 하이픈으로 연결 유지."""
+    import os
+    if not remaining:
+        return base
+
+    parts = remaining.split("-")
+    for i in range(len(parts), 0, -1):
+        candidate_name = "-".join(parts[:i])
+        candidate_path = os.path.join(base, candidate_name)
+        if os.path.exists(candidate_path):
+            rest = "-".join(parts[i:])
+            if rest:
+                deeper = _resolve_partial(candidate_path, rest)
+                if deeper:
+                    return deeper
+            # 여기까지만 존재 — 나머지를 슬래시 없이 붙임
+            rest_str = "-".join(parts[i:])
+            return candidate_path + ("/" + rest_str if rest_str else "")
     return None
 
 

@@ -52,7 +52,8 @@ async def update_model(body: ModelUpdateRequest, request: Request):
     mtime = settings_path.stat().st_mtime
     settings["model"] = body.model
     editor.write_json(settings_path, settings, last_mtime=mtime)
-
+    from claude_hub.services.scanner import invalidate_settings_cache
+    invalidate_settings_cache()
     return {"ok": True, "model": body.model}
 
 
@@ -113,29 +114,53 @@ async def teleport_session():
 
 @router.get("/claude/usage")
 async def get_claude_usage(request: Request):
-    """Claude 사용량 정보 (세션 로그 기반 추정)."""
+    """Claude 사용량 정보 (TTL 캐시 — 60초)."""
     from claude_hub.services.cost import CostService
+    from claude_hub.services.scanner import _cached
     config = request.app.state.config
     cost_service = CostService(paths=config.paths)
+    return _cached("claude_usage", cost_service.get_combined_summary)
 
-    weekly = cost_service.get_summary(days=7)
-    monthly = cost_service.get_summary(days=30)
 
-    model_breakdown = monthly.get("model_usage", {})
+@router.get("/claude/rate-limits")
+async def get_claude_rate_limits():
+    """Claude OAuth API를 통한 실시간 레이트 리밋 조회."""
+    import subprocess
+    import httpx
 
-    return {
-        "weekly": {
-            "sessions": weekly["session_count"],
-            "tokens_in": weekly["total_tokens_in"],
-            "tokens_out": weekly["total_tokens_out"],
-            "cost": weekly["total_cost_usd"],
-        },
-        "monthly": {
-            "sessions": monthly["session_count"],
-            "tokens_in": monthly["total_tokens_in"],
-            "tokens_out": monthly["total_tokens_out"],
-            "cost": monthly["total_cost_usd"],
-        },
-        "daily_avg_cost": monthly["daily_avg_cost"],
-        "model_breakdown": model_breakdown,
-    }
+    # Keychain에서 OAuth 토큰 추출
+    token = None
+    try:
+        proc = subprocess.run(
+            ["security", "find-generic-password", "-s", "Claude Code-credentials", "-w"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if proc.returncode == 0 and proc.stdout.strip():
+            creds = json.loads(proc.stdout.strip())
+            token = creds.get("claudeAiOauth", {}).get("accessToken")
+    except Exception:
+        pass
+
+    if not token:
+        raise HTTPException(status_code=404, detail="Claude OAuth token not found in Keychain")
+
+    # Anthropic OAuth usage API 호출
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.get(
+                "https://api.anthropic.com/api/oauth/usage",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "anthropic-beta": "oauth-2025-04-20",
+                },
+            )
+            if resp.status_code == 401:
+                raise HTTPException(status_code=401, detail="OAuth token expired or invalid")
+            if resp.status_code == 429:
+                raise HTTPException(status_code=429, detail="Rate limited")
+            resp.raise_for_status()
+            return resp.json()
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch rate limits: {e}")

@@ -99,4 +99,7 @@ async def delete_agent(name: str, request: Request):
     if agent_md.exists():
         editor.backup_service.create_backup(agent_md)
         agent_md.unlink()
+
+    from claude_hub.services.scanner import _cache
+    _cache.pop("scan_agents", None)
     return {"ok": True}

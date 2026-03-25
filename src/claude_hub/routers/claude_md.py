@@ -25,18 +25,44 @@ async def list_claude_md(request: Request):
         "exists": global_path.exists(),
     })
 
-    # 프로젝트별 CLAUDE.md
+    # 프로젝트별 CLAUDE.md — 그룹 구조 (메인 + 워크트리)
+    from pathlib import Path
+    from claude_hub.utils.paths import decode_project_path
     scanner = request.app.state.scanner
-    for project in scanner.list_projects():
-        # 프로젝트 디렉토리 내 CLAUDE.md
-        from pathlib import Path
-        project_claude_md = Path(project["memory_dir"]).parent.parent / "CLAUDE.md"
-        entries.append({
-            "scope": project["encoded"],
-            "label": project["decoded"],
-            "path": str(project_claude_md),
-            "exists": project_claude_md.exists(),
-        })
+    grouped = scanner.list_projects_grouped()
+
+    for group in grouped:
+        # 메인 프로젝트
+        main = group.get("main")
+        if main:
+            encoded = main["encoded"]
+            decoded = decode_project_path(encoded)
+            project_name = decoded.rstrip("/").split("/")[-1] if "/" in decoded else encoded
+            project_claude_md = paths.projects_dir / encoded / "CLAUDE.md"
+            entries.append({
+                "scope": encoded,
+                "decoded_path": decoded,
+                "project_name": project_name,
+                "is_worktree": False,
+                "parent": None,
+                "path": str(project_claude_md),
+                "exists": project_claude_md.exists(),
+            })
+            # 워크트리들
+            for wt in group.get("worktrees", []):
+                wt_encoded = wt["encoded"]
+                wt_decoded = decode_project_path(wt_encoded)
+                wt_name = wt_decoded.rstrip("/").split("/")[-1] if "/" in wt_decoded else wt_encoded
+                wt_claude_md = paths.projects_dir / wt_encoded / "CLAUDE.md"
+                entries.append({
+                    "scope": wt_encoded,
+                    "decoded_path": wt_decoded,
+                    "project_name": wt_name,
+                    "is_worktree": True,
+                    "parent": project_name,
+                    "path": str(wt_claude_md),
+                    "exists": wt_claude_md.exists(),
+                })
 
     return entries
 

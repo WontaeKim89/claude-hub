@@ -1,20 +1,19 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Package, Server } from 'lucide-react'
+import { Search, Package, Server, Trash2, Download } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useLang } from '../hooks/useLang'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
+import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import type { MarketplacePlugin } from '../lib/types'
 
-// 마켓플레이스 소스별 뱃지 색상 매핑
 function getSourceStyle(marketplace: string): string {
-  if (marketplace.includes('official')) return 'text-emerald-400 bg-emerald-500/10'
-  if (marketplace.includes('attention') || marketplace.includes('team')) return 'text-teal-400 bg-teal-500/10'
+  if (marketplace.includes('official')) return 'text-fuchsia-400 bg-fuchsia-500/10'
+  if (marketplace.includes('attention') || marketplace.includes('team')) return 'text-violet-400 bg-violet-500/10'
   return 'text-amber-400 bg-amber-500/10'
 }
 
-// MCP 소스별 뱃지 색상 매핑
 function getMcpSourceStyle(source: string): string {
   if (source === 'Anthropic') return 'text-violet-400 bg-violet-500/10'
   if (source === 'MCP Official') return 'text-blue-400 bg-blue-500/10'
@@ -38,7 +37,15 @@ function SkeletonCard() {
   )
 }
 
-function PluginCard({ plugin, t }: { plugin: MarketplacePlugin; t: (key: string) => string }) {
+function PluginCard({
+  plugin,
+  t,
+  onDelete,
+}: {
+  plugin: MarketplacePlugin
+  t: (key: string) => string
+  onDelete?: () => void
+}) {
   const qc = useQueryClient()
 
   const installMutation = useMutation({
@@ -48,7 +55,6 @@ function PluginCard({ plugin, t }: { plugin: MarketplacePlugin; t: (key: string)
 
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4 flex flex-col gap-2.5 hover:border-zinc-700 transition-colors">
-      {/* 헤더: 아이콘 + 이름 */}
       <div className="flex items-center gap-2">
         <Package size={13} className="text-zinc-600 shrink-0" strokeWidth={1.5} />
         <span className="font-mono text-sm font-bold text-zinc-100 truncate">{plugin.name}</span>
@@ -57,12 +63,10 @@ function PluginCard({ plugin, t }: { plugin: MarketplacePlugin; t: (key: string)
         )}
       </div>
 
-      {/* 설명 */}
       {plugin.description && (
         <p className="text-xs text-zinc-500 line-clamp-2 flex-1 leading-relaxed">{plugin.description}</p>
       )}
 
-      {/* 카테고리 뱃지 */}
       {plugin.category && (
         <div>
           <span className="inline-block px-1.5 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-400 rounded">
@@ -71,24 +75,37 @@ function PluginCard({ plugin, t }: { plugin: MarketplacePlugin; t: (key: string)
         </div>
       )}
 
-      {/* 하단: 마켓플레이스 소스 + 설치 버튼 */}
       <div className="flex items-center justify-between pt-2 border-t border-zinc-800 mt-auto">
         <span className={`inline-block px-1.5 py-0.5 text-[10px] font-mono rounded ${getSourceStyle(plugin.marketplace)}`}>
           {plugin.marketplace}
         </span>
-        {plugin.installed ? (
-          <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20">
-            {t('marketplace.installed')}
-          </span>
-        ) : (
-          <button
-            onClick={() => installMutation.mutate()}
-            disabled={installMutation.isPending}
-            className="px-2.5 py-0.5 text-[10px] font-mono border border-emerald-600 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded transition-colors disabled:opacity-50"
-          >
-            {installMutation.isPending ? '...' : t('marketplace.install')}
-          </button>
-        )}
+        <div className="flex items-center gap-1.5">
+          {plugin.installed ? (
+            <>
+              <span className="px-2 py-0.5 text-[10px] font-mono bg-fuchsia-500/10 text-fuchsia-400 rounded border border-fuchsia-500/20">
+                {t('marketplace.installed')}
+              </span>
+              {onDelete && (
+                <button
+                  onClick={onDelete}
+                  className="p-1 text-zinc-600 hover:text-red-400 transition-colors"
+                  title="삭제"
+                >
+                  <Trash2 size={12} />
+                </button>
+              )}
+            </>
+          ) : (
+            <button
+              onClick={() => installMutation.mutate()}
+              disabled={installMutation.isPending}
+              className="flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-mono border border-fuchsia-600 text-fuchsia-400 hover:bg-fuchsia-600 hover:text-white rounded transition-colors disabled:opacity-50"
+            >
+              <Download size={10} />
+              {installMutation.isPending ? '...' : t('marketplace.install')}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -103,30 +120,37 @@ type McpServer = {
   installed: boolean
 }
 
-function McpCard({ server, t }: { server: McpServer; t: (key: string) => string }) {
+function McpCard({
+  server,
+  t,
+  onInstall,
+  onUninstall,
+  isInstalling,
+}: {
+  server: McpServer
+  t: (key: string) => string
+  onInstall: () => void
+  onUninstall: () => void
+  isInstalling: boolean
+}) {
   return (
     <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4 flex flex-col gap-2.5 hover:border-zinc-700 transition-colors">
-      {/* 헤더: 아이콘 + 이름 */}
       <div className="flex items-center gap-2">
         <Server size={13} className="text-zinc-600 shrink-0" strokeWidth={1.5} />
         <span className="font-mono text-sm font-bold text-zinc-100 truncate">{server.name}</span>
-        {/* 소스 뱃지 — 카드 우측 상단 */}
         <span className={`ml-auto inline-block px-1.5 py-0.5 text-[10px] font-mono rounded shrink-0 ${getMcpSourceStyle(server.source)}`}>
           {server.source}
         </span>
       </div>
 
-      {/* 설명 */}
       {server.description && (
         <p className="text-xs text-zinc-500 line-clamp-2 flex-1 leading-relaxed">{server.description}</p>
       )}
 
-      {/* 패키지명 */}
       <p className="font-mono text-[10px] text-zinc-600 truncate" title={server.package}>
         {server.package}
       </p>
 
-      {/* 카테고리 뱃지 */}
       {server.category && (
         <div>
           <span className="inline-block px-1.5 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-400 rounded">
@@ -135,16 +159,29 @@ function McpCard({ server, t }: { server: McpServer; t: (key: string) => string 
         </div>
       )}
 
-      {/* 하단: 설치 상태 */}
       <div className="flex items-center justify-end pt-2 border-t border-zinc-800 mt-auto">
         {server.installed ? (
-          <span className="px-2 py-0.5 text-[10px] font-mono bg-emerald-500/10 text-emerald-400 rounded border border-emerald-500/20">
-            {t('marketplace.installed')}
-          </span>
+          <div className="flex items-center gap-1.5">
+            <span className="px-2 py-0.5 text-[10px] font-mono bg-fuchsia-500/10 text-fuchsia-400 rounded border border-fuchsia-500/20">
+              {t('marketplace.installed')}
+            </span>
+            <button
+              onClick={onUninstall}
+              className="p-1 text-zinc-600 hover:text-red-400 transition-colors"
+              title="삭제"
+            >
+              <Trash2 size={12} />
+            </button>
+          </div>
         ) : (
-          <span className="px-2 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-500 rounded">
-            미설치
-          </span>
+          <button
+            onClick={onInstall}
+            disabled={isInstalling}
+            className="flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-mono border border-fuchsia-600 text-fuchsia-400 hover:bg-fuchsia-600 hover:text-white rounded transition-colors disabled:opacity-50"
+          >
+            <Download size={10} />
+            {isInstalling ? '...' : t('marketplace.install')}
+          </button>
         )}
       </div>
     </div>
@@ -152,41 +189,58 @@ function McpCard({ server, t }: { server: McpServer; t: (key: string) => string 
 }
 
 type MainTab = 'plugins' | 'mcp'
+type FilterMode = 'all' | 'installed'
 
 export default function Marketplace() {
   const { t } = useLang()
+  const qc = useQueryClient()
   const [mainTab, setMainTab] = useState<MainTab>('plugins')
+  const [filterMode, setFilterMode] = useState<FilterMode>('all')
   const [activeSource, setActiveSource] = useState<string>('all')
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [query, setQuery] = useState('')
+  const [deleteTarget, setDeleteTarget] = useState<{ type: 'plugin' | 'mcp'; name: string } | null>(null)
 
-  // 전체 플러그인 목록 조회 (필터는 클라이언트에서 처리)
   const { data: allPlugins = [], isLoading: pluginsLoading } = useQuery<MarketplacePlugin[]>({
     queryKey: ['marketplace', 'browse'],
     queryFn: () => api.marketplace.browse({}),
   })
 
-  // MCP 서버 목록
   const { data: mcpServers = [], isLoading: mcpLoading } = useQuery<McpServer[]>({
     queryKey: ['marketplace', 'mcp'],
     queryFn: () => api.marketplace.mcp(),
   })
 
-  // 소스 탭 목록 — browse 데이터에서 마켓플레이스 목록 추출
+  const mcpInstallMutation = useMutation({
+    mutationFn: ({ name, pkg }: { name: string; pkg: string }) => api.marketplace.installMcp(name, pkg),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['marketplace', 'mcp'] }),
+  })
+
+  const mcpUninstallMutation = useMutation({
+    mutationFn: (name: string) => api.marketplace.uninstallMcp(name),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['marketplace', 'mcp'] }),
+  })
+
+  const pluginDeleteMutation = useMutation({
+    mutationFn: (name: string) => api.plugins.remove(name),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['marketplace', 'browse'] })
+      setDeleteTarget(null)
+    },
+  })
+
+  // 소스 탭 목록
   const sourceTabs = useMemo(() => {
     const counts = allPlugins.reduce<Record<string, number>>((acc, p) => {
       acc[p.marketplace] = (acc[p.marketplace] ?? 0) + 1
       return acc
     }, {})
-
     const marketplaces = Object.entries(counts)
       .sort(([, a], [, b]) => b - a)
       .map(([name, count]) => ({ name, count }))
-
     return [{ name: 'all', count: allPlugins.length }, ...marketplaces]
   }, [allPlugins])
 
-  // 카테고리 목록 (현재 선택된 소스 기준)
   const categories = useMemo(() => {
     const base = activeSource === 'all' ? allPlugins : allPlugins.filter((p) => p.marketplace === activeSource)
     const unique = Array.from(new Set(base.map((p) => p.category).filter(Boolean))) as string[]
@@ -196,29 +250,45 @@ export default function Marketplace() {
   // 필터 적용 (플러그인)
   const filteredPlugins = useMemo(() => {
     return allPlugins.filter((p) => {
+      if (filterMode === 'installed' && !p.installed) return false
       if (activeSource !== 'all' && p.marketplace !== activeSource) return false
       if (activeCategory !== 'all' && p.category !== activeCategory) return false
       if (query && !p.name.toLowerCase().includes(query.toLowerCase()) &&
           !p.description?.toLowerCase().includes(query.toLowerCase())) return false
       return true
     })
-  }, [allPlugins, activeSource, activeCategory, query])
+  }, [allPlugins, filterMode, activeSource, activeCategory, query])
 
   // 필터 적용 (MCP)
   const filteredMcp = useMemo(() => {
-    if (!query) return mcpServers
-    return mcpServers.filter((s) =>
-      s.name.toLowerCase().includes(query.toLowerCase()) ||
-      s.description.toLowerCase().includes(query.toLowerCase())
-    )
-  }, [mcpServers, query])
+    let list = mcpServers
+    if (filterMode === 'installed') list = list.filter((s) => s.installed)
+    if (query) {
+      list = list.filter((s) =>
+        s.name.toLowerCase().includes(query.toLowerCase()) ||
+        s.description.toLowerCase().includes(query.toLowerCase())
+      )
+    }
+    return list
+  }, [mcpServers, filterMode, query])
 
-  // 소스 탭 변경 시 카테고리 초기화
   function handleSourceChange(name: string) {
     setActiveSource(name)
     setActiveCategory('all')
   }
 
+  function handleDelete() {
+    if (!deleteTarget) return
+    if (deleteTarget.type === 'plugin') {
+      pluginDeleteMutation.mutate(deleteTarget.name)
+    } else {
+      mcpUninstallMutation.mutate(deleteTarget.name)
+      setDeleteTarget(null)
+    }
+  }
+
+  const installedPluginCount = allPlugins.filter((p) => p.installed).length
+  const installedMcpCount = mcpServers.filter((s) => s.installed).length
   const isLoading = mainTab === 'plugins' ? pluginsLoading : mcpLoading
 
   return (
@@ -232,37 +302,66 @@ export default function Marketplace() {
       </div>
 
       {/* 메인 탭: 플러그인 / MCP 서버 */}
-      <div className="flex gap-1 mb-5 border-b border-zinc-800 pb-0">
-        <button
-          onClick={() => setMainTab('plugins')}
-          className={`px-3 py-1.5 text-xs font-mono rounded-t transition-colors -mb-px border-b-2 ${
-            mainTab === 'plugins'
-              ? 'text-zinc-100 border-emerald-500'
-              : 'text-zinc-500 border-transparent hover:text-zinc-300'
-          }`}
-        >
-          {t('marketplace.plugins')}
-          <span className={`ml-1.5 text-[10px] ${mainTab === 'plugins' ? 'text-emerald-400' : 'text-zinc-600'}`}>
-            {allPlugins.length}
-          </span>
-        </button>
-        <button
-          onClick={() => setMainTab('mcp')}
-          className={`px-3 py-1.5 text-xs font-mono rounded-t transition-colors -mb-px border-b-2 ${
-            mainTab === 'mcp'
-              ? 'text-zinc-100 border-emerald-500'
-              : 'text-zinc-500 border-transparent hover:text-zinc-300'
-          }`}
-        >
-          {t('marketplace.mcp')}
-          <span className={`ml-1.5 text-[10px] ${mainTab === 'mcp' ? 'text-emerald-400' : 'text-zinc-600'}`}>
-            {mcpServers.length}
-          </span>
-        </button>
+      <div className="flex items-center justify-between mb-5 border-b border-zinc-800 pb-0">
+        <div className="flex gap-1">
+          <button
+            onClick={() => setMainTab('plugins')}
+            className={`px-3 py-1.5 text-xs font-mono rounded-t transition-colors -mb-px border-b-2 ${
+              mainTab === 'plugins'
+                ? 'text-zinc-100 border-fuchsia-500'
+                : 'text-zinc-500 border-transparent hover:text-zinc-300'
+            }`}
+          >
+            {t('marketplace.plugins')}
+            <span className={`ml-1.5 text-[10px] ${mainTab === 'plugins' ? 'text-fuchsia-400' : 'text-zinc-600'}`}>
+              {allPlugins.length}
+            </span>
+          </button>
+          <button
+            onClick={() => setMainTab('mcp')}
+            className={`px-3 py-1.5 text-xs font-mono rounded-t transition-colors -mb-px border-b-2 ${
+              mainTab === 'mcp'
+                ? 'text-zinc-100 border-fuchsia-500'
+                : 'text-zinc-500 border-transparent hover:text-zinc-300'
+            }`}
+          >
+            {t('marketplace.mcp')}
+            <span className={`ml-1.5 text-[10px] ${mainTab === 'mcp' ? 'text-fuchsia-400' : 'text-zinc-600'}`}>
+              {mcpServers.length}
+            </span>
+          </button>
+        </div>
+
+        {/* 설치됨 필터 토글 */}
+        <div className="flex gap-1 -mb-px">
+          <button
+            onClick={() => setFilterMode('all')}
+            className={`px-2.5 py-1 text-[11px] font-mono rounded-t border-b-2 transition-colors ${
+              filterMode === 'all'
+                ? 'text-zinc-200 border-zinc-500'
+                : 'text-zinc-600 border-transparent hover:text-zinc-400'
+            }`}
+          >
+            전체
+          </button>
+          <button
+            onClick={() => setFilterMode('installed')}
+            className={`px-2.5 py-1 text-[11px] font-mono rounded-t border-b-2 transition-colors ${
+              filterMode === 'installed'
+                ? 'text-fuchsia-400 border-fuchsia-500'
+                : 'text-zinc-600 border-transparent hover:text-zinc-400'
+            }`}
+          >
+            설치됨
+            <span className="ml-1 text-[10px]">
+              {mainTab === 'plugins' ? installedPluginCount : installedMcpCount}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* 플러그인 탭 전용: 소스 탭 + 카테고리 필터 */}
-      {mainTab === 'plugins' && (
+      {mainTab === 'plugins' && filterMode === 'all' && (
         <>
           <div className="flex flex-wrap gap-1.5 mb-4">
             {sourceTabs.map((tab) => (
@@ -271,12 +370,12 @@ export default function Marketplace() {
                 onClick={() => handleSourceChange(tab.name)}
                 className={`px-2.5 py-1 text-[11px] font-mono rounded-full transition-colors ${
                   activeSource === tab.name
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-fuchsia-600 text-white'
                     : 'bg-zinc-800 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700'
                 }`}
               >
                 {tab.name === 'all' ? t('marketplace.all') : tab.name}
-                <span className={`ml-1.5 ${activeSource === tab.name ? 'text-emerald-200' : 'text-zinc-600'}`}>
+                <span className={`ml-1.5 ${activeSource === tab.name ? 'text-fuchsia-200' : 'text-zinc-600'}`}>
                   {tab.count}
                 </span>
               </button>
@@ -289,7 +388,7 @@ export default function Marketplace() {
                 onClick={() => setActiveCategory('all')}
                 className={`px-2 py-0.5 text-[10px] font-mono rounded-full shrink-0 transition-colors ${
                   activeCategory === 'all'
-                    ? 'bg-emerald-600 text-white'
+                    ? 'bg-fuchsia-600 text-white'
                     : 'bg-zinc-800/80 text-zinc-500 hover:text-zinc-300'
                 }`}
               >
@@ -301,7 +400,7 @@ export default function Marketplace() {
                   onClick={() => setActiveCategory(cat)}
                   className={`px-2 py-0.5 text-[10px] font-mono rounded-full shrink-0 transition-colors ${
                     activeCategory === cat
-                      ? 'bg-emerald-600 text-white'
+                      ? 'bg-fuchsia-600 text-white'
                       : 'bg-zinc-800/80 text-zinc-500 hover:text-zinc-300'
                   }`}
                 >
@@ -321,7 +420,7 @@ export default function Marketplace() {
           placeholder={t('marketplace.search')}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full bg-zinc-900 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-emerald-500/50"
+          className="w-full bg-zinc-900 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-fuchsia-500/50"
         />
       </div>
 
@@ -340,7 +439,12 @@ export default function Marketplace() {
         ) : (
           <div className="grid grid-cols-3 gap-3">
             {filteredPlugins.map((plugin) => (
-              <PluginCard key={`${plugin.marketplace}/${plugin.name}`} plugin={plugin} t={t} />
+              <PluginCard
+                key={`${plugin.marketplace}/${plugin.name}`}
+                plugin={plugin}
+                t={t}
+                onDelete={plugin.installed ? () => setDeleteTarget({ type: 'plugin', name: plugin.name }) : undefined}
+              />
             ))}
           </div>
         )
@@ -352,10 +456,28 @@ export default function Marketplace() {
         ) : (
           <div className="grid grid-cols-3 gap-3">
             {filteredMcp.map((server) => (
-              <McpCard key={server.name} server={server} t={t} />
+              <McpCard
+                key={server.name}
+                server={server}
+                t={t}
+                onInstall={() => mcpInstallMutation.mutate({ name: server.name, pkg: server.package })}
+                onUninstall={() => setDeleteTarget({ type: 'mcp', name: server.name })}
+                isInstalling={mcpInstallMutation.isPending}
+              />
             ))}
           </div>
         )
+      )}
+
+      {/* 삭제 확인 */}
+      {deleteTarget && (
+        <DangerDeleteDialog
+          title={`${deleteTarget.type === 'plugin' ? '플러그인' : 'MCP 서버'} 삭제`}
+          description={deleteTarget.name}
+          confirmText={deleteTarget.name}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   )

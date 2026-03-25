@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>claude-hub — Option R Color Variants</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #09090b; color: #e4e4e7; font-family: 'Inter', system-ui, sans-serif; padding: 40px; }
+  h1 { font-size: 22px; font-weight: 600; margin-bottom: 6px; }
+  .subtitle { font-size: 13px; color: #71717a; margin-bottom: 40px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 32px; }
+  h2 { font-size: 14px; font-weight: 600; color: #a1a1aa; margin: 32px 0 16px; border-bottom: 1px solid #27272a; padding-bottom: 8px; }
+  .card {
+    background: #18181b; border: 2px solid #27272a; border-radius: 14px; padding: 24px;
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .card:hover { border-color: #38bdf8; transform: translateY(-2px); }
+  .card.selected { border-color: #38bdf8; box-shadow: 0 0 20px rgba(56,189,248,0.15); }
+  .card h3 { font-size: 12px; font-weight: 600; }
+  .card .desc { font-size: 10px; color: #52525b; text-align: center; line-height: 1.4; }
+  .card .tag { font-size: 9px; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 2px 8px; border-radius: 99px; }
+  .logo-row { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+  .logo-row .txt { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; }
+  .logo-row .sub { font-family: 'JetBrains Mono', monospace; font-size: 7px; color: #52525b; letter-spacing: 0.18em; text-transform: uppercase; }
+  .select-btn {
+    padding: 6px 16px; border: 1px solid #38bdf8; color: #38bdf8;
+    background: transparent; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all 0.15s; width: 100%;
+  }
+  .select-btn:hover { background: #38bdf8; color: #09090b; }
+  .select-btn.active { background: #38bdf8; color: #09090b; font-weight: 600; }
+  .sidebar-sim { background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; width: 220px; }
+  .sidebar-sim .logo-area { padding-bottom: 12px; border-bottom: 1px solid #27272a; margin-bottom: 8px; }
+  #simulation { display: none; margin-top: 32px; }
+  #result { margin-top: 20px; padding: 12px 16px; background: #18181b; border: 1px solid #38bdf8; border-radius: 8px; display:none; }
+</style>
+</head>
+<body>
+
+<h1>Option R — Triple Dot 색상 변형</h1>
+<p class="subtitle">기본 형태는 동일, 색상 조합만 변경하여 12가지 시안을 비교하세요.</p>
+
+<h2>Blue / Indigo 계열</h2>
+<div class="grid">
+
+  <!-- R1: 원본 Sky→Indigo -->
+  <div class="card" onclick="sel('R1')" id="card-R1">
+    <span class="tag">R1 (원본)</span>
+    <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="10" cy="16" r="3" fill="#38bdf8" fill-opacity="0.85"/>
+      <circle cx="16" cy="16" r="3" fill="#38bdf8" fill-opacity="0.5"/>
+      <circle cx="22" cy="16" r="3" fill="#818cf8" fill-opacity="0.35"/>
+    </svg>
+    <h3>Sky → Indigo</h3>
+    <p class="desc">현재 테마 색상 그대로</p>
+    <div class="logo-row">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/><circle cx="10" cy="16" r="3" fill="#38bdf8" fill-opacity="0.85"/><circle cx="16" cy="16" r="3" fill="#38bdf8" fill-opacity="0.5"/><circle cx="22" cy="16" r="3" fill="#818cf8" fill-opacity="0.35"/></svg>
+      <div><div class="txt"><span style="color:#d4d4d8">claude</span><span style="color:#38bdf8">-hub</span></div><div class="sub">config dashboard</div></div>
+    </div>
+    <button class="select-btn" id="btn-R1">선택</button>
+  </div>
+
+  <!-- R2: Cyan Gradient -->
+  <div class="card" onclick="sel('R2')" id="card-R2">
+    <span class="tag">R2</span>
+    <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="10" cy="16" r="3" fill="#22d3ee" fill-opacity="0.9"/>
+      <circle cx="16" cy="16" r="3" fill="#38bdf8" fill-opacity="0.6"/>
+      <circle cx="22" cy="16" r="3" fill="#6366f1" fill-opacity="0.4"/>
+    </svg>
+    <h3>Cyan → Indigo</h3>
+    <p class="desc">시안에서 인디고로, 넓은 스펙트럼</p>
+    <div class="logo-row">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/><circle cx="10" cy="16" r="3" fill="#22d3ee" fill-opacity="0.9"/><circle cx="16" cy="16" r="3" fill="#38bdf8" fill-opacity="0.6"/><circle cx="22" cy="16" r="3" fill="#6366f1" fill-opacity="0.4"/></svg>
+      <div><div class="txt"><span style="color:#d4d4d8">claude</span><span style="color:#22d3ee">-hub</span></div><div class="sub">config dashboard</div></div>
+    </div>
+    <button class="select-btn" id="btn-R2">선택</button>
+  </div>
+
+  <!-- R3: Electric Blue -->
+  <div class="card" onclick="sel('R3')" id="card-R3">
+    <span class="tag">R3</span>
+    <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#3b82f6" stroke-width="1" stroke-opacity="0.4"/>
+      <circle cx="10" cy="16" r="3" fill="#3b82f6" fill-opacity="0.9"/>
+      <circle cx="16" cy="16" r="3" fill="#3b82f6" fill-opacity="0.55"/>
+      <circle cx="22" cy="16" r="3" fill="#3b82f6" fill-opacity="0.25"/>
+    </svg>
+    <h3>Electric Blue</h3>
+    <p class="desc">단색 블루 그라데이션, 강렬</p>
+    <div class="logo-row">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#3b82f6" stroke-width="1" stroke-opacity="0.4"/><circle cx="10" cy="16" r="3" fill="#3b82f6" fill-opacity="0.9"/><circle cx="16" cy="16" r="3" fill="#3b82f6" fill-opacity="0.55"/><circle cx="22" cy="16" r="3" fill="#3b82f6" fill-opacity="0.25"/></svg>
+      <div><div class="txt"><span style="color:#d4d4d8">claude</span><span style="color:#3b82f6">-hub</span></div><div class="sub">config dashboard</div></div>
+    </div>
+    <button class="select-btn" id="btn-R3">선택</button>
+  </div>
+
+  <!-- R4: Ice White-Blue -->
+  <div class="card" onclick="sel('R4')" id="card-R4">
+    <span class="tag">R4</span>
+    <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="10" cy="16" r="3" fill="#e0f2fe" fill-opacity="0.9"/>
+      <circle cx="16" cy="16" r="3" fill="#7dd3fc" fill-opacity="0.7"/>
+      <circle cx="22" cy="16" r="3" fill="#38bdf8" fill-opacity="0.5"/>
+    </svg>
+    <h3>Ice → Sky</h3>
+    <p class="desc">화이트에서 스카이로, 밝고 깨끗한</p>
+    <div class="logo-row">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/><circle cx="10" cy="16" r="3" fill="#e0f2fe" fill-opacity="0.9"/><circle cx="16" cy="16" r="3" fill="#7dd3fc" fill-opacity="0.7"/><circle cx="22" cy="16" r="3" fill="#38bdf8" fill-opacity="0.5"/></svg>
+      <div><div class="txt"><span style="color:#d4d4d8">claude</span><span style="color:#7dd3fc">-hub</span></div><div class="sub">config dashboard</div></div>
+    </div>
+    <button class="select-btn" id="btn-R4">선택</button>
+  </div>
+</div>
+
+<h2>Warm / Accent 계열</h2>
+<div class="grid">
+
+  <!-- R5: Amber → Orange -->
+  <div class="card" onclick="sel('R5')" id="card-R5">
+    <span class="tag">R5</span>
+    <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="10" cy="16" r="3" fill="#fbbf24" fill-opacity="0.9"/>
+      <circle cx="16" cy="16" r="3" fill="#f59e0b" fill-opacity="0.55"/>
+      <circle cx="22" cy="16" r="3" fill="#d97706" fill-opacity="0.3"/>
+    </svg>
+    <h3>Gold Amber</h3>
+    <p class="desc">따뜻한 금색 그라디언트, 프리미엄 느낌</p>
+    <div class="logo-row">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/><circle cx="10" cy="16" r="3" fill="#fbbf24" fill-opacity="0.9"/><circle cx="16" cy="16" r="3" fill="#f59e0b" fill-opacity="0.55"/><circle cx="22" cy="16" r="3" fill="#d97706" fill-opacity="0.3"/></svg>
+      <div><div class="txt"><span style="color:#d4d4d8">claude</span><span style="color:#fbbf24">-hub</span></div><div class="sub">config dashboard</div></div>
+    </div>
+    <button class="select-btn" id="btn-R5">선택</button>
+  </div>
+
+  <!-- R6: Sky → Amber -->
+  <div class="card" onclick="sel('R6')" id="card-R6">
+    <span class="tag">R6</span>
+    <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="10" cy="16" r="3" fill="#38bdf8" fill-opacity="0.9"/>
+      <circle cx="16" cy="16" r="3" fill="#818cf8" fill-opacity="0.6"/>
+      <circle cx="22" cy="16" r="3" fill="#fbbf24" fill-opacity="0.5"/>
+    </svg>
+    <h3>Sky → Amber</h3>
+    <p class="desc">차가운 → 따뜻한 대비, 강한 인상</p>
+    <div class="logo-row">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/><circle cx="10" cy="16" r="3" fill="#38bdf8" fill-opacity="0.9"/><circle cx="16" cy="16" r="3" fill="#818cf8" fill-opacity="0.6"/><circle cx="22" cy="16" r="3" fill="#fbbf24" fill-opacity="0.5"/></svg>
+      <div><div class="txt"><span style="color:#d4d4d8">claude</span><span style="color:#38bdf8">-hub</span></div><div class="sub">config dashboard</div></div>
+    </div>
+    <button class="select-btn" id="btn-R6">선택</button>
+  </div>
+
+  <!-- R7: Emerald → Teal -->
+  <div class="card" onclick="sel('R7')" id="card-R7">
+    <span class="tag">R7</span>
+    <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="10" cy="16" r="3" fill="#34d399" fill-opacity="0.85"/>
+      <circle cx="16" cy="16" r="3" fill="#2dd4bf" fill-opacity="0.5"/>
+      <circle cx="22" cy="16" r="3" fill="#22d3ee" fill-opacity="0.3"/>
+    </svg>
+    <h3>Emerald → Cyan</h3>
+    <p class="desc">자연스러운 그린-시안 흐름</p>
+    <div class="logo-row">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/><circle cx="10" cy="16" r="3" fill="#34d399" fill-opacity="0.85"/><circle cx="16" cy="16" r="3" fill="#2dd4bf" fill-opacity="0.5"/><circle cx="22" cy="16" r="3" fill="#22d3ee" fill-opacity="0.3"/></svg>
+      <div><div class="txt"><span style="color:#d4d4d8">claude</span><span style="color:#34d399">-hub</span></div><div class="sub">config dashboard</div></div>
+    </div>
+    <button class="select-btn" id="btn-R7">선택</button>
+  </div>
+
+  <!-- R8: Rose → Pink -->
+  <div class="card" onclick="sel('R8')" id="card-R8">
+    <span class="tag">R8</span>
+    <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="10" cy="16" r="3" fill="#fb7185" fill-opacity="0.85"/>
+      <circle cx="16" cy="16" r="3" fill="#e879f9" fill-opacity="0.5"/>
+      <circle cx="22" cy="16" r="3" fill="#a78bfa" fill-opacity="0.3"/>
+    </svg>
+    <h3>Rose → Violet</h3>
+    <p class="desc">핑크-보라 그라디언트, 모던 감성</p>
+    <div class="logo-row">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/><circle cx="10" cy="16" r="3" fill="#fb7185" fill-opacity="0.85"/><circle cx="16" cy="16" r="3" fill="#e879f9" fill-opacity="0.5"/><circle cx="22" cy="16" r="3" fill="#a78bfa" fill-opacity="0.3"/></svg>
+      <div><div class="txt"><span style="color:#d4d4d8">claude</span><span style="color:#fb7185">-hub</span></div><div class="sub">config dashboard</div></div>
+    </div>
+    <button class="select-btn" id="btn-R8">선택</button>
+  </div>
+</div>
+
+<h2>Multi-Color / Bold 계열</h2>
+<div class="grid">
+
+  <!-- R9: RGB -->
+  <div class="card" onclick="sel('R9')" id="card-R9">
+    <span class="tag">R9</span>
+    <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="10" cy="16" r="3" fill="#38bdf8" fill-opacity="0.9"/>
+      <circle cx="16" cy="16" r="3" fill="#a78bfa" fill-opacity="0.75"/>
+      <circle cx="22" cy="16" r="3" fill="#fb923c" fill-opacity="0.6"/>
+    </svg>
+    <h3>Blue / Violet / Orange</h3>
+    <p class="desc">3색 조합, 각 원이 뚜렷하게 구분</p>
+    <div class="logo-row">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/><circle cx="10" cy="16" r="3" fill="#38bdf8" fill-opacity="0.9"/><circle cx="16" cy="16" r="3" fill="#a78bfa" fill-opacity="0.75"/><circle cx="22" cy="16" r="3" fill="#fb923c" fill-opacity="0.6"/></svg>
+      <div><div class="txt"><span style="color:#d4d4d8">claude</span><span style="color:#a78bfa">-hub</span></div><div class="sub">config dashboard</div></div>
+    </div>
+    <button class="select-btn" id="btn-R9">선택</button>
+  </div>
+
+  <!-- R10: Neon -->
+  <div class="card" onclick="sel('R10')" id="card-R10">
+    <span class="tag">R10</span>
+    <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="10" cy="16" r="3" fill="#00ff88"/>
+      <circle cx="16" cy="16" r="3" fill="#00ccff" fill-opacity="0.7"/>
+      <circle cx="22" cy="16" r="3" fill="#7c3aed" fill-opacity="0.5"/>
+    </svg>
+    <h3>Neon Matrix</h3>
+    <p class="desc">네온 그린 → 시안 → 바이올렛, 사이버</p>
+    <div class="logo-row">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/><circle cx="10" cy="16" r="3" fill="#00ff88"/><circle cx="16" cy="16" r="3" fill="#00ccff" fill-opacity="0.7"/><circle cx="22" cy="16" r="3" fill="#7c3aed" fill-opacity="0.5"/></svg>
+      <div><div class="txt"><span style="color:#d4d4d8">claude</span><span style="color:#00ff88">-hub</span></div><div class="sub">config dashboard</div></div>
+    </div>
+    <button class="select-btn" id="btn-R10">선택</button>
+  </div>
+
+  <!-- R11: White Minimal -->
+  <div class="card" onclick="sel('R11')" id="card-R11">
+    <span class="tag">R11</span>
+    <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="10" cy="16" r="3" fill="#ffffff" fill-opacity="0.8"/>
+      <circle cx="16" cy="16" r="3" fill="#a1a1aa" fill-opacity="0.5"/>
+      <circle cx="22" cy="16" r="3" fill="#52525b" fill-opacity="0.3"/>
+    </svg>
+    <h3>Mono Silver</h3>
+    <p class="desc">무채색 화이트→그레이, 극도의 절제</p>
+    <div class="logo-row">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/><circle cx="10" cy="16" r="3" fill="#ffffff" fill-opacity="0.8"/><circle cx="16" cy="16" r="3" fill="#a1a1aa" fill-opacity="0.5"/><circle cx="22" cy="16" r="3" fill="#52525b" fill-opacity="0.3"/></svg>
+      <div><div class="txt"><span style="color:#d4d4d8">claude</span><span style="color:#a1a1aa">-hub</span></div><div class="sub">config dashboard</div></div>
+    </div>
+    <button class="select-btn" id="btn-R11">선택</button>
+  </div>
+
+  <!-- R12: Claude Purple -->
+  <div class="card" onclick="sel('R12')" id="card-R12">
+    <span class="tag">R12</span>
+    <svg width="56" height="56" viewBox="0 0 32 32" fill="none">
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/>
+      <circle cx="10" cy="16" r="3" fill="#c084fc" fill-opacity="0.9"/>
+      <circle cx="16" cy="16" r="3" fill="#8b5cf6" fill-opacity="0.6"/>
+      <circle cx="22" cy="16" r="3" fill="#38bdf8" fill-opacity="0.4"/>
+    </svg>
+    <h3>Purple → Sky</h3>
+    <p class="desc">Claude 보라 출발 → 스카이 착지, 본가 리스펙트</p>
+    <div class="logo-row">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none"><rect x="1" y="1" width="30" height="30" rx="8" fill="#09090b" stroke="#27272a" stroke-width="1"/><circle cx="10" cy="16" r="3" fill="#c084fc" fill-opacity="0.9"/><circle cx="16" cy="16" r="3" fill="#8b5cf6" fill-opacity="0.6"/><circle cx="22" cy="16" r="3" fill="#38bdf8" fill-opacity="0.4"/></svg>
+      <div><div class="txt"><span style="color:#d4d4d8">claude</span><span style="color:#c084fc">-hub</span></div><div class="sub">config dashboard</div></div>
+    </div>
+    <button class="select-btn" id="btn-R12">선택</button>
+  </div>
+</div>
+
+<!-- 시뮬레이션 -->
+<div id="simulation">
+  <h2 style="border:none;margin-top:24px;">미리보기</h2>
+  <div style="display:flex; gap:32px; flex-wrap:wrap;">
+    <div>
+      <p style="font-size:11px; color:#71717a; margin-bottom:8px;">사이드바</p>
+      <div class="sidebar-sim">
+        <div class="sidebar-sim logo-area" id="sim-dark"></div>
+        <div style="padding:4px 0;">
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;background:rgba(56,189,248,0.08);border-left:2px solid #38bdf8;">
+            <span style="width:4px;height:4px;border-radius:50%;background:#38bdf8;"></span>
+            <span style="font-family:monospace;font-size:11px;color:#38bdf8;">대시보드</span>
+          </div>
+          <div style="padding:6px 8px;"><span style="font-family:monospace;font-size:11px;color:#71717a;">Claude 설정</span></div>
+          <div style="padding:6px 8px;"><span style="font-family:monospace;font-size:11px;color:#71717a;">확장 기능</span></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <p style="font-size:11px; color:#71717a; margin-bottom:8px;">브라우저 탭</p>
+      <div style="display:flex; align-items:center; gap:8px; background:#27272a; padding:8px 16px; border-radius:8px;">
+        <div id="sim-fav" style="width:16px;height:16px;"></div>
+        <span style="font-family:monospace; font-size:12px; color:#a1a1aa;">claude-hub</span>
+        <span style="font-size:11px; color:#52525b;">×</span>
+      </div>
+      <p style="font-size:11px; color:#71717a; margin-bottom:8px; margin-top:20px;">Dock (48px)</p>
+      <div style="display:inline-flex; background:#27272a; padding:12px 20px; border-radius:12px;">
+        <div id="sim-dock" style="width:48px;height:48px;background:#18181b;border-radius:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.3);"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="result" style="margin-top:20px; padding:12px 16px; background:#18181b; border:1px solid #38bdf8; border-radius:8px;">
+  <p style="font-size:13px; color:#38bdf8; font-weight:600;" id="result-text">카드를 클릭하세요</p>
+</div>
+
+<script>
+function getSvg(card, size) {
+  const svg = card.querySelector('svg');
+  if (!svg) return '';
+  return svg.outerHTML.replace(/width="\d+"/, `width="${size}"`).replace(/height="\d+"/, `height="${size}"`);
+}
+function sel(id) {
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  document.querySelectorAll('.select-btn').forEach(b => b.classList.remove('active'));
+  const card = document.getElementById('card-' + id);
+  card.classList.add('selected');
+  document.getElementById('btn-' + id).classList.add('active');
+  document.getElementById('simulation').style.display = 'block';
+  const logoRow = card.querySelector('.logo-row');
+  document.getElementById('sim-dark').innerHTML = logoRow ? logoRow.innerHTML : '';
+  document.getElementById('sim-fav').innerHTML = getSvg(card, 16);
+  document.getElementById('sim-dock').innerHTML = getSvg(card, 36);
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('result-text').textContent = `${id} 선택 — Claude에게 "${id}로 진행해" 라고 전달하세요.`;
+}
+</script>
+</body>
+</html>

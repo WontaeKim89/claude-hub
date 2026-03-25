@@ -46,4 +46,8 @@ async def update_hooks(body: HooksUpdate, request: Request):
     except ConflictError as e:
         raise HTTPException(status_code=409, detail=str(e))
 
+    # settings.json 캐시 무효화
+    from claude_hub.services.scanner import _cache
+    _cache.pop("settings_json", None)
+
     return {"ok": True}

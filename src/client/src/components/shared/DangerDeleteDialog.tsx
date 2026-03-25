@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
+import { useEscClose } from '../../hooks/useEscClose'
 
 interface DangerDeleteDialogProps {
   title: string
@@ -16,6 +17,7 @@ export function DangerDeleteDialog({
   onConfirm,
   onCancel,
 }: DangerDeleteDialogProps) {
+  useEscClose(onCancel)
   const [input, setInput] = useState('')
   const isMatch = input === confirmText
 

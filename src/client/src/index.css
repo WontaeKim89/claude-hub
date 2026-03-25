@@ -9,9 +9,9 @@
   --color-surface-overlay: #1e1e22;
   --color-border: #27272a;
   --color-border-subtle: #1e1e22;
-  --color-accent: #34d399;
-  --color-accent-dim: #34d39940;
-  --color-accent-secondary: #2dd4bf;
+  --color-accent: #c084fc;
+  --color-accent-dim: #c084fc40;
+  --color-accent-secondary: #a78bfa;
 }
 
 * {
@@ -43,7 +43,7 @@ body {
 
 /* Stat card glow */
 .glow-emerald {
-  box-shadow: 0 0 20px rgba(52, 211, 153, 0.05);
+  box-shadow: 0 0 20px rgba(192, 132, 252, 0.05);
 }
 
 /* Skeleton shimmer */

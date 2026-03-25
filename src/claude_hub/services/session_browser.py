@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-from claude_hub.utils.paths import ClaudePaths
+from claude_hub.utils.paths import ClaudePaths, decode_project_path
 
 
 def list_sessions(paths: ClaudePaths, project_encoded: str | None = None) -> list[dict]:
@@ -31,6 +31,7 @@ def list_sessions(paths: ClaudePaths, project_encoded: str | None = None) -> lis
             sessions.append({
                 "id": jsonl.stem,
                 "project": project_name,
+                "project_path": decode_project_path(project_name),
                 "file": str(jsonl),
                 "size": stat.st_size,
                 "modified": stat.st_mtime,
@@ -83,23 +84,54 @@ def delete_session(session_path: str) -> bool:
     return False
 
 
+def _clean_title(text: str) -> str:
+    """시스템 태그, XML 태그, 빈 줄 등을 제거하여 의미있는 제목만 추출."""
+    import re
+    # XML/HTML 태그 제거
+    cleaned = re.sub(r"<[^>]+>", "", text).strip()
+    # 여러 줄이면 첫 의미있는 줄
+    for line in cleaned.splitlines():
+        line = line.strip()
+        if line and len(line) > 3:
+            return line[:100]
+    return cleaned[:100] if cleaned else ""
+
+
+def _is_meaningful_text(text: str) -> bool:
+    """시스템 메시지가 아닌 실제 사용자 입력인지 판별."""
+    if not text or len(text.strip()) < 3:
+        return False
+    # 시스템 태그로 시작하는 경우 스킵
+    stripped = text.strip()
+    if stripped.startswith("<") and ">" in stripped[:60]:
+        return False
+    return True
+
+
 def _extract_session_title(path: Path) -> str:
-    """세션의 첫 번째 사용자 메시지를 제목으로 추출."""
+    """세션에서 의미있는 첫 사용자 메시지를 제목으로 추출."""
     try:
         with open(path, "r", errors="ignore") as f:
             for line in f:
                 try:
                     entry = json.loads(line.strip())
                     msg = entry.get("message", entry)
-                    if msg.get("role") == "user":
-                        content = msg.get("content", "")
-                        if isinstance(content, str):
-                            return content[:100]
-                        elif isinstance(content, list):
-                            for block in content:
-                                if isinstance(block, dict) and block.get("type") == "text":
-                                    return block.get("text", "")[:100]
-                            return str(content[0])[:100] if content else ""
+                    if msg.get("role") != "user":
+                        continue
+
+                    content = msg.get("content", "")
+                    text = ""
+
+                    if isinstance(content, str):
+                        text = content
+                    elif isinstance(content, list):
+                        for block in content:
+                            if isinstance(block, dict) and block.get("type") == "text":
+                                text = block.get("text", "")
+                                break
+
+                    if _is_meaningful_text(text):
+                        return _clean_title(text)
                 except (json.JSONDecodeError, TypeError):
                     continue
     except Exception:

@@ -10,13 +10,13 @@ import { useQuery } from '@tanstack/react-query'
 type DiffStatus = ConfigDiffItem['status']
 
 const STATUS_STYLES: Record<DiffStatus, string> = {
-  identical: 'bg-emerald-500/15 text-emerald-400',
+  identical: 'bg-fuchsia-500/15 text-fuchsia-400',
   different: 'bg-amber-500/15 text-amber-400',
   missing: 'bg-red-500/15 text-red-400',
   both_missing: 'bg-zinc-700/50 text-zinc-500',
 }
 
-export default function ConfigDiff() {
+export default function ConfigDiff({ embedded }: { embedded?: boolean }) {
   const { t } = useLang()
   const [projectA, setProjectA] = useState('')
   const [projectB, setProjectB] = useState('')
@@ -59,13 +59,15 @@ export default function ConfigDiff() {
   return (
     <div className="max-w-3xl">
       {/* 헤더 */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-1">
-          <GitCompare size={16} className="text-emerald-400" strokeWidth={1.5} />
-          <h2 className="text-base font-semibold text-zinc-100 tracking-tight">{t('configDiff.title')}</h2>
+      {!embedded && (
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <GitCompare size={16} className="text-fuchsia-400" strokeWidth={1.5} />
+            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">{t('configDiff.title')}</h2>
+          </div>
+          <p className="text-xs text-zinc-500">{t('configDiff.subtitle')}</p>
         </div>
-        <p className="text-xs text-zinc-500">{t('configDiff.subtitle')}</p>
-      </div>
+      )}
 
       {/* 프로젝트 선택 + 비교 버튼 */}
       <div className="flex items-end gap-3 mb-5">
@@ -104,7 +106,7 @@ export default function ConfigDiff() {
         <button
           onClick={handleCompare}
           disabled={!projectA || !projectB || diffMutation.isPending}
-          className="shrink-0 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-xs text-white rounded transition-colors"
+          className="shrink-0 px-4 py-1.5 bg-fuchsia-600 hover:bg-fuchsia-500 disabled:opacity-40 text-xs text-white rounded transition-colors"
         >
           {diffMutation.isPending ? '비교 중...' : t('configDiff.compare')}
         </button>
@@ -112,7 +114,7 @@ export default function ConfigDiff() {
 
       {/* 동기화 완료 메시지 */}
       {syncMsg && (
-        <div className="mb-3 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded text-xs text-emerald-400">
+        <div className="mb-3 px-3 py-2 bg-fuchsia-500/10 border border-fuchsia-500/30 rounded text-xs text-fuchsia-400">
           {syncMsg}
         </div>
       )}
@@ -155,7 +157,7 @@ export default function ConfigDiff() {
                         <button
                           onClick={() => syncMutation.mutate({ source: projectA, target: projectB })}
                           disabled={syncMutation.isPending}
-                          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded transition-colors disabled:opacity-40"
+                          className="flex items-center gap-1 px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors disabled:opacity-40"
                         >
                           <ArrowRight size={12} />
                           {t('configDiff.copyAtoB')}

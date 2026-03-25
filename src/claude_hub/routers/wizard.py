@@ -4,6 +4,8 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
+from claude_hub.services.scanner import _cached, invalidate_settings_cache
+
 router = APIRouter(tags=["wizard"])
 
 
@@ -15,6 +17,12 @@ class ApplyRequest(BaseModel):
     project_path: str
     claude_md: str | None = None
     hooks: list[dict] | None = None
+    project_settings: dict | None = None
+    memory_files: dict | None = None
+    skills: list[dict] | None = None
+    agents: list[dict] | None = None
+    commands: list[dict] | None = None
+    mcp_servers: dict | None = None
 
 
 class GenerateSkillRequest(BaseModel):
@@ -23,10 +31,13 @@ class GenerateSkillRequest(BaseModel):
 
 @router.post("/wizard/analyze")
 async def analyze_project_endpoint(body: AnalyzeRequest, request: Request):
+    import asyncio
     from claude_hub.services.wizard import analyze_project
     config = request.app.state.config
     try:
-        result = analyze_project(body.project_path, config.paths)
+        # 블로킹 함수를 별도 스레드에서 실행 (이벤트 루프 블로킹 방지)
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(None, lambda: analyze_project(body.project_path, config.paths))
         # AI 생성 성공 여부 판단: hooks나 mcp_suggestions가 있거나, claude_md가 실질적 내용을 포함
         ai_generated = bool(result.hooks or result.mcp_suggestions) or len(result.claude_md) > 200
         return {
@@ -35,6 +46,11 @@ async def analyze_project_endpoint(body: AnalyzeRequest, request: Request):
             "claude_md": result.claude_md,
             "hooks": result.hooks,
             "mcp_suggestions": result.mcp_suggestions,
+            "project_settings": result.project_settings,
+            "memory_files": result.memory_files,
+            "skills": result.skills or [],
+            "agents": result.agents or [],
+            "commands": result.commands or [],
             "ai_generated": ai_generated,
         }
     except ValueError as e:
@@ -48,9 +64,14 @@ async def apply_wizard(body: ApplyRequest, request: Request):
     config = request.app.state.config
     results = []
 
+    project_dir = Path(body.project_path)
+    if not project_dir.exists():
+        raise HTTPException(status_code=400, detail=f"Project directory not found: {body.project_path}")
+
     if body.claude_md:
-        target = Path(body.project_path) / "CLAUDE.md"
-        editor.write_text(target, body.claude_md)
+        target = project_dir / "CLAUDE.md"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(body.claude_md, encoding="utf-8")
         results.append({"type": "claude_md", "applied": True})
 
     if body.hooks:
@@ -67,16 +88,84 @@ async def apply_wizard(body: ApplyRequest, request: Request):
                         {"hooks": [{"type": "command", "command": command}]}
                     )
             editor.write_json(settings_path, settings, last_mtime=mtime)
+            invalidate_settings_cache()
             results.append({"type": "hooks", "applied": True, "count": len(body.hooks)})
+
+    # 프로젝트 설정 (.claude/settings.json)
+    if body.project_settings:
+        proj_settings_dir = Path(body.project_path) / ".claude"
+        proj_settings_dir.mkdir(parents=True, exist_ok=True)
+        proj_settings_path = proj_settings_dir / "settings.json"
+        proj_settings_path.write_text(_json.dumps(body.project_settings, indent=2, ensure_ascii=False))
+        results.append({"type": "project_settings", "applied": True})
+
+    # 메모리 파일
+    if body.memory_files:
+        from claude_hub.utils.paths import encode_project_path
+        encoded = encode_project_path(body.project_path)
+        mem_dir = config.paths.projects_dir / encoded / "memory"
+        mem_dir.mkdir(parents=True, exist_ok=True)
+        for fname, content in body.memory_files.items():
+            (mem_dir / fname).write_text(content, encoding="utf-8")
+        results.append({"type": "memory_files", "applied": True, "count": len(body.memory_files)})
+
+    # 스킬
+    if body.skills:
+        skills_dir = Path(body.project_path) / ".claude" / "skills"
+        for skill in body.skills:
+            name = skill.get("name", "")
+            content = skill.get("content", "")
+            if name and content:
+                skill_dir = skills_dir / name
+                skill_dir.mkdir(parents=True, exist_ok=True)
+                (skill_dir / "SKILL.md").write_text(content, encoding="utf-8")
+        results.append({"type": "skills", "applied": True, "count": len(body.skills)})
+
+    # 에이전트
+    if body.agents:
+        agents_dir = Path(body.project_path) / ".claude" / "agents"
+        agents_dir.mkdir(parents=True, exist_ok=True)
+        for agent in body.agents:
+            name = agent.get("name", "")
+            content = agent.get("content", "")
+            if name and content:
+                (agents_dir / f"{name}.md").write_text(content, encoding="utf-8")
+        results.append({"type": "agents", "applied": True, "count": len(body.agents)})
+
+    # 커맨드
+    if body.commands:
+        commands_dir = Path(body.project_path) / ".claude" / "commands"
+        commands_dir.mkdir(parents=True, exist_ok=True)
+        for cmd in body.commands:
+            name = cmd.get("name", "")
+            content = cmd.get("content", "")
+            if name and content:
+                (commands_dir / f"{name}.md").write_text(content, encoding="utf-8")
+        results.append({"type": "commands", "applied": True, "count": len(body.commands)})
+
+    # MCP 서버
+    if body.mcp_servers:
+        settings_path = config.paths.settings_path
+        if settings_path.exists():
+            settings = _json.loads(settings_path.read_text())
+            mcp = settings.setdefault("mcpServers", {})
+            for name_key, cfg in body.mcp_servers.items():
+                if name_key not in mcp:
+                    mcp[name_key] = cfg
+            settings_path.write_text(_json.dumps(settings, indent=2, ensure_ascii=False))
+            invalidate_settings_cache()
+            results.append({"type": "mcp_servers", "applied": True})
 
     return {"results": results}
 
 
 @router.post("/wizard/generate-skill")
 async def generate_skill_endpoint(body: GenerateSkillRequest, request: Request):
+    import asyncio
     from claude_hub.services.wizard import generate_skill
     config = request.app.state.config
-    result = generate_skill(body.messages, config.paths)
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, lambda: generate_skill(body.messages, config.paths))
     return result
 
 
@@ -111,6 +200,26 @@ async def project_tree(request: Request, path: str):
         return scanner.get_project_tree(path)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/wizard/project-trees-all")
+async def all_project_trees(request: Request):
+    """모든 프로젝트의 트리를 한번에 반환 (N+1 문제 해결)."""
+    scanner = request.app.state.scanner
+
+    def _load():
+        projects = scanner.list_projects()
+        results = []
+        for p in projects:
+            try:
+                decoded = p["decoded"] if isinstance(p, dict) else p.decoded
+                tree = scanner.get_project_tree(decoded)
+                results.append(tree)
+            except Exception:
+                continue
+        return results
+
+    return _cached("project_trees_all", _load)
 
 
 @router.get("/projects/grouped")
@@ -151,6 +260,19 @@ async def toggle_permissions(body: TogglePermissionsRequest):
 
     settings_local.write_text(json.dumps(data, indent=2, ensure_ascii=False))
     return {"ok": True, "enabled": body.enabled}
+
+
+@router.delete("/projects/{encoded}")
+async def delete_project(encoded: str, request: Request):
+    """프로젝트의 ~/.claude/projects/{encoded} 디렉토리 전체 삭제."""
+    import shutil
+    config = request.app.state.config
+    project_dir = config.paths.projects_dir / encoded
+    if not project_dir.exists():
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Project not found: {encoded}")
+    shutil.rmtree(project_dir)
+    return {"ok": True, "deleted": encoded}
 
 
 @router.get("/projects/permissions-status")

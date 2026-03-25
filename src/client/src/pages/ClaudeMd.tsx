@@ -8,7 +8,7 @@ import { DiffModal } from '../components/shared/DiffModal'
 import { SaveConfirmDialog } from '../components/shared/SaveConfirmDialog'
 import type { ClaudeMdEntry, DiffResult } from '../lib/types'
 
-export default function ClaudeMd() {
+export default function ClaudeMd({ embedded }: { embedded?: boolean }) {
   const qc = useQueryClient()
   const [activeScope, setActiveScope] = useState<string | null>(null)
   const [content, setContent] = useState('')
@@ -82,36 +82,47 @@ export default function ClaudeMd() {
 
   return (
     <div>
-      <div className="flex items-center gap-1.5 mb-6">
-        <div>
-          <h2 className="text-base font-semibold text-zinc-100 tracking-tight">CLAUDE.md</h2>
-          <p className="mt-0.5 text-xs text-zinc-500">Manage your Claude instruction files</p>
+      {!embedded && (
+        <div className="flex items-center gap-1.5 mb-6">
+          <div>
+            <h2 className="text-base font-semibold text-zinc-100 tracking-tight">CLAUDE.md</h2>
+            <p className="mt-0.5 text-xs text-zinc-500">Manage your Claude instruction files</p>
+          </div>
+          <InfoTooltip {...CATEGORY_INFO.claudeMd} />
         </div>
-        <InfoTooltip {...CATEGORY_INFO.claudeMd} />
-      </div>
+      )}
 
-      {/* Scope selector */}
+      {/* Scope selector — Global / Projects / Worktrees 3그룹 */}
       {entries.length > 0 && (
         <div className="mb-5">
           <select
             value={activeScope ?? ''}
             onChange={(e) => handleTabChange(e.target.value)}
-            className="bg-zinc-900 border border-zinc-800 rounded px-3 py-1.5 text-xs font-mono text-zinc-200 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/30 cursor-pointer"
+            className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-200 focus:outline-none focus:border-fuchsia-500/50 focus:ring-1 focus:ring-fuchsia-500/30 cursor-pointer min-w-[320px]"
           >
-            {entries.map((entry) => (
-              <option key={entry.scope} value={entry.scope}>
-                {entry.scope === 'global'
-                  ? 'Global (~/.claude/)'
-                  : entry.decoded_path ?? entry.scope}
-                {!entry.exists ? ' (new)' : ''}
-              </option>
-            ))}
+            <option value="global">Global (~/.claude/)</option>
+            <optgroup label="Projects">
+              {entries.filter((e) => e.scope !== 'global' && !e.is_worktree).map((entry) => (
+                <option key={entry.scope} value={entry.scope}>
+                  {entry.project_name ?? entry.scope}{!entry.exists ? ' (new)' : ''}
+                </option>
+              ))}
+            </optgroup>
+            {entries.some((e) => e.is_worktree) && (
+              <optgroup label="Worktrees">
+                {entries.filter((e) => e.is_worktree).map((entry) => (
+                  <option key={entry.scope} value={entry.scope}>
+                    {entry.project_name ?? entry.scope}{!entry.exists ? ' (new)' : ''}
+                  </option>
+                ))}
+              </optgroup>
+            )}
           </select>
         </div>
       )}
 
       {error && <p className="text-xs text-red-400 bg-red-400/10 rounded px-3 py-2 mb-4">{error}</p>}
-      {success && <p className="text-xs text-emerald-400 bg-emerald-400/10 rounded px-3 py-2 mb-4">Saved successfully.</p>}
+      {success && <p className="text-xs text-fuchsia-400 bg-fuchsia-400/10 rounded px-3 py-2 mb-4">Saved successfully.</p>}
 
       {activeScope && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
@@ -139,7 +150,7 @@ export default function ClaudeMd() {
             <button
               onClick={() => setShowSaveConfirm(true)}
               disabled={mutation.isPending || contentLoading}
-              className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded disabled:opacity-50"
+              className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
             >
               {mutation.isPending ? 'Saving...' : 'Save'}
             </button>

@@ -76,7 +76,7 @@ export default function Cost() {
               onClick={() => setPeriod(p.value)}
               className={`px-2.5 py-1 rounded text-xs font-mono transition-colors ${
                 period === p.value
-                  ? 'bg-emerald-500/20 text-emerald-400'
+                  ? 'bg-fuchsia-500/20 text-fuchsia-400'
                   : 'text-zinc-500 hover:text-zinc-300'
               }`}
             >
@@ -92,13 +92,13 @@ export default function Cost() {
           label={t('cost.totalTokens')}
           value={summaryLoading ? '—' : formatTokens((summary?.total_tokens_in ?? 0) + (summary?.total_tokens_out ?? 0))}
           icon={Cpu}
-          accent="border-l-teal-500/60"
+          accent="border-l-violet-500/60"
         />
         <SummaryCard
           label={t('cost.estCost')}
           value={summaryLoading ? '—' : `$${summary?.total_cost_usd.toFixed(2) ?? '0.00'}`}
           icon={DollarSign}
-          accent="border-l-emerald-500/60"
+          accent="border-l-fuchsia-500/60"
         />
         <SummaryCard
           label={t('cost.sessions')}
@@ -140,7 +140,7 @@ export default function Cost() {
                   </div>
                   <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-emerald-500/60 rounded-full transition-all duration-300"
+                      className="h-full bg-fuchsia-500/60 rounded-full transition-all duration-300"
                       style={{ width: `${(p.cost / maxCost) * 100}%` }}
                     />
                   </div>
@@ -169,7 +169,7 @@ export default function Cost() {
                 <div key={model} className="bg-zinc-800/50 rounded-md px-3 py-2">
                   <div className="flex items-center justify-between mb-1">
                     <span className="font-mono text-xs text-zinc-300 capitalize">{model}</span>
-                    <span className="font-mono text-xs text-emerald-400">${usage.cost.toFixed(3)}</span>
+                    <span className="font-mono text-xs text-fuchsia-400">${usage.cost.toFixed(3)}</span>
                   </div>
                   <div className="flex gap-3 text-[10px] font-mono text-zinc-500">
                     <span>in: {formatTokens(usage.input)}</span>
@@ -193,9 +193,16 @@ export default function Cost() {
       </div>
 
       {/* 면책 문구 */}
-      <p className="mt-4 text-[10px] font-mono text-zinc-700">
-        * {t('cost.disclaimer')}
-      </p>
+      <div className="mt-4 bg-zinc-900 border border-zinc-800 rounded-md px-4 py-3">
+        <p className="text-[11px] text-zinc-500 leading-relaxed">
+          * {t('cost.disclaimer')}
+        </p>
+        <p className="text-[10px] text-zinc-600 mt-1.5 leading-relaxed">
+          산출 방식: 세션 JSONL의 usage.input_tokens / output_tokens에 모델별 공개 단가 적용
+          (Opus: $5/$25, Sonnet: $3/$15, Haiku: $1/$5 per 1M tokens).
+          캐시 토큰 할인, 배치 할인 등은 미반영. Max/Pro 플랜 구독료와는 별개.
+        </p>
+      </div>
     </div>
   )
 }

@@ -10,8 +10,8 @@ Claude Code의 전체 harness 구성을 시각적으로 관리하는 로컬 웹 
 - **Phase 4 (Polish)**: 완료 (2026-03-20) — Backup History, Preview Diff, Health Check, README, PyPI
 - **Phase 5 (Native App + Stats)**: 완료 (2026-03-21) — pywebview 앱, SQLite 사용 통계, macOS 트레이
 - **Phase 6 (UX 개선)**: 완료 (2026-03-21) — Info 툴팁, Hit 통계 탭, AI 분석, 스킬 템플릿
-- **백엔드**: FastAPI + 134 tests passing
-- **프론트엔드**: Vite + React 19 + Tailwind + 1826 modules, npm run build 성공
+- **백엔드**: FastAPI + pytest
+- **프론트엔드**: Vite + React 19 + Tailwind, npm run build 성공
 - **PyPI 빌드**: uv build 성공 (sdist + wheel)
 - **macOS App**: /Applications/claude-hub.app (메뉴바 트레이 지원)
 

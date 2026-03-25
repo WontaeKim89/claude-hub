@@ -11,12 +11,12 @@ import type { MonitorEvent } from '../lib/types'
 // 도구별 컬러 매핑
 const TOOL_COLORS: Record<string, string> = {
   Skill: 'bg-purple-500',
-  Read: 'bg-teal-500',
+  Read: 'bg-violet-500',
   Write: 'bg-red-500',
   Edit: 'bg-red-500',
-  Bash: 'bg-emerald-500',
-  Grep: 'bg-emerald-500',
-  Glob: 'bg-teal-500',
+  Bash: 'bg-fuchsia-500',
+  Grep: 'bg-fuchsia-500',
+  Glob: 'bg-violet-500',
   Agent: 'bg-amber-500',
 }
 
@@ -27,12 +27,12 @@ function toolColor(tool: string): string {
 function toolTextColor(tool: string): string {
   const map: Record<string, string> = {
     Skill: 'text-purple-400',
-    Read: 'text-teal-400',
+    Read: 'text-violet-400',
     Write: 'text-red-400',
     Edit: 'text-red-400',
-    Bash: 'text-emerald-400',
-    Grep: 'text-emerald-400',
-    Glob: 'text-teal-400',
+    Bash: 'text-fuchsia-400',
+    Grep: 'text-fuchsia-400',
+    Glob: 'text-violet-400',
     Agent: 'text-amber-400',
   }
   return map[tool] ?? 'text-zinc-400'
@@ -96,7 +96,7 @@ export default function Monitor() {
           detail={CATEGORY_INFO.monitor.detail}
         />
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-fuchsia-400 animate-pulse" />
           <span className="font-mono text-[10px] text-zinc-500">10s interval</span>
         </div>
       </PageHeader>
