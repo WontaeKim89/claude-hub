@@ -26,8 +26,8 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/claude-hub/claude-hub"
-Repository = "https://github.com/claude-hub/claude-hub"
+Homepage = "https://github.com/WontaeKim89/claude-hub"
+Repository = "https://github.com/WontaeKim89/claude-hub"
 
 [project.scripts]
 claude-hub = "claude_hub.main:cli"
