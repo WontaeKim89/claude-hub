@@ -3,6 +3,7 @@ import { useMutation } from '@tanstack/react-query'
 import { X, AlertTriangle, ExternalLink, Loader2, Trash2, RefreshCw } from 'lucide-react'
 import { api } from '../../lib/api-client'
 import { useLang } from '../../hooks/useLang'
+import { useEscClose } from '../../hooks/useEscClose'
 import type { AnalysisItem, AnalysisResult } from '../../lib/types'
 
 interface Props {
@@ -118,6 +119,7 @@ function SkillNameCell({ item }: { item: AnalysisItem }) {
 }
 
 export function AnalysisPanel({ type, onClose }: Props) {
+  useEscClose(onClose)
   const { t } = useLang()
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [loadingCache, setLoadingCache] = useState(true)

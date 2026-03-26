@@ -3,6 +3,15 @@ from pathlib import Path
 
 import pytest
 
+from claude_hub.services.scanner import _cache
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    _cache.clear()
+    yield
+    _cache.clear()
+
 
 @pytest.fixture
 def fake_claude_dir(tmp_path: Path) -> Path:

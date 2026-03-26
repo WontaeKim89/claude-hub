@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Info } from 'lucide-react'
+import { useLang } from '../../hooks/useLang'
 
 interface InfoTooltipProps {
   title: string
@@ -8,6 +9,9 @@ interface InfoTooltipProps {
 }
 
 export function InfoTooltip({ title, description, detail }: InfoTooltipProps) {
+  const { t } = useLang()
+  // i18n 키이면 번역, 아니면 원문 사용
+  const _t = (s: string) => { const v = t(s); return v !== s ? v : s }
   const [visible, setVisible] = useState(false)
   const triggerRef = useRef<HTMLDivElement>(null)
   const [position, setPosition] = useState<'right' | 'left'>('right')
@@ -35,12 +39,12 @@ export function InfoTooltip({ title, description, detail }: InfoTooltipProps) {
             position === 'left' ? 'right-6' : 'left-6'
           }`}
         >
-          <p className="text-fuchsia-400 text-[0.75rem] font-bold mb-1">{title}</p>
-          <p className="text-zinc-400 text-[0.7rem] leading-relaxed">{description}</p>
+          <p className="text-fuchsia-400 text-[0.75rem] font-bold mb-1">{_t(title)}</p>
+          <p className="text-zinc-400 text-[0.7rem] leading-relaxed">{_t(description)}</p>
           {detail && (
             <>
               <div className="border-t border-zinc-800 mt-2 mb-2" />
-              <p className="text-zinc-600 text-[0.65rem] font-mono leading-relaxed">{detail}</p>
+              <p className="text-zinc-600 text-[0.65rem] font-mono leading-relaxed">{_t(detail)}</p>
             </>
           )}
         </div>

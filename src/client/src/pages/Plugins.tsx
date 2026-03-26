@@ -69,7 +69,7 @@ export default function Plugins({ embedded }: { embedded?: boolean }) {
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors duration-150"
           >
             <BarChart2 size={13} strokeWidth={2} />
-            사용량 분석
+            Usage Analysis
           </button>
         </div>
       )}
@@ -80,7 +80,7 @@ export default function Plugins({ embedded }: { embedded?: boolean }) {
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors duration-150"
           >
             <BarChart2 size={13} strokeWidth={2} />
-            사용량 분석
+            Usage Analysis
           </button>
         </div>
       )}
@@ -158,7 +158,7 @@ export default function Plugins({ embedded }: { embedded?: boolean }) {
 
       {uninstallTarget && (
         <DangerDeleteDialog
-          title={`'${uninstallTarget.name}' 플러그인을 제거하시겠습니까?`}
+          title={`'${uninstallTarget.name}' Remove this plugin?`}
           confirmText={uninstallTarget.name}
           onConfirm={() => removeMutation.mutate(uninstallTarget.name)}
           onCancel={() => setUninstallTarget(null)}

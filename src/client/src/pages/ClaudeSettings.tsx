@@ -224,7 +224,7 @@ export default function ClaudeSettings() {
             <p className="mt-2 text-[11px] text-zinc-600">{t('claudeSettings.modelHint')}</p>
 
             {success && (
-              <p className="mt-2 text-xs text-fuchsia-400 font-mono">저장됨</p>
+              <p className="mt-2 text-xs text-fuchsia-400 font-mono">{t('common.saved')}</p>
             )}
             {error && (
               <p className="mt-2 text-xs text-red-400 font-mono">{error}</p>

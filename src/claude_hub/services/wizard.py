@@ -237,31 +237,46 @@ def _gather_project_context(project_dir: Path) -> dict:
     """프로젝트 디렉토리에서 분석에 필요한 정보를 수집."""
     context: dict = {"name": project_dir.name, "path": str(project_dir)}
 
-    for readme in ["README.md", "readme.md", "README.rst"]:
-        path = project_dir / readme
-        if path.exists():
-            context["readme"] = path.read_text(errors="ignore")[:3000]
-            break
+    try:
+        for readme in ["README.md", "readme.md", "README.rst"]:
+            path = project_dir / readme
+            if path.exists():
+                context["readme"] = path.read_text(errors="ignore")[:3000]
+                break
+    except (PermissionError, OSError):
+        pass
 
     for pm_file in ["package.json", "pyproject.toml", "Cargo.toml", "go.mod", "pom.xml"]:
-        path = project_dir / pm_file
-        if path.exists():
-            context[pm_file] = path.read_text(errors="ignore")[:2000]
+        try:
+            path = project_dir / pm_file
+            if path.exists():
+                context[pm_file] = path.read_text(errors="ignore")[:2000]
+        except (PermissionError, OSError):
+            continue
 
     dirs = []
-    for item in sorted(project_dir.iterdir()):
-        if item.name.startswith(".") or item.name in ("node_modules", "__pycache__", ".venv", "dist", "build"):
-            continue
-        if item.is_dir():
-            sub = [f.name for f in sorted(item.iterdir())[:10] if not f.name.startswith(".")]
-            dirs.append({"name": item.name, "children": sub})
-        elif item.is_file():
-            dirs.append({"name": item.name})
+    try:
+        for item in sorted(project_dir.iterdir()):
+            if item.name.startswith(".") or item.name in ("node_modules", "__pycache__", ".venv", "dist", "build"):
+                continue
+            try:
+                if item.is_dir():
+                    sub = [f.name for f in sorted(item.iterdir())[:10] if not f.name.startswith(".")]
+                    dirs.append({"name": item.name, "children": sub})
+                elif item.is_file():
+                    dirs.append({"name": item.name})
+            except PermissionError:
+                continue
+    except PermissionError:
+        pass
     context["structure"] = dirs[:30]
 
-    project_claude = project_dir / "CLAUDE.md"
-    if project_claude.exists():
-        context["existing_claude_md"] = project_claude.read_text(errors="ignore")[:2000]
+    try:
+        project_claude = project_dir / "CLAUDE.md"
+        if project_claude.exists():
+            context["existing_claude_md"] = project_claude.read_text(errors="ignore")[:2000]
+    except (PermissionError, OSError):
+        pass
 
     return context
 
@@ -269,14 +284,17 @@ def _gather_project_context(project_dir: Path) -> dict:
 def _detect_tech_stack(project_dir: Path) -> list[str]:
     """패키지 매니저 파일에서 tech stack을 감지."""
     stack = []
-    if (project_dir / "package.json").exists():
-        stack.append("Node.js")
-    if (project_dir / "pyproject.toml").exists():
-        stack.append("Python")
-    if (project_dir / "Cargo.toml").exists():
-        stack.append("Rust")
-    if (project_dir / "go.mod").exists():
-        stack.append("Go")
-    if (project_dir / "tsconfig.json").exists():
-        stack.append("TypeScript")
+    try:
+        if (project_dir / "package.json").exists():
+            stack.append("Node.js")
+        if (project_dir / "pyproject.toml").exists():
+            stack.append("Python")
+        if (project_dir / "Cargo.toml").exists():
+            stack.append("Rust")
+        if (project_dir / "go.mod").exists():
+            stack.append("Go")
+        if (project_dir / "tsconfig.json").exists():
+            stack.append("TypeScript")
+    except (PermissionError, OSError):
+        pass
     return stack

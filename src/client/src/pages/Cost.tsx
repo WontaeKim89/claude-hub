@@ -18,9 +18,9 @@ function formatTokens(n: number): string {
 type Period = 7 | 30 | 365
 
 const PERIODS: { label: string; value: Period }[] = [
-  { label: '7일', value: 7 },
-  { label: '30일', value: 30 },
-  { label: '전체', value: 365 },
+  { label: '7d', value: 7 },
+  { label: '30d', value: 30 },
+  { label: 'All', value: 365 },
 ]
 
 interface SummaryCardProps {
@@ -198,9 +198,9 @@ export default function Cost() {
           * {t('cost.disclaimer')}
         </p>
         <p className="text-[10px] text-zinc-600 mt-1.5 leading-relaxed">
-          산출 방식: 세션 JSONL의 usage.input_tokens / output_tokens에 모델별 공개 단가 적용
+          Calculated from session JSONL input/output tokens × model pricing.
           (Opus: $5/$25, Sonnet: $3/$15, Haiku: $1/$5 per 1M tokens).
-          캐시 토큰 할인, 배치 할인 등은 미반영. Max/Pro 플랜 구독료와는 별개.
+          Cache/batch discounts not included. Separate from Max/Pro subscription.
         </p>
       </div>
     </div>

@@ -42,6 +42,13 @@ const navGroups: NavGroup[] = [
     ],
   },
   {
+    title: 'Monitor',
+    titleKey: 'nav.monitor',
+    items: [
+      { label: 'Sessions', labelKey: 'nav.sessions', to: '/sessions', icon: MessageSquare },
+    ],
+  },
+  {
     title: 'Context',
     titleKey: 'nav.contextMgmt',
     items: [
@@ -53,15 +60,8 @@ const navGroups: NavGroup[] = [
     title: 'Extensions',
     titleKey: 'nav.extensions',
     items: [
-      { label: '확장 기능', labelKey: 'nav.extensionsPage', to: '/extensions', icon: Blocks },
+      { label: 'Extensions', labelKey: 'nav.extensionsPage', to: '/extensions', icon: Blocks },
       { label: 'Marketplace', labelKey: 'nav.marketplace', to: '/marketplace', icon: Store },
-    ],
-  },
-  {
-    title: 'Monitor',
-    titleKey: 'nav.monitor',
-    items: [
-      { label: 'Sessions', labelKey: 'nav.sessions', to: '/sessions', icon: MessageSquare },
     ],
   },
   {

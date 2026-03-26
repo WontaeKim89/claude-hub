@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   FolderKanban, Loader2, X, Save, Star, Trash2, FlaskConical, ChevronRight, Check,
@@ -136,7 +137,7 @@ function TreeNodeRow({
               (node as FileNode).needs_compact ? 'text-amber-400' : 'text-fuchsia-400'
             }`}
           >
-            {(node as FileNode).needs_compact ? '⚠' : '●'} {(node as FileNode).lines}줄
+            {(node as FileNode).needs_compact ? '⚠' : '●'} {(node as FileNode).lines}lines
           </span>
         )}
         {isFile && !(node as FileNode).exists && (
@@ -220,14 +221,14 @@ function PermissionToggle({ projectPath }: { projectPath: string }) {
       className="flex items-center gap-1.5"
       onClick={(e) => e.stopPropagation()}
     >
-      <span className="text-[10px] text-zinc-500 font-mono">전체 권한</span>
+      <span className="text-[10px] text-zinc-500 font-mono">All Permissions</span>
       <button
         onClick={handleToggleClick}
         disabled={toggleMutation.isPending}
         className={`relative w-8 h-4 rounded-full transition-colors disabled:opacity-50 ${
           allAllowed ? 'bg-fuchsia-500' : 'bg-zinc-700'
         }`}
-        title={allAllowed ? '전체 권한 허용 중 (클릭으로 해제)' : '전체 권한 해제 (클릭으로 허용)'}
+        title={allAllowed ? 'All Permissions 허용 중 (클릭으로 해제)' : 'All Permissions 해제 (클릭으로 허용)'}
       >
         <div
           className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform ${
@@ -236,7 +237,7 @@ function PermissionToggle({ projectPath }: { projectPath: string }) {
         />
       </button>
 
-      {/* 전체 권한 활성화 확인 팝업 */}
+      {/* All Permissions 활성화 확인 팝업 */}
       {showConfirm && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
@@ -247,7 +248,7 @@ function PermissionToggle({ projectPath }: { projectPath: string }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 pt-5 pb-3">
-              <h3 className="text-sm font-semibold text-zinc-100">전체 권한 허용</h3>
+              <h3 className="text-sm font-semibold text-zinc-100">All Permissions 허용</h3>
               <p className="text-xs text-zinc-400 mt-2.5 leading-relaxed">
                 이 프로젝트의 <code className="text-fuchsia-400 bg-zinc-800 px-1 py-0.5 rounded text-[11px]">.claude/settings.local.json</code>에
                 다음 권한을 일괄 추가합니다:
@@ -292,17 +293,60 @@ function PermissionToggle({ projectPath }: { projectPath: string }) {
 // 프로젝트 카드 (아코디언)
 // Inline Harness Wizard — 프로젝트 현황에서 직접 실행
 // Inline Harness Wizard
-type WizardPhase = 'files' | 'references' | 'confirm' | 'generating' | 'preview' | 'done'
+type WizardPhase = 'intro' | 'files' | 'references' | 'confirm' | 'generating' | 'preview' | 'done'
 
-const GENERATE_MESSAGES = [
-  '프로젝트 구조를 분석하고 있습니다...',
-  'README.md와 문서를 읽고 있습니다...',
-  '기술 스택을 감지하고 있습니다...',
-  '참조 프로젝트의 설정을 분석하고 있습니다...',
-  '최적의 CLAUDE.md를 작성하고 있습니다...',
-  'Hook 설정을 구성하고 있습니다...',
-  '거의 완료되었습니다. 잠시만 기다려주세요...',
-]
+// Step indicator for wizard phases
+function WizardStepIndicator({ current, t }: { current: number; t: (key: string) => string }) {
+  const steps = [
+    { num: 1, label: 'Intro' },
+    { num: 2, label: t('wizard.refFiles') },
+    { num: 3, label: t('wizard.refProjects') },
+    { num: 4, label: 'Confirm' },
+  ]
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      {steps.map((step, i) => {
+        const done = step.num < current
+        const active = step.num === current
+        return (
+          <div key={step.num} className="flex items-center gap-1.5">
+            {i > 0 && <span className="text-zinc-700 text-xs">→</span>}
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-colors ${
+              active
+                ? 'bg-fuchsia-500/15 border border-fuchsia-500/30'
+                : 'bg-zinc-800/60 border border-zinc-800'
+            }`}>
+              <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold ${
+                active
+                  ? 'bg-fuchsia-500 text-white'
+                  : done
+                    ? 'bg-fuchsia-500/30 text-fuchsia-400'
+                    : 'bg-zinc-700 text-zinc-400'
+              }`}>
+                {done ? '✓' : step.num}
+              </span>
+              <span className={`text-xs ${active ? 'font-medium text-fuchsia-300' : 'text-zinc-500'}`}>
+                {step.label}
+              </span>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function getGenerateMessages(t: (key: string) => string): string[] {
+  return [
+    t('wizard.gen1'),
+    t('wizard.gen2'),
+    t('wizard.gen3'),
+    t('wizard.gen4'),
+    t('wizard.gen5'),
+    t('wizard.gen6'),
+    t('wizard.gen7'),
+  ]
+}
 
 function InlineWizardModal({
   projectPath,
@@ -319,7 +363,8 @@ function InlineWizardModal({
 }) {
   const { t } = useLang()
   useEscClose(onClose)
-  const [phase, setPhase] = useState<WizardPhase>('files')
+  const GENERATE_MESSAGES = getGenerateMessages(t)
+  const [phase, setPhase] = useState<WizardPhase>('intro')
   const [referenceProjects, setReferenceProjects] = useState<string[]>([])
   const [result, setResult] = useState<{
     tech_stack: string[]
@@ -346,19 +391,19 @@ function InlineWizardModal({
   const [genStep, setGenStep] = useState(0)
   const [genMsg, setGenMsg] = useState(GENERATE_MESSAGES[0])
 
-  // 프로젝트의 참고 파일 목록
+  // 프로젝트의 Reference Files 목록
   const contextFiles = [
-    { category: '프로젝트 파일', items: [
+    { category: 'Project Files', items: [
       { name: 'README.md', icon: '📖' },
       { name: 'pyproject.toml / package.json', icon: '📦' },
-      { name: '디렉토리 구조', icon: '📁' },
+      { name: 'Directory structure', icon: '📁' },
     ]},
-    { category: '전역 Claude 설정', items: [
+    { category: 'Global Claude Settings', items: [
       { name: '~/.claude/CLAUDE.md', icon: '📝' },
       { name: '~/.claude/settings.json', icon: '⚙️' },
     ]},
-    { category: '기존 프로젝트 설정', items: [
-      { name: `${projectName}/CLAUDE.md (기존)`, icon: '📄' },
+    { category: 'Existing Project Settings', items: [
+      { name: `${projectName}/CLAUDE.md (existing)`, icon: '📄' },
       { name: `${projectName}/.claude/memory/`, icon: '🧠' },
     ]},
   ]
@@ -438,7 +483,7 @@ function InlineWizardModal({
           <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300"><X size={16} /></button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-5">
+        <div className="flex-1 overflow-y-auto p-5 flex flex-col min-h-0">
           {error && (
             <div className="flex items-center gap-2 text-xs text-red-400 bg-red-400/10 rounded px-3 py-2 mb-4">
               <span>{error}</span>
@@ -446,46 +491,124 @@ function InlineWizardModal({
             </div>
           )}
 
-          {/* Step 1: 참고 파일 확인 */}
-          {phase === 'files' && (
+          {/* Step 0: Intro */}
+          {phase === 'intro' && (
             <div className="space-y-5">
-              {/* 스텝 인디케이터 */}
-              <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600">
-                <span className="text-fuchsia-400 font-medium">1. {t('wizard.refFiles')}</span>
-                <span>→</span>
-                <span>2. {t('wizard.refProjects')}</span>
-                <span>→</span>
-                <span>3. Confirm</span>
-              </div>
+              <WizardStepIndicator current={1} t={t} />
 
-              {/* 공식 지침 기반 배너 */}
-              <div className="bg-fuchsia-500/5 border border-fuchsia-500/20 rounded-lg px-4 py-3 mb-4">
-                <p className="text-xs text-zinc-200 font-medium mb-1">
-                  Based on Anthropic&apos;s Official Best Practices
-                </p>
-                <p className="text-[10px] text-zinc-400 leading-relaxed">
-                  This wizard generates a <strong className="text-fuchsia-400">full harness</strong> (CLAUDE.md, Hooks, Permissions, Skills, Agents, Memory, Commands, MCP)
-                  following the{' '}
-                  <a href="https://code.claude.com/docs/en/best-practices" target="_blank" rel="noopener noreferrer"
-                    className="text-fuchsia-400 underline hover:text-fuchsia-300">
-                    official Claude Code Best Practices guide
-                  </a>.
+              {/* Hero section */}
+              <div className="text-center pt-2 pb-1">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-fuchsia-500/10 border border-fuchsia-500/20 mb-4">
+                  <FlaskConical size={28} className="text-fuchsia-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-zinc-100 mb-1.5">{t('wizard.introTitle')}</h3>
+                <p className="text-xs text-zinc-400 max-w-md mx-auto leading-relaxed">
+                  {t('wizard.introDesc')}
                 </p>
               </div>
 
-              <div>
+              {/* Official badge */}
+              <div className="bg-fuchsia-500/5 border border-fuchsia-500/20 rounded-lg px-4 py-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-fuchsia-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-sm">🏛️</span>
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-200 font-medium mb-0.5">
+                      {t('wizard.introOfficialTitle')}
+                    </p>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed">
+                      {t('wizard.introOfficialDesc')}{' '}
+                      <a href="https://docs.anthropic.com/en/docs/build-with-claude/prompt-engineering/overview" target="_blank" rel="noopener noreferrer"
+                        className="text-fuchsia-400 underline hover:text-fuchsia-300">
+                        Official Guide →
+                      </a>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Generated items preview */}
+              <div className="bg-zinc-800/40 border border-zinc-700/50 rounded-lg p-4">
+                <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-3">{t('wizard.introGenItems')}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { icon: '📝', label: 'CLAUDE.md', desc: t('wizard.introItemClaudeMd') },
+                    { icon: '🔗', label: 'Hooks', desc: t('wizard.introItemHooks') },
+                    { icon: '⚙️', label: 'Permissions', desc: t('wizard.introItemPermissions') },
+                    { icon: '🧠', label: 'Memory', desc: t('wizard.introItemMemory') },
+                    { icon: '⚡', label: 'Skills', desc: t('wizard.introItemSkills') },
+                    { icon: '🤖', label: 'Agents', desc: t('wizard.introItemAgents') },
+                    { icon: '📋', label: 'Commands', desc: t('wizard.introItemCommands') },
+                    { icon: '🔌', label: 'MCP Servers', desc: t('wizard.introItemMcp') },
+                  ].map((item) => (
+                    <div key={item.label} className="flex items-center gap-2.5 px-3 py-2 rounded-md bg-zinc-900/60 border border-zinc-800/60">
+                      <span className="text-base shrink-0">{item.icon}</span>
+                      <div className="min-w-0">
+                        <p className="font-mono text-[11px] text-zinc-300">{item.label}</p>
+                        <p className="text-[9px] text-zinc-600 truncate">{item.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Flow diagram */}
+              <div className="flex items-center justify-center gap-2 py-2">
+                {[
+                  { icon: '📂', label: t('wizard.introFlowAnalyze') },
+                  { icon: '🤖', label: t('wizard.introFlowGenerate') },
+                  { icon: '👀', label: t('wizard.introFlowPreview') },
+                  { icon: '✅', label: t('wizard.introFlowApply') },
+                ].map((step, i) => (
+                  <div key={step.label} className="flex items-center gap-2">
+                    {i > 0 && <span className="text-zinc-700 text-xs">→</span>}
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="text-lg">{step.icon}</span>
+                      <span className="text-[9px] text-zinc-500 font-mono">{step.label}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2">
+                <button onClick={onClose} className="flex-1 py-2.5 text-xs border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-md transition-colors">
+                  {t('wizard.cancel')}
+                </button>
+                <button
+                  onClick={() => setPhase('files')}
+                  className="flex-1 py-2.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium rounded-md transition-colors"
+                >
+                  {t('wizard.introStart')} →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Reference Files 확인 */}
+          {phase === 'files' && (
+            <div className="flex flex-col h-full">
+              <div className="shrink-0 mb-4">
+                <WizardStepIndicator current={2} t={t} />
+              </div>
+
+              <div className="shrink-0 mb-2">
                 <h3 className="text-sm font-medium text-zinc-200 mb-1">{t('wizard.refFiles')}</h3>
-                <p className="text-[10px] text-zinc-500 mb-3">
-                  AI가 다음 파일과 설정을 분석하여 최적의 Claude harness를 생성합니다.
+                <p className="text-[10px] text-zinc-500">
+                  {t('wizard.refFilesDesc')}
                 </p>
+              </div>
+
+              {/* Scrollable file list */}
+              <div className="flex-1 min-h-0 overflow-y-auto border border-zinc-800 rounded-lg bg-zinc-800/20 p-3 mb-4">
                 <div className="space-y-3">
                   {contextFiles.map((cat) => (
                     <div key={cat.category}>
                       <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider mb-1.5">{cat.category}</p>
                       <div className="space-y-0.5">
                         {cat.items.map((item) => (
-                          <div key={item.name} className="flex items-center gap-2.5 px-3 py-2 rounded-md bg-zinc-800/40 border border-zinc-800/60">
-                            <span className="text-base">{item.icon}</span>
+                          <div key={item.name} className="flex items-center gap-2.5 px-3 py-1.5 rounded-md bg-zinc-900/60 border border-zinc-800/60">
+                            <span className="text-sm">{item.icon}</span>
                             <span className="font-mono text-[11px] text-zinc-300">{item.name}</span>
                           </div>
                         ))}
@@ -495,44 +618,38 @@ function InlineWizardModal({
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <button onClick={onClose} className="flex-1 py-2.5 text-xs border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-md transition-colors">
-                  {t('wizard.cancel')}
+              <div className="flex gap-2 shrink-0">
+                <button onClick={() => setPhase('intro')} className="flex-1 py-2.5 text-xs border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-md transition-colors">
+                  ← Back
                 </button>
                 <button
                   onClick={() => setPhase('references')}
                   className="flex-1 py-2.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium rounded-md transition-colors"
                 >
-                  다음 →
+                  Next →
                 </button>
               </div>
             </div>
           )}
 
-          {/* Step 2: 참조 프로젝트 선택 */}
+          {/* Step 3: Reference Projects 선택 */}
           {phase === 'references' && (
             <div className="space-y-5">
-              {/* 스텝 인디케이터 */}
-              <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600">
-                <span className="text-zinc-500">1. {t('wizard.refFiles')}</span>
-                <span>→</span>
-                <span className="text-fuchsia-400 font-medium">2. {t('wizard.refProjects')}</span>
-                <span>→</span>
-                <span>3. Confirm</span>
-              </div>
+              <WizardStepIndicator current={3} t={t} />
 
               <div>
-                <h3 className="text-sm font-medium text-zinc-200 mb-1">{t('wizard.refProjects')}</h3>
-                <p className="text-[11px] text-zinc-500 mb-4 leading-relaxed">
-                  {t('wizard.refProjectsDesc')}
-                  <br />
-                  <span className="text-zinc-600">
-                    선택한 프로젝트의 CLAUDE.md, Memory, Hooks 설정이 참고 데이터에 추가됩니다.
-                  </span>
-                </p>
+                <h3 className="text-sm font-medium text-zinc-200 mb-2">{t('wizard.refProjects')}</h3>
+                <div className="bg-amber-500/8 border border-amber-500/25 rounded-lg px-4 py-3 mb-4">
+                  <p className="text-xs text-amber-200/90 leading-relaxed mb-1">
+                    {t('wizard.refProjectsDesc')}
+                  </p>
+                  <p className="text-[11px] text-amber-300/60 leading-relaxed">
+                    {t('wizard.refProjectsDetail')}
+                  </p>
+                </div>
 
                 {allProjects.filter((p) => p.project_path !== projectPath).length === 0 ? (
-                  <div className="py-6 text-center text-xs text-zinc-600">다른 프로젝트가 없습니다.</div>
+                  <div className="py-6 text-center text-xs text-zinc-600">No other projects available.</div>
                 ) : (
                   <div className="space-y-1 max-h-[280px] overflow-y-auto">
                     {allProjects.filter((p) => p.project_path !== projectPath).map((p) => {
@@ -555,7 +672,7 @@ function InlineWizardModal({
                             <p className="font-mono text-[10px] text-zinc-600 mt-0.5">{fileCount} files</p>
                           </div>
                           {checked && (
-                            <span className="text-[9px] font-mono text-fuchsia-400/60 shrink-0">참고 반영</span>
+                            <span className="text-[9px] font-mono text-fuchsia-400/60 shrink-0">Referenced</span>
                           )}
                         </label>
                       )
@@ -574,50 +691,43 @@ function InlineWizardModal({
 
               <div className="flex gap-2">
                 <button onClick={() => setPhase('files')} className="flex-1 py-2.5 text-xs border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-md transition-colors">
-                  ← 이전
+                  ← Back
                 </button>
                 <button
                   onClick={() => setPhase('confirm')}
                   className="flex-1 py-2.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium rounded-md transition-colors"
                 >
-                  다음 →
+                  Next →
                 </button>
               </div>
             </div>
           )}
 
-          {/* Step 3: 최종 확인 */}
+          {/* Step 4: 최종 확인 */}
           {phase === 'confirm' && (
             <div className="space-y-5">
-              {/* 스텝 인디케이터 */}
-              <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-600">
-                <span className="text-zinc-500">1. {t('wizard.refFiles')}</span>
-                <span>→</span>
-                <span className="text-zinc-500">2. {t('wizard.refProjects')}</span>
-                <span>→</span>
-                <span className="text-fuchsia-400 font-medium">3. Confirm</span>
-              </div>
+              <WizardStepIndicator current={4} t={t} />
 
               {/* 요약 */}
               <div className="space-y-3">
                 <div className="bg-zinc-800/40 border border-zinc-700/50 rounded-lg p-4">
-                  <h3 className="text-sm font-medium text-zinc-200 mb-3">생성 요약</h3>
+                  <h3 className="text-sm font-medium text-zinc-200 mb-3">Generation Summary</h3>
 
                   <div className="space-y-2 text-xs">
                     <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/50">
-                      <span className="text-zinc-400">대상 프로젝트</span>
+                      <span className="text-zinc-400">Target Project</span>
                       <span className="font-mono text-zinc-200">{projectName}</span>
                     </div>
                     <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/50">
-                      <span className="text-zinc-400">참고 파일</span>
-                      <span className="font-mono text-zinc-200">{contextFiles.reduce((s, c) => s + c.items.length, 0)}개</span>
+                      <span className="text-zinc-400">Reference Files</span>
+                      <span className="font-mono text-zinc-200">{contextFiles.reduce((s, c) => s + c.items.length, 0)}</span>
                     </div>
                     <div className="flex items-center justify-between py-1.5 border-b border-zinc-800/50">
-                      <span className="text-zinc-400">참조 프로젝트</span>
-                      <span className="font-mono text-zinc-200">{referenceProjects.length}개</span>
+                      <span className="text-zinc-400">Reference Projects</span>
+                      <span className="font-mono text-zinc-200">{referenceProjects.length}</span>
                     </div>
                     <div className="flex items-center justify-between py-1.5">
-                      <span className="text-zinc-400">생성할 파일</span>
+                      <span className="text-zinc-400">Files to Generate</span>
                       <span className="font-mono text-zinc-200">CLAUDE.md, Hooks, Memory</span>
                     </div>
                   </div>
@@ -625,21 +735,20 @@ function InlineWizardModal({
 
                 <div className="bg-fuchsia-500/5 border border-fuchsia-500/20 rounded-lg px-4 py-3">
                   <p className="text-xs text-zinc-300 leading-relaxed">
-                    위 데이터를 기반으로 <span className="text-fuchsia-400 font-medium">{projectName}</span> 프로젝트에 최적화된
-                    Claude 설정 파일을 AI가 생성합니다. 진행하시겠습니까?
+                    {t('wizard.confirmMsg').replace('{project}', projectName)}
                   </p>
                 </div>
               </div>
 
               <div className="flex gap-2">
                 <button onClick={() => setPhase('references')} className="flex-1 py-2.5 text-xs border border-zinc-700 text-zinc-400 hover:text-zinc-200 rounded-md transition-colors">
-                  ← 이전
+                  ← Back
                 </button>
                 <button
                   onClick={startGenerate}
                   className="flex-1 py-2.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium rounded-md transition-colors"
                 >
-                  진행하기
+                  {t('wizard.confirmProceed')}
                 </button>
               </div>
             </div>
@@ -657,7 +766,7 @@ function InlineWizardModal({
 
               {/* 진행 메시지 */}
               <p className="text-sm text-zinc-200 mb-2 animate-fade-in" key={genStep}>{genMsg}</p>
-              <p className="text-[10px] text-zinc-600 mb-6">AI가 프로젝트에 최적화된 설정을 생성하고 있습니다</p>
+              <p className="text-[10px] text-zinc-600 mb-6">{t('wizard.genSubMsg')}</p>
 
               {/* 프로그레스 바 */}
               <div className="w-64 h-1 bg-zinc-800 rounded-full overflow-hidden">
@@ -955,13 +1064,21 @@ function FileEditorModal({
 export default function ProjectOverview() {
   const { t } = useLang()
   const queryClient = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
 
   // 편집 모달 상태
   const [editingNode, setEditingNode] = useState<FileNode | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<FileNode | null>(null)
-  const [selectedPath, setSelectedPath] = useState<string | null>(null)
+  const [selectedPath, setSelectedPath] = useState<string | null>(searchParams.get('select'))
   const [deleteProjectTarget, setDeleteProjectTarget] = useState<{ name: string; encoded: string } | null>(null)
-  const [showWizard, setShowWizard] = useState(false)
+  const [showWizard, setShowWizard] = useState(searchParams.get('wizard') === '1')
+
+  // URL 파라미터 소비 후 정리
+  useEffect(() => {
+    if (searchParams.has('select') || searchParams.has('wizard')) {
+      setSearchParams({}, { replace: true })
+    }
+  }, [])
 
   // 즐겨찾기 (localStorage 기반)
   const [favorites, setFavorites] = useState<Set<string>>(() => {
@@ -1088,8 +1205,7 @@ export default function ProjectOverview() {
         </div>
         <p className="text-xs text-zinc-500">{t('projects.subtitle')}</p>
         <p className="mt-2 text-[11px] text-zinc-600 bg-zinc-900 border border-zinc-800 rounded px-3 py-2 inline-block">
-          <span className="text-zinc-400">표시 기준:</span> <code className="font-mono text-fuchsia-400/80">~/.claude/projects/</code> 내에서
-          Claude Code가 세션을 생성한 프로젝트 (JSONL 또는 memory 디렉토리가 존재하는 프로젝트)
+          {t('criteria.projectStatus')}
         </p>
       </div>
 
@@ -1295,12 +1411,12 @@ export default function ProjectOverview() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-zinc-100 mb-1">
-                            이 프로젝트에 Claude 설정이 없습니다
+                            {t('projects.noClaudeMd')}
                           </p>
                           <p className="text-[11px] text-zinc-400 leading-relaxed mb-3">
                             Harness Wizard가{' '}
                             <a href="https://code.claude.com/docs/en/best-practices" target="_blank" rel="noopener noreferrer" className="text-fuchsia-400 underline">
-                              Anthropic 공식 가이드
+                              Anthropic official guide
                             </a>
                             {' '}기반으로 최적의 설정을 AI로 생성합니다.
                           </p>
@@ -1316,7 +1432,7 @@ export default function ProjectOverview() {
                             onClick={() => setShowWizard(true)}
                             className="px-4 py-2 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-medium rounded-md transition-colors"
                           >
-                            Harness Wizard 실행
+                            {t('projects.runWizard')}
                           </button>
                         </div>
                       </div>

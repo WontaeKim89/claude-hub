@@ -6,6 +6,7 @@ import { MonacoWrapper } from '../components/editors/MonacoWrapper'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
+import { useEscClose } from '../hooks/useEscClose'
 import type { MemoryProject, MemoryFileSummary } from '../lib/types'
 
 function NewFileModal({
@@ -15,6 +16,7 @@ function NewFileModal({
   project: string
   onClose: () => void
 }) {
+  useEscClose(onClose)
   const qc = useQueryClient()
   const [name, setName] = useState('')
   const [content, setContent] = useState('# ')
@@ -289,7 +291,7 @@ export default function Memory({ embedded }: { embedded?: boolean }) {
 
       {deleteTarget && (
         <DangerDeleteDialog
-          title={`'${deleteTarget}' 파일을 삭제하시겠습니까?`}
+          title={`'${deleteTarget}' Delete this file?`}
           confirmText={deleteTarget}
           onConfirm={() => deleteMutation.mutate(deleteTarget)}
           onCancel={() => setDeleteTarget(null)}

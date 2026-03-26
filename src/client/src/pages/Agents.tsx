@@ -8,9 +8,11 @@ import { CATEGORY_INFO } from '../lib/category-info'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
 import { TableSkeleton } from '../components/shared/Skeleton'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
+import { useEscClose } from '../hooks/useEscClose'
 import type { AgentSummary, AgentDetail } from '../lib/types'
 
 function NewAgentModal({ onClose }: { onClose: () => void }) {
+  useEscClose(onClose)
   const qc = useQueryClient()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -118,6 +120,7 @@ function NewAgentModal({ onClose }: { onClose: () => void }) {
 }
 
 function EditAgentModal({ agent, onClose }: { agent: AgentSummary; onClose: () => void }) {
+  useEscClose(onClose)
   const qc = useQueryClient()
   const { data } = useQuery<AgentDetail>({
     queryKey: ['agent', agent.name],
@@ -309,7 +312,7 @@ export default function Agents({ embedded }: { embedded?: boolean }) {
 
       {deleteTarget && (
         <DangerDeleteDialog
-          title={`'${deleteTarget.name}' 에이전트를 삭제하시겠습니까?`}
+          title={`'${deleteTarget.name}' Delete this agent?`}
           confirmText={deleteTarget.name}
           onConfirm={() => deleteMutation.mutate(deleteTarget.name)}
           onCancel={() => setDeleteTarget(null)}

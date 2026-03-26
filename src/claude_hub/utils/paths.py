@@ -67,22 +67,26 @@ class ClaudePaths:
     def backup_dir(self) -> Path:
         return Path.home() / ".claude-hub"
 
-    def list_projects(self) -> list[ProjectInfo]:
+    def list_projects(self, include_sessions: bool = False) -> list[ProjectInfo]:
+        """프로젝트 목록. include_sessions=True면 JSONL만 있는 프로젝트도 포함."""
         projects = []
         if not self.projects_dir.exists():
             return projects
+        EXCLUDE = {"subagents"}
         for entry in sorted(self.projects_dir.iterdir()):
             if not entry.is_dir() or not entry.name.startswith("-"):
                 continue
+            if entry.name in EXCLUDE:
+                continue
+            segments = entry.name.lstrip("-").split("-")
+            if len(segments) < 3:
+                continue
             memory_dir = entry / "memory"
-            if memory_dir.exists():
-                projects.append(
-                    ProjectInfo(
-                        encoded=entry.name,
-                        decoded=decode_project_path(entry.name),
-                        memory_dir=memory_dir,
-                    )
-                )
+            has_memory = memory_dir.exists()
+            if has_memory:
+                projects.append(ProjectInfo(encoded=entry.name, decoded=decode_project_path(entry.name), memory_dir=memory_dir))
+            elif include_sessions and any(entry.glob("*.jsonl")):
+                projects.append(ProjectInfo(encoded=entry.name, decoded=decode_project_path(entry.name), memory_dir=memory_dir))
         return projects
 
 

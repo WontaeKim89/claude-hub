@@ -24,8 +24,9 @@ export default function ContextManager() {
           {t('nav.contextManagement')}
         </h2>
         <p className="mt-0.5 text-xs text-zinc-500">
-          CLAUDE.md, Memory, Context Compare 통합 관리
+          {t('context.subtitle')}
         </p>
+        <p className="mt-1 text-[10px] text-zinc-600">{t('criteria.context')}</p>
       </div>
 
       {/* 탭 바 */}

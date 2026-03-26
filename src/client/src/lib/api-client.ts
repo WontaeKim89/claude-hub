@@ -17,6 +17,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   dashboard: {
     get: () => request<DashboardData>('/dashboard'),
+    projectConfigs: () => request<Array<{
+      name: string; encoded: string; path: string
+      claude_md: boolean; memory: boolean; settings: boolean
+      agents: boolean; commands: boolean; count: number; total: number
+    }>>('/dashboard/project-configs'),
   },
 
   health: {

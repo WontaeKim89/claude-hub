@@ -6,7 +6,6 @@ import {
   Bot,
   Webhook,
   Server,
-  FolderOpen,
   History,
   AlertTriangle,
   RefreshCw,
@@ -47,13 +46,13 @@ function StatCard({ label, value, icon: Icon, accent, sub, link }: StatCardProps
   return (
     <div
       onClick={() => link && navigate(link)}
-      className={`bg-zinc-900 border border-zinc-800 border-l-2 ${borderColor} rounded-md p-4 glow-emerald hover:border-zinc-700 hover:scale-[1.01] transition-all duration-150 ${link ? 'cursor-pointer hover:scale-[1.02] hover:border-fuchsia-500/30' : 'cursor-default'}`}
+      className={`bg-zinc-900 border border-zinc-800 border-l-2 ${borderColor} rounded-md p-3 glow-emerald hover:border-zinc-700 transition-all duration-150 ${link ? 'cursor-pointer hover:border-fuchsia-500/30' : 'cursor-default'}`}
     >
       <div className="flex items-start justify-between mb-2">
         <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">{label}</span>
         <Icon size={14} strokeWidth={1.5} className="text-zinc-700 mt-0.5 shrink-0" />
       </div>
-      <span className="font-mono text-2xl font-semibold text-zinc-100 leading-none">{value}</span>
+      <span className="font-mono text-xl font-semibold text-zinc-100 leading-none">{value}</span>
       {sub && <p className="mt-1.5 text-[10px] text-zinc-600 font-mono">{sub}</p>}
     </div>
   )
@@ -67,7 +66,7 @@ function HelpPopup({ content }: { content: string }) {
       <button
         onClick={() => setOpen((v) => !v)}
         className="text-zinc-600 hover:text-zinc-400 transition-colors"
-        aria-label="도움말"
+        aria-label="help"
       >
         <Info size={13} strokeWidth={1.5} />
       </button>
@@ -321,6 +320,7 @@ const REFRESH_OPTIONS = [
 ] as const
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [showBackupHistory, setShowBackupHistory] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; name: string } | null>(null)
   const [usageTab, setUsageTab] = useState<'skills' | 'plugins'>('skills')
@@ -361,6 +361,12 @@ export default function Dashboard() {
     retry: false,
   })
 
+  const { data: projectConfigs } = useQuery({
+    queryKey: ['project-configs'],
+    queryFn: () => api.dashboard.projectConfigs(),
+    staleTime: 60_000,
+  })
+
   const { data: unusedItems } = useQuery({
     queryKey: ['stats', 'unused'],
     queryFn: () => api.stats.unused(30),
@@ -398,7 +404,7 @@ export default function Dashboard() {
       icon: Sparkles,
       accent: 'emerald',
       sub: `${dashboard?.skills?.custom ?? 0} custom · ${dashboard?.skills?.installed ?? 0} installed`,
-      link: '/extensions?tab=skills',
+      link: '/extensions?tab=skills&filter=installed',
     },
     {
       label: t('dashboard.plugins'),
@@ -406,7 +412,7 @@ export default function Dashboard() {
       icon: Puzzle,
       accent: 'teal',
       sub: `${dashboard?.plugins?.enabled ?? 0} enabled`,
-      link: '/extensions?tab=plugins',
+      link: '/extensions?tab=plugins&filter=installed',
     },
     {
       label: t('dashboard.agents'),
@@ -428,13 +434,6 @@ export default function Dashboard() {
       icon: Server,
       accent: 'violet',
       link: '/extensions?tab=mcp',
-    },
-    {
-      label: t('dashboard.projects'),
-      value: dashboard?.projects?.total ?? 0,
-      icon: FolderOpen,
-      accent: 'zinc',
-      link: '/projects',
     },
   ]
 
@@ -470,7 +469,7 @@ export default function Dashboard() {
             <RefreshCw size={13} strokeWidth={1.5} className={syncMutation.isPending ? 'animate-spin' : ''} />
             {t('stats.syncHistory')}
           </button>
-          <HelpPopup content={"Claude Code 세션 로그에서 스킬/플러그인 사용 이력을 추출하여 통계 DB에 반영합니다. 최초 실행 시 과거 데이터를 소급 분석합니다.\n\n데이터: ~/.claude-hub/usage.db"} />
+          <HelpPopup content={"Extract skill/plugin usage from Claude Code session logs into statistics DB. First run imports historical data.\n\nData: ~/.claude-hub/usage.db"} />
           <button
             onClick={() => setShowBackupHistory(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-zinc-400 border border-zinc-800 hover:border-zinc-600 hover:text-zinc-200 rounded-md transition-colors duration-150"
@@ -478,20 +477,78 @@ export default function Dashboard() {
             <History size={13} strokeWidth={1.5} />
             {t('dashboard.backupHistory')}
           </button>
-          <HelpPopup content={"claude-hub에서 설정을 수정할 때마다 자동으로 이전 상태를 백업합니다. 실수로 변경한 설정을 이전 시점으로 복원할 수 있습니다.\n\n저장 위치: ~/.claude-hub/backups/\n최대 보관: 50개 (FIFO)"} />
+          <HelpPopup content={"Automatically backs up previous state whenever settings are modified. Restore accidentally changed settings.\n\nLocation: ~/.claude-hub/backups/\nMax: 50 backups (FIFO)"} />
         </div>
       </div>
 
-      {/* Stat cards — 3x2 grid */}
-      <div className="grid grid-cols-3 gap-3 mb-6">
+      {/* Project Harness Status — 로딩 시에도 스켈레톤 표시 */}
+      {!projectConfigs ? (
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden mb-4">
+          <div className="px-3 py-2 border-b border-zinc-800">
+            <Skeleton className="h-3 w-28" />
+          </div>
+          <div className="p-3 space-y-2">
+            {[1, 2, 3].map((i) => <Skeleton key={i} className="h-5 w-full" />)}
+          </div>
+        </div>
+      ) : projectConfigs.length > 0 && (
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden mb-4">
+          <div className="px-3 py-2 border-b border-zinc-800 flex items-center justify-between">
+            <span className="text-[11px] font-medium text-zinc-300">{t('dashboard.harnessStatus')}</span>
+            <button onClick={() => navigate('/projects')} className="text-[10px] text-fuchsia-400 hover:text-fuchsia-300 transition-colors">View All →</button>
+          </div>
+          <table className="w-full text-[10px]">
+            <thead>
+              <tr className="border-b border-zinc-800/50 text-zinc-500">
+                <th className="text-left px-3 py-1.5 font-mono font-medium">Project</th>
+                <th className="px-2 py-1.5 text-center font-mono font-medium">CLAUDE.md</th>
+                <th className="px-2 py-1.5 text-center font-mono font-medium">memory/</th>
+                <th className="px-2 py-1.5 text-center font-mono font-medium">settings.json</th>
+                <th className="px-2 py-1.5 text-center font-mono font-medium">agents/</th>
+                <th className="px-2 py-1.5 text-center font-mono font-medium">commands/</th>
+                <th className="px-2 py-1.5 w-20 text-right font-mono font-medium"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {projectConfigs.slice(0, 5).map((p) => (
+                <tr
+                  key={p.encoded}
+                  className="border-b border-zinc-800/20 hover:bg-zinc-800/20 transition-colors cursor-pointer"
+                  onClick={() => navigate(`/projects?select=${encodeURIComponent(p.path)}`)}
+                >
+                  <td className="px-3 py-1.5 font-mono text-zinc-300 truncate max-w-[180px]" title={p.path}>{p.name}</td>
+                  <td className="px-2 py-1.5 text-center"><span className={p.claude_md ? 'text-fuchsia-400' : 'text-zinc-800'}>●</span></td>
+                  <td className="px-2 py-1.5 text-center"><span className={p.memory ? 'text-violet-400' : 'text-zinc-800'}>●</span></td>
+                  <td className="px-2 py-1.5 text-center"><span className={p.settings ? 'text-amber-400' : 'text-zinc-800'}>●</span></td>
+                  <td className="px-2 py-1.5 text-center"><span className={p.agents ? 'text-sky-400' : 'text-zinc-800'}>●</span></td>
+                  <td className="px-2 py-1.5 text-center"><span className={p.commands ? 'text-green-400' : 'text-zinc-800'}>●</span></td>
+                  <td className="px-2 py-1.5 text-right whitespace-nowrap">
+                    {p.count < 3 && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/projects?select=${encodeURIComponent(p.path)}&wizard=1`) }}
+                        className="inline-flex items-center gap-1 text-[9px] font-mono text-fuchsia-400 hover:text-fuchsia-300 bg-fuchsia-500/10 border border-fuchsia-500/30 px-1.5 py-0.5 rounded transition-colors leading-none"
+                      >
+                        <Sparkles size={9} />AI Setup
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Stat cards — 5 in a row */}
+      <div className="grid grid-cols-5 gap-2 mb-4">
         {isLoading
-          ? Array.from({ length: 6 }).map((_, i) => <StatCardSkeleton key={i} />)
+          ? Array.from({ length: 5 }).map((_, i) => <StatCardSkeleton key={i} />)
           : stats.map((s) => <StatCard key={s.label} {...s} />)
         }
       </div>
 
       {/* Usage Stats + Claude 사용량 — 2-column layout */}
-      <div className="grid grid-cols-2 gap-4 mt-4">
+      <div className="grid grid-cols-2 gap-3 mt-3">
         {/* Left: Top Used (tabbed skills/plugins) */}
         {!topSkills && !topPlugins ? <ChartPanelSkeleton /> : (
         <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden">
@@ -664,6 +721,8 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* (Project Harness Status moved above stat cards) */}
+
       {/* Unused Items Warning */}
       {unusedItems && unusedItems.length > 0 && (
         <div className="bg-zinc-900 border border-zinc-800 rounded-md overflow-hidden mt-4">
@@ -699,7 +758,7 @@ export default function Dashboard() {
 
       {deleteTarget && (
         <DangerDeleteDialog
-          title={`${deleteTarget.type} 제거: ${deleteTarget.name}`}
+          title={`${deleteTarget.type} Remove: ${deleteTarget.name}`}
           confirmText={deleteTarget.name}
           onConfirm={() => handleDeleteUnused(deleteTarget)}
           onCancel={() => setDeleteTarget(null)}

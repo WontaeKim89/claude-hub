@@ -3,6 +3,7 @@
  * DiffViewer를 래핑해 파일 경로와 함께 보여준다.
  */
 import { DiffViewer } from './DiffViewer'
+import { useEscClose } from '../../hooks/useEscClose'
 
 interface DiffModalProps {
   diff: string
@@ -11,6 +12,7 @@ interface DiffModalProps {
 }
 
 export function DiffModal({ diff, targetPath, onClose }: DiffModalProps) {
+  useEscClose(onClose)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
       <div className="bg-zinc-900 border border-zinc-700 rounded-lg shadow-xl w-full max-w-3xl mx-4 flex flex-col max-h-[80vh]">
