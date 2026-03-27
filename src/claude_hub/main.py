@@ -132,11 +132,27 @@ def cli():
 
     url = f"http://localhost:{args.port}"
 
-    # 이미 서버가 실행 중이면 브라우저에서 열고 종료
+    # pywebview 사용 가능 여부 확인 — 있으면 기본적으로 앱 모드
+    use_app = args.app
+    if not use_app:
+        try:
+            import webview as _wv
+            use_app = True  # pywebview 설치되어 있으면 앱 모드 기본
+        except ImportError:
+            use_app = False
+
+    # 이미 서버가 실행 중이면 열고 종료
     if _is_already_running(args.port):
         print(f"[claude-hub] Already running at {url}")
-        import webbrowser
-        webbrowser.open(url)
+        if use_app:
+            try:
+                import webview
+                webview.create_window("ClaudeHub", url, width=1280, height=820, min_size=(900, 600), background_color='#09090b')
+                webview.start()
+            except ImportError:
+                webbrowser.open(url)
+        else:
+            webbrowser.open(url)
         return
 
     config = AppConfig(port=args.port, host=args.host, auto_open=not args.no_open)
@@ -164,7 +180,7 @@ def cli():
         print("[claude-hub] Usage data pre-calculated.")
     threading.Thread(target=_warmup, daemon=True).start()
 
-    if args.app:
+    if use_app:
         _run_as_app(app, config, url)
     else:
         print(f"claude-hub running at {url}")
