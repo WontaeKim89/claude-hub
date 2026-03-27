@@ -6,6 +6,15 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
+# Claude Code 빌트인 CLI 명령어 — 스킬 집계에서 제외
+BUILTIN_COMMANDS = frozenset({
+    "help", "clear", "compact", "config", "cost", "doctor", "init",
+    "login", "logout", "memory", "model", "permissions", "review",
+    "status", "terminal-setup", "vim", "fast", "slow", "bug",
+    "listen", "mcp", "add-dir", "approved-tools", "context",
+    "resume", "plan", "plugin",
+})
+
 
 @dataclass
 class UsageDB:
@@ -68,13 +77,15 @@ class UsageDB:
 
     def get_top_skills(self, limit: int = 10, days: int = 30) -> list[dict]:
         cutoff = time.time() - (days * 86400)
+        placeholders = ",".join("?" * len(BUILTIN_COMMANDS))
         with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             rows = conn.execute(
-                """SELECT name, COUNT(*) as hit_count, MAX(timestamp) as last_used
-                   FROM usage_events WHERE type = 'skill' AND timestamp >= ?
+                f"""SELECT name, COUNT(*) as hit_count, MAX(timestamp) as last_used
+                   FROM usage_events
+                   WHERE type = 'skill' AND timestamp >= ? AND name NOT IN ({placeholders})
                    GROUP BY name ORDER BY hit_count DESC LIMIT ?""",
-                (cutoff, limit),
+                (cutoff, *BUILTIN_COMMANDS, limit),
             ).fetchall()
             return [dict(r) for r in rows]
 
