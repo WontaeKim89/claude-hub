@@ -53,7 +53,6 @@ const navGroups: NavGroup[] = [
     titleKey: 'nav.contextMgmt',
     items: [
       { label: 'Context', labelKey: 'nav.contextMgmt', to: '/context', icon: FileText },
-      { label: 'Templates', labelKey: 'nav.templates', to: '/templates', icon: FileStack },
     ],
   },
   {
@@ -62,13 +61,14 @@ const navGroups: NavGroup[] = [
     items: [
       { label: 'Extensions', labelKey: 'nav.extensionsPage', to: '/extensions', icon: Blocks },
       { label: 'Marketplace', labelKey: 'nav.marketplace', to: '/marketplace', icon: Store },
+      { label: 'Templates', labelKey: 'nav.templates', to: '/templates', icon: FileStack },
     ],
   },
   {
     title: 'Labs',
     titleKey: 'nav.labs',
     items: [
-      { label: 'Wizard', labelKey: 'nav.wizard', to: '/wizard', icon: FlaskConical },
+      { label: 'Harness Wizard', labelKey: 'nav.harnessWizard', to: '/wizard', icon: FlaskConical },
       { label: 'Claude 설정', labelKey: 'nav.claudeSettings', to: '/claude-settings', icon: Cpu },
       { label: 'Keybindings', labelKey: 'nav.keybindings', to: '/keybindings', icon: Keyboard },
       { label: 'Hub 설정', labelKey: 'nav.hubSettings', to: '/hub-settings', icon: Settings },

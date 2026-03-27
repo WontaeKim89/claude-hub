@@ -69,7 +69,7 @@ for _ in range(30):
     if is_running(): break
     time.sleep(0.3)
 
-window = webview.create_window("ClaudeHub", URL, width=1280, height=820, min_size=(900, 600))
+window = webview.create_window("ClaudeHub", URL, width=1280, height=820, min_size=(900, 600), background_color='#09090b')
 webview.start()
 cleanup()
 PYLAUNCH

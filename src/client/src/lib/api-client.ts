@@ -350,4 +350,9 @@ export const api = {
     installTracker: () =>
       request<{ ok: boolean; command: string }>('/hub/settings/install-tracker', { method: 'POST' }),
   },
+
+  update: {
+    check: () => request<{ current: string; latest: string; update_available: boolean }>('/update/check'),
+    apply: () => request<{ ok: boolean; method?: string; version?: string; restart_required?: boolean; error?: string }>('/update/apply', { method: 'POST' }),
+  },
 }

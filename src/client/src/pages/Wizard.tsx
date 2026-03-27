@@ -9,25 +9,27 @@ import type { WizardResult, MemoryProject } from '../lib/types'
 // 위자드 전체 흐름: intro → select → confirm → analyzing → result → done
 type WizardStep = 'intro' | 'select' | 'confirm' | 'analyzing' | 'result' | 'done'
 
-const ANALYSIS_STEPS = [
-  { icon: '📁', label: 'Project Structure Scan', detail: 'Scan src/, tests/, docs/' },
-  { icon: '📖', label: 'README.md Analysis', detail: 'Understand project description and purpose' },
-  { icon: '🧠', label: 'Global CLAUDE.md Reference', detail: 'Review existing dev patterns and instructions' },
-  { icon: '💾', label: 'MEMORY.md Pattern Analysis', detail: 'Analyze project memory and habits' },
-  { icon: '⚡', label: 'Tech Stack Detection', detail: 'Analyze package.json / pyproject.toml' },
-  { icon: '🤖', label: 'AI Generating Optimal Settings', detail: 'Claude is writing a tailored CLAUDE.md' },
-]
+function getAnalysisSteps(t: (key: string) => string) {
+  return [
+    { icon: '📁', label: t('wizard.analysisStep1'), detail: t('wizard.analysisStep1Detail') },
+    { icon: '📖', label: t('wizard.analysisStep2'), detail: t('wizard.analysisStep2Detail') },
+    { icon: '🧠', label: t('wizard.analysisStep3'), detail: t('wizard.analysisStep3Detail') },
+    { icon: '💾', label: t('wizard.analysisStep4'), detail: t('wizard.analysisStep4Detail') },
+    { icon: '⚡', label: t('wizard.analysisStep5'), detail: t('wizard.analysisStep5Detail') },
+    { icon: '🤖', label: t('wizard.analysisStep6'), detail: t('wizard.analysisStep6Detail') },
+  ]
+}
 
 type StepStatus = 'waiting' | 'running' | 'done'
 
 // 상단 스텝 인디케이터
-function StepIndicator({ current }: { current: WizardStep }) {
+function StepIndicator({ current, t }: { current: WizardStep; t: (key: string) => string }) {
   const steps = [
-    { key: 'intro', label: 'Intro' },
-    { key: 'select', label: 'Select Project' },
-    { key: 'confirm', label: 'Reference' },
-    { key: 'analyzing', label: 'Analyze' },
-    { key: 'result', label: 'Result' },
+    { key: 'intro', label: t('wizard.stepIntro') },
+    { key: 'select', label: t('wizard.stepSelect') },
+    { key: 'confirm', label: t('wizard.stepReference') },
+    { key: 'analyzing', label: t('wizard.stepAnalyze') },
+    { key: 'result', label: t('wizard.stepResult') },
   ] as const
 
   const order = ['intro', 'select', 'confirm', 'analyzing', 'result', 'done']
@@ -73,10 +75,10 @@ function StepIndicator({ current }: { current: WizardStep }) {
 }
 
 // Analyze 진행 애니메이션
-function AnalysisProgress({ currentStep }: { currentStep: number }) {
+function AnalysisProgress({ currentStep, steps }: { currentStep: number; steps: Array<{ icon: string; label: string; detail: string }> }) {
   return (
     <div className="space-y-3">
-      {ANALYSIS_STEPS.map((step, i) => {
+      {steps.map((step, i) => {
         const status: StepStatus =
           i < currentStep ? 'done' : i === currentStep ? 'running' : 'waiting'
 
@@ -131,24 +133,27 @@ function AnalysisProgress({ currentStep }: { currentStep: number }) {
   )
 }
 
-// 참조 파일 목록 (confirm 단계)
-const REFERENCE_FILES = [
-  { category: 'Project Files', items: [
-    { name: 'README.md', desc: 'Project description, run instructions, tech stack' },
-    { name: 'pyproject.toml / package.json', desc: 'Dependencies, build config, scripts' },
-    { name: 'src/, tests/, docs/', desc: 'Directory structure analysis' },
-  ]},
-  { category: 'Global Claude Settings', items: [
-    { name: '~/.claude/CLAUDE.md', desc: 'Global dev instructions, coding style' },
-    { name: '~/.claude/projects/*/memory/', desc: 'Per-project memory, learned patterns' },
-  ]},
-  { category: 'Existing Project Settings (if any)', items: [
-    { name: '{project}/CLAUDE.md', desc: 'Existing project CLAUDE.md (for merge reference)' },
-  ]},
-]
+function getReferenceFiles(t: (key: string) => string) {
+  return [
+    { category: t('wizard.refCategory1'), items: [
+      { name: 'README.md', desc: t('wizard.refItem1Desc') },
+      { name: 'pyproject.toml / package.json', desc: t('wizard.refItem2Desc') },
+      { name: 'src/, tests/, docs/', desc: t('wizard.refItem3Desc') },
+    ]},
+    { category: t('wizard.refCategory2'), items: [
+      { name: '~/.claude/CLAUDE.md', desc: t('wizard.refItem4Desc') },
+      { name: '~/.claude/projects/*/memory/', desc: t('wizard.refItem5Desc') },
+    ]},
+    { category: t('wizard.refCategory3'), items: [
+      { name: '{project}/CLAUDE.md', desc: t('wizard.refItem6Desc') },
+    ]},
+  ]
+}
 
 export default function Wizard() {
   const { t } = useLang()
+  const ANALYSIS_STEPS = getAnalysisSteps(t)
+  const REFERENCE_FILES = getReferenceFiles(t)
   const [step, setStep] = useState<WizardStep>('intro')
   const [selectedPath, setSelectedPath] = useState('')
   const [customPath, setCustomPath] = useState('')
@@ -251,7 +256,7 @@ export default function Wizard() {
       </div>
 
       {/* 스텝 인디케이터 */}
-      <StepIndicator current={step} />
+      <StepIndicator current={step} t={t} />
 
       {/* Step 1: Intro */}
       {step === 'intro' && (
@@ -262,27 +267,21 @@ export default function Wizard() {
                 <Wand2 size={28} className="text-fuchsia-400" />
               </div>
               <div className="space-y-3">
-                <h3 className="text-base font-semibold text-zinc-100">Auto-configure project-specific environment</h3>
+                <h3 className="text-base font-semibold text-zinc-100">{t('wizard.introHeading')}</h3>
                 <div className="bg-fuchsia-500/5 border border-fuchsia-500/20 rounded-lg px-3 py-2 mb-2">
                   <p className="text-[11px] text-zinc-300 leading-relaxed">
-                    This wizard generates a <strong className="text-fuchsia-400">full harness</strong> based on{' '}
-                    <a href="https://code.claude.com/docs/en/best-practices" target="_blank" rel="noopener noreferrer" className="text-fuchsia-400 underline hover:text-fuchsia-300">
-                      Anthropic's official Claude Code Best Practices
-                    </a>
-                    {' '}— CLAUDE.md, Hooks, Permissions, Skills, Agents, Memory, Commands, and MCP.
+                    {t('wizard.introBestPractice')}
                   </p>
                 </div>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  The wizard analyzes your project's code, README, and tech stack,
-                  references existing patterns (global CLAUDE.md, Memory), and
-                  AI auto-generates optimal project settings.
+                  {t('wizard.introDetail')}
                 </p>
 
                 <div className="grid grid-cols-3 gap-3 mt-4">
                   {[
-                    { icon: <FileSearch size={16} />, label: 'CLAUDE.md Generation', color: 'fuchsia' },
-                    { icon: <Sparkles size={16} />, label: 'Hooks/MCP Suggestions', color: 'violet' },
-                    { icon: <Wand2 size={16} />, label: 'AI 기반 Analyze', color: 'purple' },
+                    { icon: <FileSearch size={16} />, label: t('wizard.introCard1'), color: 'fuchsia' },
+                    { icon: <Sparkles size={16} />, label: t('wizard.introCard2'), color: 'violet' },
+                    { icon: <Wand2 size={16} />, label: t('wizard.introCard3'), color: 'purple' },
                   ].map((item) => (
                     <div
                       key={item.label}
@@ -301,7 +300,7 @@ export default function Wizard() {
             onClick={() => setStep('select')}
             className="w-full flex items-center justify-center gap-2 px-5 py-3 text-sm bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg transition-colors"
           >
-            Get Started
+            {t('wizard.getStarted')}
             <ChevronRight size={16} />
           </button>
         </div>
@@ -447,7 +446,7 @@ export default function Wizard() {
             <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">{t('wizard.analyzing')}</p>
             <p className="text-xs text-zinc-300 font-mono truncate">{activePath}</p>
           </div>
-          <AnalysisProgress currentStep={currentAnalysisStep} />
+          <AnalysisProgress currentStep={currentAnalysisStep} steps={ANALYSIS_STEPS} />
         </div>
       )}
 

@@ -10,6 +10,9 @@ import {
   AlertTriangle,
   RefreshCw,
   Info,
+  ArrowUpCircle,
+  Loader2,
+  X,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api-client'
@@ -325,8 +328,22 @@ export default function Dashboard() {
   const [deleteTarget, setDeleteTarget] = useState<{ type: string; name: string } | null>(null)
   const [usageTab, setUsageTab] = useState<'skills' | 'plugins'>('skills')
   const [refreshInterval, setRefreshInterval] = useState(180_000) // 기본 3분
+  const [updateDismissed, setUpdateDismissed] = useState(false)
   const queryClient = useQueryClient()
   const { t } = useLang()
+
+  // 업데이트 체크 (서버 시작 시 1회, 이후 10분마다)
+  const { data: updateInfo } = useQuery({
+    queryKey: ['update-check'],
+    queryFn: () => api.update.check(),
+    staleTime: 600_000,
+    refetchInterval: 600_000,
+    retry: false,
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: () => api.update.apply(),
+  })
 
   const { data: dashboard, isLoading: dashLoading } = useQuery<DashboardData>({
     queryKey: ['dashboard'],
@@ -480,6 +497,47 @@ export default function Dashboard() {
           <HelpPopup content={"Automatically backs up previous state whenever settings are modified. Restore accidentally changed settings.\n\nLocation: ~/.claude-hub/backups/\nMax: 50 backups (FIFO)"} />
         </div>
       </div>
+
+      {/* Update banner */}
+      {updateInfo?.update_available && !updateDismissed && (
+        <div className="flex items-center gap-3 mb-4 px-4 py-2.5 bg-fuchsia-500/8 border border-fuchsia-500/25 rounded-lg">
+          <ArrowUpCircle size={16} className="text-fuchsia-400 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <span className="text-xs text-zinc-200">
+              {t('update.available')}
+            </span>
+            <span className="font-mono text-xs text-fuchsia-400 ml-1.5">
+              v{updateInfo.current} → v{updateInfo.latest}
+            </span>
+          </div>
+          {updateMutation.isPending ? (
+            <div className="flex items-center gap-1.5 text-xs text-fuchsia-400">
+              <Loader2 size={13} className="animate-spin" />
+              {t('update.updating')}
+            </div>
+          ) : updateMutation.isSuccess && updateMutation.data?.ok ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-fuchsia-400">{t('update.done')}</span>
+              <button
+                onClick={() => window.location.reload()}
+                className="px-2.5 py-1 text-[10px] font-mono bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors"
+              >
+                {t('update.restart')}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => updateMutation.mutate()}
+              className="px-3 py-1 text-xs font-mono bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors"
+            >
+              {t('update.install')}
+            </button>
+          )}
+          <button onClick={() => setUpdateDismissed(true)} className="text-zinc-600 hover:text-zinc-400 shrink-0">
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Project Harness Status — 로딩 시에도 스켈레톤 표시 */}
       {!projectConfigs ? (

@@ -61,8 +61,9 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.include_router(sessions.router, prefix="/api")
     app.include_router(claude_settings.router, prefix="/api")
 
-    from claude_hub.routers import hub_settings
+    from claude_hub.routers import hub_settings, update
     app.include_router(hub_settings.router, prefix="/api")
+    app.include_router(update.router, prefix="/api")
 
     static_dir = Path(__file__).parent / "static"
     if static_dir.exists():
@@ -388,6 +389,7 @@ def _run_as_app(app, config: AppConfig, url: str):
             width=1280,
             height=820,
             min_size=(900, 600),
+            background_color='#09090b',
         )
         webview.start()
     except ImportError:

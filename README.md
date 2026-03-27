@@ -2,7 +2,7 @@
   <img src="scripts/macos/icon.svg" width="80" height="80" alt="ClaudHub icon" />
 </p>
 
-<h1 align="center">Claud<span><img src="https://img.shields.io/badge/Hub-8B5CF6?style=flat-square&logoColor=white" height="28" /></span></h1>
+<h1 align="center">ClaudeHub</h1>
 
 <p align="center">
   <strong>Visual dashboard for managing your entire Claude Code configuration.</strong><br />
@@ -160,10 +160,31 @@ Apply pre-built harness configurations to any project with one click.
 
 ## Installation
 
-### Homebrew (recommended)
+### Homebrew (macOS, recommended)
 
 ```bash
-brew install WontaeKim89/tap/claude-hub
+brew tap WontaeKim89/tap && brew install claude-hub
+```
+
+After installation, start the server:
+
+```bash
+claude-hub
+```
+
+Update to the latest version:
+
+```bash
+brew update && brew upgrade claude-hub
+```
+
+### PyPI
+
+```bash
+uvx claude-hub          # one-shot run (no install)
+# or
+pip install claude-hub   # permanent install
+claude-hub
 ```
 
 ### From Source
@@ -245,9 +266,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
-
----
-
-<p align="center">
-  Built with Claude Code, for Claude Code users.
-</p>
