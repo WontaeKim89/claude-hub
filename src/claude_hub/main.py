@@ -132,28 +132,20 @@ def cli():
 
     url = f"http://localhost:{args.port}"
 
+    # 이미 서버가 실행 중이면 브라우저로 열고 종료 (빠르게)
+    if _is_already_running(args.port):
+        print(f"[claude-hub] Already running at {url}")
+        webbrowser.open(url)
+        return
+
     # pywebview 사용 가능 여부 확인 — 있으면 기본적으로 앱 모드
     use_app = args.app
     if not use_app:
         try:
             import webview as _wv
-            use_app = True  # pywebview 설치되어 있으면 앱 모드 기본
+            use_app = True
         except ImportError:
             use_app = False
-
-    # 이미 서버가 실행 중이면 열고 종료
-    if _is_already_running(args.port):
-        print(f"[claude-hub] Already running at {url}")
-        if use_app:
-            try:
-                import webview
-                webview.create_window("ClaudeHub", url, width=1280, height=820, min_size=(900, 600), background_color='#09090b')
-                webview.start()
-            except ImportError:
-                webbrowser.open(url)
-        else:
-            webbrowser.open(url)
-        return
 
     config = AppConfig(port=args.port, host=args.host, auto_open=not args.no_open)
     if args.claude_dir:
@@ -183,11 +175,27 @@ def cli():
     if use_app:
         _run_as_app(app, config, url)
     else:
-        print(f"claude-hub running at {url}")
-        print("Press Ctrl+C to stop")
-        if config.auto_open:
-            webbrowser.open(url)
-        uvicorn.run(app, host=config.host, port=config.port, log_level="warning")
+        # 백그라운드 데몬으로 실행 — 터미널 세션을 점유하지 않음
+        pid = os.fork()
+        if pid > 0:
+            # 부모 프로세스: 서버 시작 대기 후 브라우저 열고 종료
+            import time
+            for _ in range(30):
+                if _is_already_running(args.port):
+                    break
+                time.sleep(0.3)
+            print(f"[claude-hub] Running at {url} (pid: {pid})")
+            if config.auto_open:
+                webbrowser.open(url)
+            return
+        else:
+            # 자식 프로세스: 서버 실행 (백그라운드)
+            import sys
+            # 표준 출력 닫기 (터미널 점유 방지)
+            sys.stdout = open(os.devnull, 'w')
+            sys.stderr = open(os.devnull, 'w')
+            os.setsid()  # 새 세션 리더 (터미널 종료 시에도 유지)
+            uvicorn.run(app, host=config.host, port=config.port, log_level="warning")
 
 
 def _is_already_running(port: int) -> bool:

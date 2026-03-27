@@ -166,17 +166,23 @@ Apply pre-built harness configurations to any project with one click.
 brew tap WontaeKim89/tap && brew install claude-hub
 ```
 
-After installation, start the server:
+This installs the CLI and automatically creates **ClaudeHub.app** in `/Applications`.
+
+**Launch:**
 
 ```bash
-claude-hub
+claude-hub                    # Opens native app window (pywebview)
 ```
 
-Update to the latest version:
+Or open **Finder → Applications → ClaudeHub**, or drag it to your Dock for quick access.
+
+**Update:**
 
 ```bash
 brew update && brew upgrade claude-hub
 ```
+
+Or click the **Update** banner in the Dashboard when a new version is available.
 
 ### PyPI
 
@@ -187,7 +193,7 @@ pip install claude-hub   # permanent install
 claude-hub
 ```
 
-### From Source
+### From Source (for development)
 
 ```bash
 git clone https://github.com/WontaeKim89/claude-hub.git
@@ -198,19 +204,10 @@ uv run claude-hub        # Start server
 
 Opens at **http://localhost:3847**
 
-### macOS Native App (optional)
-
-```bash
-bash scripts/macos/create-app.sh
-# Launches from Spotlight — menu bar tray stays active
-```
-
 ### Prerequisites
 
-- **Python 3.13+**
-- **Node.js 18+** (for frontend build)
-- **[uv](https://docs.astral.sh/uv/)** (Python package manager)
-- **Claude Code** installed and authenticated
+- **[Claude Code](https://claude.ai/code)** installed and authenticated
+- **Python 3.13+** and **[uv](https://docs.astral.sh/uv/)** (auto-installed by Homebrew)
 
 ---
 
@@ -222,7 +219,7 @@ bash scripts/macos/create-app.sh
 | Frontend | Vite + React 19 + Tailwind CSS v4 + Monaco Editor |
 | Database | SQLite (usage statistics) |
 | Packaging | PyPI (uv build) |
-| macOS App | AppleScript bundle + LaunchAgent |
+| macOS App | pywebview native window |
 
 ---
 
