@@ -7,6 +7,7 @@ import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
 import { TableSkeleton } from '../components/shared/Skeleton'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
+import { useEscClose } from '../hooks/useEscClose'
 import type { HooksData, HookEntry, HookEventType } from '../lib/types'
 
 const EVENT_TYPES: HookEventType[] = [
@@ -98,6 +99,7 @@ function HookFormModal({
   onSave: (form: HookFormState) => void
   onClose: () => void
 }) {
+  useEscClose(onClose)
   const [form, setForm] = useState<HookFormState>(initial)
 
   return (
@@ -366,7 +368,7 @@ export default function Hooks({ embedded }: { embedded?: boolean }) {
 
       {deleteTarget && (
         <DangerDeleteDialog
-          title={`'${deleteTarget.eventType}' 훅을 삭제하시겠습니까?`}
+          title={`'${deleteTarget.eventType}' Delete this hook?`}
           confirmText={deleteTarget.eventType}
           onConfirm={() => handleDelete(deleteTarget)}
           onCancel={() => setDeleteTarget(null)}

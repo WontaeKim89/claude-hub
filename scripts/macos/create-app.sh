@@ -118,19 +118,36 @@ cat > "$APP_DIR/Contents/Info.plist" << PLIST
     <string>APPL</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>ClaudeHub needs access to Desktop to manage Claude Code project configurations.</string>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>ClaudeHub needs access to Documents to manage Claude Code project configurations.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>ClaudeHub needs access to Downloads to manage Claude Code project configurations.</string>
+    <key>NSRemovableVolumesUsageDescription</key>
+    <string>ClaudeHub needs access to removable volumes to manage Claude Code project configurations.</string>
+    <key>NSAppleMusicUsageDescription</key>
+    <string>Not required. Deny this permission.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Not required. Deny this permission.</string>
 </dict>
 </plist>
 PLIST
 
+# 1. quarantine 제거
 xattr -cr "$APP_DIR" 2>/dev/null
 
-# 아이콘
+# 2. 코드 서명 (아이콘 설정 전에 실행)
+codesign --force --deep --sign - "$APP_DIR" 2>/dev/null
+
+# 3. 아이콘 설정 (코드 서명 후 — 리소스 포크가 보존됨)
 ICON_PNG="${PROJECT_DIR}/scripts/macos/icon.iconset/icon_512x512.png"
 if [ -f "$ICON_PNG" ] && command -v fileicon &>/dev/null; then
     fileicon set "$APP_DIR" "$ICON_PNG"
     echo "Custom icon applied."
 fi
 
+# 4. LaunchServices + Spotlight 등록
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$APP_DIR" 2>/dev/null
 mdimport "$APP_DIR" 2>/dev/null
 

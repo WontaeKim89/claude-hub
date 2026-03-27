@@ -3,11 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { FileStack, Tag, Trash2, Download, Check, X } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useLang } from '../hooks/useLang'
+import { useEscClose } from '../hooks/useEscClose'
 import type { HarnessTemplate, MemoryProject } from '../lib/types'
 
 type Tab = 'community' | 'my' | 'export'
 
 function TemplateDetailModal({ template, onClose, onApply }: { template: HarnessTemplate; onClose: () => void; onApply: () => void }) {
+  useEscClose(onClose)
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
       <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[700px] max-h-[80vh] flex flex-col">
@@ -50,7 +52,7 @@ function TemplateDetailModal({ template, onClose, onApply }: { template: Harness
         </div>
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-zinc-800">
           <button onClick={onClose} className="px-3 py-1.5 text-xs text-zinc-400 border border-zinc-700 rounded">닫기</button>
-          <button onClick={onApply} className="px-3 py-1.5 text-xs bg-fuchsia-600 text-white rounded">적용</button>
+          <button onClick={onApply} className="px-3 py-1.5 text-xs bg-fuchsia-600 text-white rounded">Apply</button>
         </div>
       </div>
     </div>
@@ -162,7 +164,7 @@ export default function Templates() {
         ))}
       </div>
 
-      {/* 적용 대상 프로젝트 선택 (커뮤니티/내 템플릿 탭) */}
+      {/* Apply 대상 프로젝트 선택 (커뮤니티/내 템플릿 탭) */}
       {(activeTab === 'community' || activeTab === 'my') && (
         <div className="mb-4 flex items-center gap-2">
           <span className="text-xs text-zinc-500 shrink-0">{t('templates.selectProject')}</span>
@@ -171,7 +173,7 @@ export default function Templates() {
             onChange={(e) => setApplyTarget(e.target.value)}
             className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-600"
           >
-            <option value="">— 선택 —</option>
+            <option value="">— Select —</option>
             {projects.map((p) => (
               <option key={p.encoded} value={p.decoded}>{p.decoded}</option>
             ))}
@@ -247,7 +249,7 @@ export default function Templates() {
               onChange={(e) => setExportProject(e.target.value)}
               className="flex-1 bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-600"
             >
-              <option value="">— 프로젝트 선택 —</option>
+              <option value="">— Select project —</option>
               {projects.map((p) => (
                 <option key={p.encoded} value={p.decoded}>{p.decoded}</option>
               ))}
@@ -257,7 +259,7 @@ export default function Templates() {
               disabled={!exportProject || exportMutation.isPending}
               className="px-3 py-1.5 bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-xs text-zinc-200 rounded transition-colors"
             >
-              {exportMutation.isPending ? '분석 중...' : '미리보기'}
+              {exportMutation.isPending ? '분석 중...' : 'Preview'}
             </button>
           </div>
 
@@ -279,7 +281,7 @@ export default function Templates() {
               <div className="bg-zinc-950 rounded p-3 text-[11px] font-mono text-zinc-400 max-h-32 overflow-y-auto">
                 <div>hooks: {exportPreview.hooks.length}개</div>
                 <div>mcp_servers: {Object.keys(exportPreview.mcp_servers).length}개</div>
-                <div>claude_md: {exportPreview.claude_md ? `${exportPreview.claude_md.split('\n').length}줄` : '없음'}</div>
+                <div>claude_md: {exportPreview.claude_md ? `${exportPreview.claude_md.split('\n').length}lines` : '없음'}</div>
               </div>
 
               <div className="flex items-center gap-2">
@@ -360,7 +362,7 @@ function TemplateCard({ tmpl, applyTarget, applying, applied, onApply, onDelete,
                 : 'bg-zinc-700 hover:bg-zinc-600 disabled:opacity-40 text-zinc-200'
             }`}
           >
-            {applied ? <><Check size={12} className="inline mr-1" />완료</> : applying ? '적용 중...' : '적용'}
+            {applied ? <><Check size={12} className="inline mr-1" />완료</> : applying ? 'Apply 중...' : 'Apply'}
           </button>
         </div>
       </div>
@@ -368,7 +370,7 @@ function TemplateCard({ tmpl, applyTarget, applying, applied, onApply, onDelete,
       <div className="mt-3 flex gap-3 text-[11px] text-zinc-600 font-mono">
         <span>hooks: {tmpl.hooks.length}</span>
         <span>mcp: {Object.keys(tmpl.mcp_servers).length}</span>
-        <span>claude_md: {tmpl.claude_md ? `${tmpl.claude_md.split('\n').length}줄` : '없음'}</span>
+        <span>claude_md: {tmpl.claude_md ? `${tmpl.claude_md.split('\n').length}lines` : '없음'}</span>
       </div>
     </div>
   )

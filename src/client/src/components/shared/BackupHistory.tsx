@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../../lib/api-client'
+import { useEscClose } from '../../hooks/useEscClose'
 import type { BackupEntry } from '../../lib/types'
 
 interface BackupHistoryProps {
@@ -12,6 +13,7 @@ interface BackupHistoryProps {
 }
 
 export function BackupHistory({ onClose }: BackupHistoryProps) {
+  useEscClose(onClose)
   const qc = useQueryClient()
   const [confirmId, setConfirmId] = useState<string | null>(null)
   const [error, setError] = useState('')

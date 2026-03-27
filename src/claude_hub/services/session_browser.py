@@ -14,10 +14,19 @@ def list_sessions(paths: ClaudePaths, project_encoded: str | None = None) -> lis
 
     dirs = [projects_dir / project_encoded] if project_encoded else sorted(projects_dir.iterdir())
 
+    # 제외할 디렉토리: subagents, 단일 세그먼트 루트 경로
+    EXCLUDE = {"subagents"}
+
     for project_dir in dirs:
         if not project_dir.is_dir():
             continue
         project_name = project_dir.name
+        if project_name in EXCLUDE:
+            continue
+        # 경로 세그먼트가 너무 적은 디렉토리 제외 (/, /Users/xxx, /Desktop 등)
+        segments = project_name.lstrip("-").split("-")
+        if len(segments) <= 2 and not any(project_dir.glob("*.jsonl")):
+            continue
         for jsonl in sorted(project_dir.glob("*.jsonl"), key=lambda f: f.stat().st_mtime, reverse=True):
             stat = jsonl.stat()
             try:

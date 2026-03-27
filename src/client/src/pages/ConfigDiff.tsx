@@ -36,7 +36,7 @@ export default function ConfigDiff({ embedded }: { embedded?: boolean }) {
     mutationFn: ({ source, target }: { source: string; target: string }) =>
       api.configDiff.sync(source, target),
     onSuccess: (data) => {
-      setSyncMsg(`복사 완료: ${data.target}`)
+      setSyncMsg(`Copy complete: ${data.target}`)
       setTimeout(() => setSyncMsg(null), 4000)
     },
   })
@@ -78,7 +78,7 @@ export default function ConfigDiff({ embedded }: { embedded?: boolean }) {
             onChange={(e) => setProjectA(e.target.value)}
             className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-600"
           >
-            <option value="">— 선택 —</option>
+            <option value="">— Select —</option>
             {projects.map((p) => (
               <option key={p.encoded} value={p.decoded}>{p.decoded}</option>
             ))}
@@ -96,7 +96,7 @@ export default function ConfigDiff({ embedded }: { embedded?: boolean }) {
             onChange={(e) => setProjectB(e.target.value)}
             className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-zinc-600"
           >
-            <option value="">— 선택 —</option>
+            <option value="">— Select —</option>
             {projects.map((p) => (
               <option key={p.encoded} value={p.decoded}>{p.decoded}</option>
             ))}
@@ -108,7 +108,7 @@ export default function ConfigDiff({ embedded }: { embedded?: boolean }) {
           disabled={!projectA || !projectB || diffMutation.isPending}
           className="shrink-0 px-4 py-1.5 bg-fuchsia-600 hover:bg-fuchsia-500 disabled:opacity-40 text-xs text-white rounded transition-colors"
         >
-          {diffMutation.isPending ? '비교 중...' : t('configDiff.compare')}
+          {diffMutation.isPending ? 'Comparing...' : t('configDiff.compare')}
         </button>
       </div>
 
@@ -125,11 +125,11 @@ export default function ConfigDiff({ embedded }: { embedded?: boolean }) {
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-zinc-800 bg-zinc-900/50">
-                <th className="text-left px-4 py-2.5 text-zinc-500 font-medium">컴포넌트</th>
+                <th className="text-left px-4 py-2.5 text-zinc-500 font-medium">Component</th>
                 <th className="text-left px-4 py-2.5 text-zinc-500 font-medium">Project A</th>
                 <th className="text-left px-4 py-2.5 text-zinc-500 font-medium">Project B</th>
-                <th className="text-left px-4 py-2.5 text-zinc-500 font-medium">상태</th>
-                <th className="text-right px-4 py-2.5 text-zinc-500 font-medium">액션</th>
+                <th className="text-left px-4 py-2.5 text-zinc-500 font-medium">Status</th>
+                <th className="text-right px-4 py-2.5 text-zinc-500 font-medium">Action</th>
               </tr>
             </thead>
             <tbody>

@@ -6,6 +6,7 @@ import { TableSkeleton } from '../components/shared/Skeleton'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
+import { useEscClose } from '../hooks/useEscClose'
 import type { McpServer } from '../lib/types'
 
 function envToEntries(env?: Record<string, string>): { key: string; value: string }[] {
@@ -84,6 +85,7 @@ interface ServerFormState {
 }
 
 function AddServerModal({ onClose }: { onClose: () => void }) {
+  useEscClose(onClose)
   const qc = useQueryClient()
   const [form, setForm] = useState<ServerFormState>({ name: '', command: '', args: '', envEntries: [] })
   const [error, setError] = useState('')
@@ -173,6 +175,7 @@ function AddServerModal({ onClose }: { onClose: () => void }) {
 }
 
 function EditServerModal({ server, onClose }: { server: McpServer; onClose: () => void }) {
+  useEscClose(onClose)
   const qc = useQueryClient()
   const { data: mcpData } = useQuery({ queryKey: ['mcp'], queryFn: api.mcp.get })
   const [form, setForm] = useState<ServerFormState>({
@@ -393,7 +396,7 @@ export default function Mcp({ embedded }: { embedded?: boolean }) {
 
       {deleteTarget && (
         <DangerDeleteDialog
-          title={`'${deleteTarget.name}' MCP 서버를 삭제하시겠습니까?`}
+          title={`'${deleteTarget.name}' Delete this MCP server?`}
           confirmText={deleteTarget.name}
           onConfirm={() => deleteMutation.mutate(deleteTarget.name)}
           onCancel={() => setDeleteTarget(null)}

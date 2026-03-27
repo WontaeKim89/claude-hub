@@ -4,6 +4,7 @@ import { Plus, Edit2, Trash2, X } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
+import { useEscClose } from '../hooks/useEscClose'
 
 interface KeybindingEntry {
   action: string
@@ -15,6 +16,7 @@ function dataToEntries(data: Record<string, string>): KeybindingEntry[] {
 }
 
 function EditKeybindingModal({ entry, onClose }: { entry: KeybindingEntry; onClose: () => void }) {
+  useEscClose(onClose)
   const qc = useQueryClient()
   const { data: kbData } = useQuery({ queryKey: ['keybindings'], queryFn: api.keybindings.get })
   const [shortcut, setShortcut] = useState(entry.shortcut)
@@ -80,6 +82,7 @@ function EditKeybindingModal({ entry, onClose }: { entry: KeybindingEntry; onClo
 }
 
 function AddKeybindingModal({ onClose }: { onClose: () => void }) {
+  useEscClose(onClose)
   const qc = useQueryClient()
   const [action, setAction] = useState('')
   const [shortcut, setShortcut] = useState('')
@@ -191,16 +194,16 @@ export default function Keybindings() {
 
       {/* 키바인딩 기능 설명 */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-md p-5 mb-6 max-w-2xl">
-        <h3 className="text-sm font-semibold text-zinc-200 mb-3">키바인딩이란?</h3>
+        <h3 className="text-sm font-semibold text-zinc-200 mb-3">What are Keybindings?</h3>
         <p className="text-xs text-zinc-400 leading-relaxed mb-3">
-          Claude Code CLI에서 사용하는 <span className="text-zinc-200">키보드 단축키</span>를 커스터마이징하는 기능입니다.
-          자주 사용하는 동작에 원하는 키 조합을 매핑하여 작업 효율을 높일 수 있습니다.
+          Claude Code CLI <span className="text-zinc-200">keyboard shortcuts</span> customization.
+          Map frequently used actions to key combinations for improved efficiency.
         </p>
         <p className="text-xs text-zinc-400 leading-relaxed mb-4">
-          설정 파일: <code className="font-mono text-fuchsia-400 bg-zinc-800 px-1.5 py-0.5 rounded text-[11px]">~/.claude/keybindings.json</code>
+          Settings file: <code className="font-mono text-fuchsia-400 bg-zinc-800 px-1.5 py-0.5 rounded text-[11px]">~/.claude/keybindings.json</code>
         </p>
 
-        <h4 className="text-xs font-semibold text-zinc-300 mb-2">사용 예시</h4>
+        <h4 className="text-xs font-semibold text-zinc-300 mb-2">Examples</h4>
         <div className="space-y-2">
           <div className="flex items-center gap-3 text-xs">
             <div className="flex gap-0.5 shrink-0">
@@ -209,7 +212,7 @@ export default function Keybindings() {
               <kbd className="px-1.5 py-0.5 font-mono bg-zinc-800 border border-zinc-700 rounded text-zinc-300 text-[11px]">L</kbd>
             </div>
             <span className="text-zinc-500">→</span>
-            <span className="text-zinc-400">채팅 히스토리 초기화</span>
+            <span className="text-zinc-400">Clear chat history</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
             <div className="flex gap-0.5 shrink-0">
@@ -218,21 +221,21 @@ export default function Keybindings() {
               <kbd className="px-1.5 py-0.5 font-mono bg-zinc-800 border border-zinc-700 rounded text-zinc-300 text-[11px]">R</kbd>
             </div>
             <span className="text-zinc-500">→</span>
-            <span className="text-zinc-400">이전 세션 resume</span>
+            <span className="text-zinc-400">Resume previous session</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
             <div className="flex gap-0.5 shrink-0">
               <kbd className="px-1.5 py-0.5 font-mono bg-zinc-800 border border-zinc-700 rounded text-zinc-300 text-[11px]">Escape</kbd>
             </div>
             <span className="text-zinc-500">→</span>
-            <span className="text-zinc-400">현재 생성 중단 / 입력 취소</span>
+            <span className="text-zinc-400">Cancel generation / input</span>
           </div>
         </div>
 
         <div className="mt-4 pt-3 border-t border-zinc-800">
           <p className="text-[11px] text-zinc-600 leading-relaxed">
-            Action: 바인딩할 동작 이름 (예: clearHistory, resume, cancel) &nbsp;|&nbsp;
-            Shortcut: 키 조합 (예: Ctrl+L, Ctrl+Shift+P)
+            Action: Action name to bind (e.g. clearHistory, resume, cancel) &nbsp;|&nbsp;
+            Shortcut: Key combination (e.g. Ctrl+L, Ctrl+Shift+P)
           </p>
         </div>
       </div>

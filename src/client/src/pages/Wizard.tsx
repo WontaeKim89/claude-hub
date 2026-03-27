@@ -10,12 +10,12 @@ import type { WizardResult, MemoryProject } from '../lib/types'
 type WizardStep = 'intro' | 'select' | 'confirm' | 'analyzing' | 'result' | 'done'
 
 const ANALYSIS_STEPS = [
-  { icon: '📁', label: '프로젝트 구조 분석', detail: 'src/, tests/, docs/ 스캔' },
-  { icon: '📖', label: 'README.md 분석', detail: '프로젝트 설명 및 목적 파악' },
-  { icon: '🧠', label: '전역 CLAUDE.md 참조', detail: '기존 개발 패턴 및 지시문 확인' },
-  { icon: '💾', label: 'MEMORY.md 패턴 분석', detail: '프로젝트 메모리 및 습관 파악' },
-  { icon: '⚡', label: '기술 스택 감지', detail: 'package.json / pyproject.toml 분석' },
-  { icon: '🤖', label: 'AI가 최적 설정 생성 중', detail: 'Claude가 맞춤 CLAUDE.md를 작성합니다' },
+  { icon: '📁', label: 'Project Structure Scan', detail: 'Scan src/, tests/, docs/' },
+  { icon: '📖', label: 'README.md Analysis', detail: 'Understand project description and purpose' },
+  { icon: '🧠', label: 'Global CLAUDE.md Reference', detail: 'Review existing dev patterns and instructions' },
+  { icon: '💾', label: 'MEMORY.md Pattern Analysis', detail: 'Analyze project memory and habits' },
+  { icon: '⚡', label: 'Tech Stack Detection', detail: 'Analyze package.json / pyproject.toml' },
+  { icon: '🤖', label: 'AI Generating Optimal Settings', detail: 'Claude is writing a tailored CLAUDE.md' },
 ]
 
 type StepStatus = 'waiting' | 'running' | 'done'
@@ -23,11 +23,11 @@ type StepStatus = 'waiting' | 'running' | 'done'
 // 상단 스텝 인디케이터
 function StepIndicator({ current }: { current: WizardStep }) {
   const steps = [
-    { key: 'intro', label: '소개' },
-    { key: 'select', label: '프로젝트 선택' },
-    { key: 'confirm', label: '참조 확인' },
-    { key: 'analyzing', label: '분석' },
-    { key: 'result', label: '결과' },
+    { key: 'intro', label: 'Intro' },
+    { key: 'select', label: 'Select Project' },
+    { key: 'confirm', label: 'Reference' },
+    { key: 'analyzing', label: 'Analyze' },
+    { key: 'result', label: 'Result' },
   ] as const
 
   const order = ['intro', 'select', 'confirm', 'analyzing', 'result', 'done']
@@ -72,7 +72,7 @@ function StepIndicator({ current }: { current: WizardStep }) {
   )
 }
 
-// 분석 진행 애니메이션
+// Analyze 진행 애니메이션
 function AnalysisProgress({ currentStep }: { currentStep: number }) {
   return (
     <div className="space-y-3">
@@ -133,17 +133,17 @@ function AnalysisProgress({ currentStep }: { currentStep: number }) {
 
 // 참조 파일 목록 (confirm 단계)
 const REFERENCE_FILES = [
-  { category: '프로젝트 파일', items: [
-    { name: 'README.md', desc: '프로젝트 설명, 실행 방법, 기술 스택' },
-    { name: 'pyproject.toml / package.json', desc: '의존성, 빌드 설정, 스크립트' },
-    { name: 'src/, tests/, docs/', desc: '디렉토리 구조 분석' },
+  { category: 'Project Files', items: [
+    { name: 'README.md', desc: 'Project description, run instructions, tech stack' },
+    { name: 'pyproject.toml / package.json', desc: 'Dependencies, build config, scripts' },
+    { name: 'src/, tests/, docs/', desc: 'Directory structure analysis' },
   ]},
-  { category: '전역 Claude 설정', items: [
-    { name: '~/.claude/CLAUDE.md', desc: '전역 개발 지시문, 코딩 스타일' },
-    { name: '~/.claude/projects/*/memory/', desc: '프로젝트별 메모리, 학습된 패턴' },
+  { category: 'Global Claude Settings', items: [
+    { name: '~/.claude/CLAUDE.md', desc: 'Global dev instructions, coding style' },
+    { name: '~/.claude/projects/*/memory/', desc: 'Per-project memory, learned patterns' },
   ]},
-  { category: '기존 프로젝트 설정 (있는 경우)', items: [
-    { name: '{project}/CLAUDE.md', desc: '기존 프로젝트 CLAUDE.md (병합 참고)' },
+  { category: 'Existing Project Settings (if any)', items: [
+    { name: '{project}/CLAUDE.md', desc: 'Existing project CLAUDE.md (for merge reference)' },
   ]},
 ]
 
@@ -182,7 +182,7 @@ export default function Wizard() {
     },
   })
 
-  // 분석 중 단계 타이머
+  // Analyze 중 단계 타이머
   useEffect(() => {
     if (step !== 'analyzing') return
 
@@ -253,7 +253,7 @@ export default function Wizard() {
       {/* 스텝 인디케이터 */}
       <StepIndicator current={step} />
 
-      {/* Step 1: 소개 */}
+      {/* Step 1: Intro */}
       {step === 'intro' && (
         <div className="space-y-6">
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6">
@@ -262,18 +262,27 @@ export default function Wizard() {
                 <Wand2 size={28} className="text-fuchsia-400" />
               </div>
               <div className="space-y-3">
-                <h3 className="text-base font-semibold text-zinc-100">프로젝트 맞춤 환경을 자동으로 구성합니다</h3>
+                <h3 className="text-base font-semibold text-zinc-100">Auto-configure project-specific environment</h3>
+                <div className="bg-fuchsia-500/5 border border-fuchsia-500/20 rounded-lg px-3 py-2 mb-2">
+                  <p className="text-[11px] text-zinc-300 leading-relaxed">
+                    This wizard generates a <strong className="text-fuchsia-400">full harness</strong> based on{' '}
+                    <a href="https://code.claude.com/docs/en/best-practices" target="_blank" rel="noopener noreferrer" className="text-fuchsia-400 underline hover:text-fuchsia-300">
+                      Anthropic's official Claude Code Best Practices
+                    </a>
+                    {' '}— CLAUDE.md, Hooks, Permissions, Skills, Agents, Memory, Commands, and MCP.
+                  </p>
+                </div>
                 <p className="text-xs text-zinc-400 leading-relaxed">
-                  Wizard는 프로젝트의 코드, README, 기술 스택을 분석하고,
-                  기존 개발 패턴(전역 CLAUDE.md, Memory)을 참조하여
-                  최적의 프로젝트 설정을 AI가 자동 생성합니다.
+                  The wizard analyzes your project's code, README, and tech stack,
+                  references existing patterns (global CLAUDE.md, Memory), and
+                  AI auto-generates optimal project settings.
                 </p>
 
                 <div className="grid grid-cols-3 gap-3 mt-4">
                   {[
-                    { icon: <FileSearch size={16} />, label: 'CLAUDE.md 자동 생성', color: 'fuchsia' },
-                    { icon: <Sparkles size={16} />, label: 'Hooks/MCP 추천', color: 'violet' },
-                    { icon: <Wand2 size={16} />, label: 'AI 기반 분석', color: 'purple' },
+                    { icon: <FileSearch size={16} />, label: 'CLAUDE.md Generation', color: 'fuchsia' },
+                    { icon: <Sparkles size={16} />, label: 'Hooks/MCP Suggestions', color: 'violet' },
+                    { icon: <Wand2 size={16} />, label: 'AI 기반 Analyze', color: 'purple' },
                   ].map((item) => (
                     <div
                       key={item.label}
@@ -292,13 +301,13 @@ export default function Wizard() {
             onClick={() => setStep('select')}
             className="w-full flex items-center justify-center gap-2 px-5 py-3 text-sm bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg transition-colors"
           >
-            시작하기
+            Get Started
             <ChevronRight size={16} />
           </button>
         </div>
       )}
 
-      {/* Step 2: 프로젝트 선택 */}
+      {/* Step 2: Select Project */}
       {step === 'select' && (
         <div className="space-y-5">
           <div className="flex items-center gap-2 mb-2">
@@ -306,8 +315,8 @@ export default function Wizard() {
               <ArrowLeft size={16} />
             </button>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-100">분석할 프로젝트를 선택하세요</h3>
-              <p className="text-[11px] text-zinc-500 mt-0.5">Claude Code 세션이 있는 프로젝트 또는 새 경로를 입력하세요</p>
+              <h3 className="text-sm font-semibold text-zinc-100">{t('wizard.selectProjectTitle')}</h3>
+              <p className="text-[11px] text-zinc-500 mt-0.5">{t('wizard.selectProjectDesc')}</p>
             </div>
           </div>
 
@@ -315,7 +324,7 @@ export default function Wizard() {
             <div>
               <label className="flex items-center gap-1.5 font-mono text-xs text-zinc-500 mb-2">
                 <FolderOpen size={12} />
-                기존 프로젝트
+                {t('wizard.existingProjects')}
               </label>
               <div className="space-y-1 max-h-56 overflow-y-auto border border-zinc-800 rounded-lg p-1.5">
                 {projects.map((p) => (
@@ -336,7 +345,7 @@ export default function Wizard() {
           )}
 
           <div>
-            <label className="block font-mono text-xs text-zinc-500 mb-1.5">직접 입력</label>
+            <label className="block font-mono text-xs text-zinc-500 mb-1.5">{t('wizard.manualInput')}</label>
             <input
               value={customPath}
               onChange={(e) => { setCustomPath(e.target.value); setSelectedPath('') }}
@@ -356,7 +365,7 @@ export default function Wizard() {
             disabled={!activePath}
             className="w-full flex items-center justify-center gap-2 px-5 py-3 text-sm bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            다음
+            {t('wizard.next')}
             <ChevronRight size={16} />
           </button>
         </div>
@@ -370,14 +379,14 @@ export default function Wizard() {
               <ArrowLeft size={16} />
             </button>
             <div>
-              <h3 className="text-sm font-semibold text-zinc-100">참조 파일 및 생성 경로 확인</h3>
-              <p className="text-[11px] text-zinc-500 mt-0.5">아래 파일들을 분석하여 설정을 생성합니다</p>
+              <h3 className="text-sm font-semibold text-zinc-100">{t('wizard.confirmTitle')}</h3>
+              <p className="text-[11px] text-zinc-500 mt-0.5">{t('wizard.confirmDesc')}</p>
             </div>
           </div>
 
           {/* 선택된 프로젝트 */}
           <div className="bg-zinc-800/40 border border-zinc-700/50 rounded-lg px-4 py-3">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">대상 프로젝트</p>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-1">{t('wizard.targetProject')}</p>
             <p className="text-xs font-mono text-fuchsia-400">{activePath}</p>
           </div>
 
@@ -405,17 +414,17 @@ export default function Wizard() {
 
           {/* 저장 경로 */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-2">생성될 파일</p>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-2">{t('wizard.filesToGenerate')}</p>
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-xs font-mono">
                 <span className="text-fuchsia-400">→</span>
                 <span className="text-zinc-300">{activePath}/CLAUDE.md</span>
-                <span className="text-zinc-600 text-[10px]">(프로젝트 CLAUDE.md)</span>
+                <span className="text-zinc-600 text-[10px]">({t('wizard.projectClaudeMd')})</span>
               </div>
               <div className="flex items-center gap-2 text-xs font-mono">
                 <span className="text-violet-400">→</span>
                 <span className="text-zinc-300">~/.claude/settings.json</span>
-                <span className="text-zinc-600 text-[10px]">(Hooks 추가, 선택 시)</span>
+                <span className="text-zinc-600 text-[10px]">({t('wizard.hooksOptional')})</span>
               </div>
             </div>
           </div>
@@ -426,23 +435,23 @@ export default function Wizard() {
             className="w-full flex items-center justify-center gap-2 px-5 py-3 text-sm bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-lg transition-colors"
           >
             <Sparkles size={16} />
-            AI 분석 및 설정 생성
+            {t('wizard.startAnalyze')}
           </button>
         </div>
       )}
 
-      {/* Step 4: 분석 진행 */}
+      {/* Step 4: Analyze 진행 */}
       {step === 'analyzing' && (
         <div className="space-y-4">
           <div className="bg-zinc-800/30 rounded-lg px-4 py-2.5 mb-2">
-            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">분석 중</p>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-wider mb-0.5">{t('wizard.analyzing')}</p>
             <p className="text-xs text-zinc-300 font-mono truncate">{activePath}</p>
           </div>
           <AnalysisProgress currentStep={currentAnalysisStep} />
         </div>
       )}
 
-      {/* Step 5: 결과 */}
+      {/* Step 5: Result */}
       {step === 'result' && result && (
         <div>
           <div className="mb-5 p-4 rounded-lg bg-gradient-to-r from-fuchsia-500/5 to-violet-500/5 border border-fuchsia-500/15">
@@ -451,7 +460,7 @@ export default function Wizard() {
                 <Check size={16} className="text-fuchsia-400" />
               </div>
               <div>
-                <p className="text-sm text-zinc-100 font-medium">분석 완료</p>
+                <p className="text-sm text-zinc-100 font-medium">{t('wizard.analyzeComplete')}</p>
                 <p className="text-[10px] text-zinc-500 font-mono mt-0.5">{result.project_path}</p>
               </div>
             </div>
@@ -511,7 +520,7 @@ export default function Wizard() {
             onClick={resetWizard}
             className="mt-4 px-5 py-2.5 text-xs text-zinc-400 hover:text-zinc-200 border border-zinc-800 hover:border-zinc-600 rounded-lg transition-colors"
           >
-            다른 프로젝트 분석
+            다른 프로젝트 Analyze
           </button>
         </div>
       )}

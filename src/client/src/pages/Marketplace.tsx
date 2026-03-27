@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Package, Server, Trash2, Download } from 'lucide-react'
+import { Search, Package, Server, Trash2, Download, X } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useLang } from '../hooks/useLang'
+import { useEscClose } from '../hooks/useEscClose'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
@@ -41,10 +42,12 @@ function PluginCard({
   plugin,
   t,
   onDelete,
+  onClick,
 }: {
   plugin: MarketplacePlugin
   t: (key: string) => string
   onDelete?: () => void
+  onClick: () => void
 }) {
   const qc = useQueryClient()
 
@@ -54,7 +57,10 @@ function PluginCard({
   })
 
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4 flex flex-col gap-2.5 hover:border-zinc-700 transition-colors">
+    <div
+      onClick={onClick}
+      className="bg-zinc-900 border border-zinc-800 rounded-md p-4 flex flex-col gap-2.5 hover:border-zinc-700 transition-colors cursor-pointer"
+    >
       <div className="flex items-center gap-2">
         <Package size={13} className="text-zinc-600 shrink-0" strokeWidth={1.5} />
         <span className="font-mono text-sm font-bold text-zinc-100 truncate">{plugin.name}</span>
@@ -87,9 +93,9 @@ function PluginCard({
               </span>
               {onDelete && (
                 <button
-                  onClick={onDelete}
+                  onClick={(e) => { e.stopPropagation(); onDelete() }}
                   className="p-1 text-zinc-600 hover:text-red-400 transition-colors"
-                  title="삭제"
+                  title="Delete"
                 >
                   <Trash2 size={12} />
                 </button>
@@ -97,7 +103,7 @@ function PluginCard({
             </>
           ) : (
             <button
-              onClick={() => installMutation.mutate()}
+              onClick={(e) => { e.stopPropagation(); installMutation.mutate() }}
               disabled={installMutation.isPending}
               className="flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-mono border border-fuchsia-600 text-fuchsia-400 hover:bg-fuchsia-600 hover:text-white rounded transition-colors disabled:opacity-50"
             >
@@ -126,15 +132,17 @@ function McpCard({
   onInstall,
   onUninstall,
   isInstalling,
+  onClick,
 }: {
   server: McpServer
   t: (key: string) => string
   onInstall: () => void
   onUninstall: () => void
   isInstalling: boolean
+  onClick: () => void
 }) {
   return (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-md p-4 flex flex-col gap-2.5 hover:border-zinc-700 transition-colors">
+    <div onClick={onClick} className="bg-zinc-900 border border-zinc-800 rounded-md p-4 flex flex-col gap-2.5 hover:border-zinc-700 transition-colors cursor-pointer">
       <div className="flex items-center gap-2">
         <Server size={13} className="text-zinc-600 shrink-0" strokeWidth={1.5} />
         <span className="font-mono text-sm font-bold text-zinc-100 truncate">{server.name}</span>
@@ -166,16 +174,16 @@ function McpCard({
               {t('marketplace.installed')}
             </span>
             <button
-              onClick={onUninstall}
+              onClick={(e) => { e.stopPropagation(); onUninstall() }}
               className="p-1 text-zinc-600 hover:text-red-400 transition-colors"
-              title="삭제"
+              title="Delete"
             >
               <Trash2 size={12} />
             </button>
           </div>
         ) : (
           <button
-            onClick={onInstall}
+            onClick={(e) => { e.stopPropagation(); onInstall() }}
             disabled={isInstalling}
             className="flex items-center gap-1 px-2.5 py-0.5 text-[10px] font-mono border border-fuchsia-600 text-fuchsia-400 hover:bg-fuchsia-600 hover:text-white rounded transition-colors disabled:opacity-50"
           >
@@ -183,6 +191,110 @@ function McpCard({
             {isInstalling ? '...' : t('marketplace.install')}
           </button>
         )}
+      </div>
+    </div>
+  )
+}
+
+type DetailTarget =
+  | { type: 'plugin'; data: MarketplacePlugin }
+  | { type: 'mcp'; data: McpServer }
+
+function DetailModal({ target, t, onClose, onInstall, onUninstall, isInstalling }: {
+  target: DetailTarget
+  t: (key: string) => string
+  onClose: () => void
+  onInstall: () => void
+  onUninstall: () => void
+  isInstalling: boolean
+}) {
+  useEscClose(onClose)
+  const isPlugin = target.type === 'plugin'
+  const d = target.data
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={onClose}>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[480px] max-h-[70vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800 shrink-0">
+          <div className="flex items-center gap-2">
+            {isPlugin ? <Package size={15} className="text-zinc-400" /> : <Server size={15} className="text-zinc-400" />}
+            <span className="text-sm font-medium text-zinc-100 font-mono">{d.name}</span>
+          </div>
+          <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300"><X size={16} /></button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {d.description && (
+            <p className="text-xs text-zinc-400 leading-relaxed">{d.description}</p>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            {isPlugin && (target.data as MarketplacePlugin).version && (
+              <div>
+                <p className="text-[10px] font-mono text-zinc-600 mb-1">{t('marketplace.version')}</p>
+                <p className="text-xs text-zinc-300 font-mono">v{(target.data as MarketplacePlugin).version}</p>
+              </div>
+            )}
+            {d.category && (
+              <div>
+                <p className="text-[10px] font-mono text-zinc-600 mb-1">{t('marketplace.category')}</p>
+                <span className="inline-block px-1.5 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-400 rounded">
+                  {d.category}
+                </span>
+              </div>
+            )}
+            <div>
+              <p className="text-[10px] font-mono text-zinc-600 mb-1">{t('marketplace.source')}</p>
+              <span className={`inline-block px-1.5 py-0.5 text-[10px] font-mono rounded ${
+                isPlugin ? getSourceStyle((target.data as MarketplacePlugin).marketplace) : getMcpSourceStyle((target.data as McpServer).source)
+              }`}>
+                {isPlugin ? (target.data as MarketplacePlugin).marketplace : (target.data as McpServer).source}
+              </span>
+            </div>
+            {!isPlugin && (target.data as McpServer).package && (
+              <div>
+                <p className="text-[10px] font-mono text-zinc-600 mb-1">{t('marketplace.package')}</p>
+                <p className="text-xs text-zinc-300 font-mono truncate" title={(target.data as McpServer).package}>
+                  {(target.data as McpServer).package}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Install / Uninstall action */}
+          <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-zinc-600">{t('common.status')}:</span>
+              {d.installed ? (
+                <span className="px-2 py-0.5 text-[10px] font-mono bg-fuchsia-500/10 text-fuchsia-400 rounded border border-fuchsia-500/20">
+                  {t('marketplace.installed')}
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-500 rounded">
+                  Not installed
+                </span>
+              )}
+            </div>
+            {d.installed ? (
+              <button
+                onClick={onUninstall}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border border-red-900/40 text-red-500 hover:text-red-400 hover:border-red-700/60 rounded transition-colors"
+              >
+                <Trash2 size={12} />
+                {t('delete.remove')}
+              </button>
+            ) : (
+              <button
+                onClick={onInstall}
+                disabled={isInstalling}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors disabled:opacity-50"
+              >
+                <Download size={12} />
+                {isInstalling ? '...' : t('marketplace.install')}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -200,6 +312,7 @@ export default function Marketplace() {
   const [activeCategory, setActiveCategory] = useState<string>('all')
   const [query, setQuery] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'plugin' | 'mcp'; name: string } | null>(null)
+  const [detailTarget, setDetailTarget] = useState<DetailTarget | null>(null)
 
   const { data: allPlugins = [], isLoading: pluginsLoading } = useQuery<MarketplacePlugin[]>({
     queryKey: ['marketplace', 'browse'],
@@ -342,7 +455,7 @@ export default function Marketplace() {
                 : 'text-zinc-600 border-transparent hover:text-zinc-400'
             }`}
           >
-            전체
+            {t('marketplace.filterAll')}
           </button>
           <button
             onClick={() => setFilterMode('installed')}
@@ -352,7 +465,7 @@ export default function Marketplace() {
                 : 'text-zinc-600 border-transparent hover:text-zinc-400'
             }`}
           >
-            설치됨
+            {t('marketplace.filterInstalled')}
             <span className="ml-1 text-[10px]">
               {mainTab === 'plugins' ? installedPluginCount : installedMcpCount}
             </span>
@@ -444,6 +557,7 @@ export default function Marketplace() {
                 plugin={plugin}
                 t={t}
                 onDelete={plugin.installed ? () => setDeleteTarget({ type: 'plugin', name: plugin.name }) : undefined}
+                onClick={() => setDetailTarget({ type: 'plugin', data: plugin })}
               />
             ))}
           </div>
@@ -463,16 +577,44 @@ export default function Marketplace() {
                 onInstall={() => mcpInstallMutation.mutate({ name: server.name, pkg: server.package })}
                 onUninstall={() => setDeleteTarget({ type: 'mcp', name: server.name })}
                 isInstalling={mcpInstallMutation.isPending}
+                onClick={() => setDetailTarget({ type: 'mcp', data: server })}
               />
             ))}
           </div>
         )
       )}
 
-      {/* 삭제 확인 */}
+      {detailTarget && (
+        <DetailModal
+          target={detailTarget}
+          t={t}
+          onClose={() => setDetailTarget(null)}
+          isInstalling={detailTarget.type === 'plugin' ? false : mcpInstallMutation.isPending}
+          onInstall={() => {
+            if (detailTarget.type === 'plugin') {
+              const p = detailTarget.data as MarketplacePlugin
+              api.plugins.install(p.name, p.marketplace).then(() => {
+                qc.invalidateQueries({ queryKey: ['marketplace', 'browse'] })
+                setDetailTarget(null)
+              })
+            } else {
+              const s = detailTarget.data as McpServer
+              mcpInstallMutation.mutate({ name: s.name, pkg: s.package }, { onSuccess: () => setDetailTarget(null) })
+            }
+          }}
+          onUninstall={() => {
+            setDeleteTarget({
+              type: detailTarget.type === 'plugin' ? 'plugin' : 'mcp',
+              name: detailTarget.data.name,
+            })
+            setDetailTarget(null)
+          }}
+        />
+      )}
+
       {deleteTarget && (
         <DangerDeleteDialog
-          title={`${deleteTarget.type === 'plugin' ? '플러그인' : 'MCP 서버'} 삭제`}
+          title={deleteTarget.type === 'plugin' ? t('marketplace.deletePlugin') : t('marketplace.deleteMcp')}
           description={deleteTarget.name}
           confirmText={deleteTarget.name}
           onConfirm={handleDelete}

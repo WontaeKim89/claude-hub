@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="scripts/macos/icon.svg" width="80" height="80" alt="claude-hub icon" />
+  <img src="scripts/macos/icon.svg" width="80" height="80" alt="ClaudHub icon" />
 </p>
 
-<h1 align="center">claude-hub</h1>
+<h1 align="center">Claud<span><img src="https://img.shields.io/badge/Hub-8B5CF6?style=flat-square&logoColor=white" height="28" /></span></h1>
 
 <p align="center">
   <strong>Visual dashboard for managing your entire Claude Code configuration.</strong><br />
@@ -18,125 +18,178 @@
 
 ---
 
-## What is claude-hub?
+## What is ClaudHub?
 
-**claude-hub** is a local web dashboard that gives you full visual control over your [Claude Code](https://docs.anthropic.com/en/docs/claude-code) environment. Instead of manually editing JSON files and Markdown scattered across `~/.claude/`, you get a single UI to manage everything.
+Claude Code stores configuration across dozens of files — `settings.json`, `CLAUDE.md`, skills, plugins, hooks, MCP servers, memory, session logs, and more. Managing all of these by hand is tedious and error-prone.
 
-### The Problem
-
-Claude Code stores its configuration across dozens of files:
-
-```
-~/.claude/
-  ├── settings.json          # Global settings, model, permissions
-  ├── settings.local.json    # Local overrides
-  ├── CLAUDE.md              # Global instructions
-  ├── keybindings.json       # Keyboard shortcuts
-  ├── skills/                # 30+ skill directories
-  ├── plugins/               # Plugin packages
-  ├── agents/                # Agent definitions
-  ├── projects/              # Per-project sessions, memory, config
-  │   ├── -Users-.../
-  │   │   ├── memory/        # Project memory files
-  │   │   └── *.jsonl        # Session histories
-  └── ...
-```
-
-Managing this by hand is tedious, error-prone, and you never have a clear picture of what's configured where.
-
-### The Solution
-
-claude-hub reads and writes these files through a visual interface — with backup, diff preview, and conflict detection built in.
+**ClaudHub** gives you a single visual interface to see, edit, and manage everything in your `~/.claude/` directory. No more guessing what's configured where.
 
 ---
 
-## Features
+## Core Features
 
 ### Dashboard
-- Real-time rate limit monitoring (Session / Weekly / Model — via Anthropic OAuth API)
-- Token usage & estimated cost tracking (Today / Weekly / Monthly)
-- Top used skills & plugins chart
-- Auto-refresh with configurable interval (1m / 3m / 5m / 10m)
 
-### Extensions Management
-- **Skills**: Browse, create, edit, delete. Duplicate skill detection with side-by-side comparison and similarity scoring
-- **Plugins**: Toggle, install from marketplace, remove
-- **Agents**: View and edit agent definitions
-- **Hooks**: Visual hook editor for all 11 event types
-- **MCP Servers**: Configure, install from marketplace, manage environment variables (masked)
+At a glance, see the full picture of your Claude Code environment.
 
-### Context Management
-- **CLAUDE.md**: Edit global and per-project instruction files with Monaco Editor
-- **Memory**: Browse and edit per-project memory files
-- **Context Compare**: Diff two projects' configurations side by side, sync with one click
+<p align="center">
+  <img src="docs/screenshots/dashboard.png" alt="Dashboard" width="800" />
+</p>
 
-### Session History
-- Browse all Claude Code conversation histories by project
-- Chat-style message viewer with inline tool call display
-- Session delete
-
-### Project Status
-- Left-right split layout: project list + file tree
-- Main repository and worktree separation with visual distinction
-- Favorites pinning (localStorage-based)
-- Project removal (delete `~/.claude/projects/{project}`)
-
-### Marketplace
-- Browse official & community plugins
-- Browse and install MCP servers (auto-configures `settings.json`)
-- Installed filter with uninstall support
-
-### Cost Tracking
-- Per-project cost breakdown
-- Model-specific usage (Opus / Sonnet / Haiku)
-- 7-day / 30-day / all-time periods
-
-### Additional
-- Templates: Export/import harness configurations across projects
-- Keybindings: Visual keyboard shortcut editor
-- Hub Settings: macOS auto-launch on login (LaunchAgent)
-- Backup History: Automatic backup before every config change, one-click restore
+- **Project Harness Status** — See which projects have CLAUDE.md, Memory, Settings, Agents, and Commands configured. Spot gaps instantly and launch AI Setup for incomplete projects.
+- **Extension Summary** — Total count of Skills, Plugins, Agents, Hooks, and MCP Servers across your environment.
+- **Top Used Skills & Plugins** — Ranked by actual usage frequency. Identify which tools are driving your workflow.
+- **Claude Usage** — Real-time rate limit monitoring (Session / Weekly / Sonnet), token consumption (Today / Weekly / Monthly), and session counts.
+- **Auto-refresh** — Configurable interval (1m / 3m / 5m / 10m) with manual Sync and Backup History controls.
 
 ---
 
-## Quick Start
+### Project Status
+
+Browse all your Claude Code projects and inspect their harness configuration in detail.
+
+<p align="center">
+  <img src="docs/screenshots/project-status.png" alt="Project Status" width="800" />
+</p>
+
+- **Project List** — All projects with session or memory files, showing file count and worktree indicators.
+- **File Tree** — Expand any project to see CLAUDE.md, memory files, docs, and plans with line counts.
+- **Permission Toggle** — Enable or disable all permissions per project.
+- **Harness Wizard Shortcut** — Launch AI-powered configuration directly from the project view.
+
+---
+
+### Harness Wizard
+
+Automatically generate optimal Claude Code settings for any project using AI.
+
+<p align="center">
+  <img src="docs/screenshots/wizard.png" alt="Harness Wizard" width="800" />
+</p>
+
+- **AI-Powered Analysis** — Scans your project's code, README, and tech stack, then generates a complete harness configuration based on [Anthropic's Official Best Practices](https://docs.anthropic.com/en/docs/claude-code/best-practices).
+- **Full Harness Generation** — Creates CLAUDE.md, Hooks, Permissions, Skills, Agents, Commands, Memory, and MCP configurations in one pass.
+- **Step-by-Step Flow** — Intro → Select Project → Reference Settings → Analyze → Result. Review and apply with confidence.
+- **Reference-Aware** — References your global CLAUDE.md and Memory to maintain consistency across projects.
+
+<p align="center">
+  <img src="docs/screenshots/wizard-popup.png" alt="Wizard Popup" width="600" />
+  <img src="docs/screenshots/wizard-analyzing.png" alt="Wizard Analyzing" width="600" />
+</p>
+
+---
+
+### Session History
+
+Browse all Claude Code conversation histories with a chat-style viewer.
+
+<p align="center">
+  <img src="docs/screenshots/session-history.png" alt="Session History" width="800" />
+</p>
+
+- **Project Filter** — Browse sessions across all projects or filter by specific project.
+- **Chat-Style Viewer** — Read conversations in a familiar message bubble format with tool call indicators.
+- **Session Metadata** — See line count, file size, and timestamps for each session.
+- **Bulk Management** — Select and delete multiple sessions at once.
+
+---
+
+## More Features
+
+### Context Management
+
+Edit your CLAUDE.md and Memory files with a full-featured code editor.
+
+<p align="center">
+  <img src="docs/screenshots/context-management.png" alt="Context Management" width="800" />
+</p>
+
+- **Monaco Editor** — Syntax-highlighted editing for CLAUDE.md with line numbers.
+- **Scope Selector** — Switch between Global (`~/.claude/`) and per-project configurations.
+- **Memory Browser** — View and edit project memory files (MEMORY.md, feedback, fixes).
+- **Context Compare** — Diff two projects' configurations side by side and sync with one click.
+- **Preview Diff** — Review changes before saving. Automatic backup on every write.
+
+---
+
+### Extensions
+
+Manage Skills, Plugins, Agents, Hooks, and MCP Servers from a single unified view.
+
+<p align="center">
+  <img src="docs/screenshots/extensions.png" alt="Extensions" width="800" />
+</p>
+
+- **Skills** — Browse all installed skills with descriptions and invoke commands. Create custom skills, detect duplicates with similarity scoring.
+- **Plugins** — Toggle, install, and remove plugins.
+- **Agents** — View and edit agent definitions.
+- **Hooks** — Visual editor for all 11 event types.
+- **MCP Servers** — Configure servers with masked environment variables.
+- **Usage Analysis** — AI-powered ranking of extension usefulness based on actual usage patterns.
+
+---
+
+### Marketplace
+
+Discover and install plugins and MCP servers from the community.
+
+<p align="center">
+  <img src="docs/screenshots/marketplace.png" alt="Marketplace" width="800" />
+</p>
+
+- **Plugin Directory** — Browse 100+ plugins from official and community sources.
+- **MCP Servers** — Install MCP servers with automatic `settings.json` configuration.
+- **Category Filters** — Filter by automation, database, deployment, design, development, and more.
+- **One-Click Install/Uninstall** — No manual JSON editing required.
+
+---
+
+### Templates
+
+Apply pre-built harness configurations to any project with one click.
+
+<p align="center">
+  <img src="docs/screenshots/templates.png" alt="Templates" width="800" />
+</p>
+
+- **Community Templates** — Built-in presets for React, FastAPI, Next.js, Monorepo, Data Science, and more.
+- **My Templates** — Export your own project configurations as reusable templates.
+- **Template Details** — See hooks, MCP servers, and CLAUDE.md line counts before applying.
+
+---
+
+## Installation
+
+### Homebrew (recommended)
+
+```bash
+brew install WontaeKim89/tap/claude-hub
+```
+
+### From Source
+
+```bash
+git clone https://github.com/WontaeKim89/claude-hub.git
+cd claude-hub
+bash scripts/build.sh   # Build frontend
+uv run claude-hub        # Start server
+```
+
+Opens at **http://localhost:3847**
+
+### macOS Native App (optional)
+
+```bash
+bash scripts/macos/create-app.sh
+# Launches from Spotlight — menu bar tray stays active
+```
 
 ### Prerequisites
 
 - **Python 3.13+**
 - **Node.js 18+** (for frontend build)
 - **[uv](https://docs.astral.sh/uv/)** (Python package manager)
-- **Claude Code** installed and authenticated (`claude auth login`)
-
-### Install & Run
-
-```bash
-# Clone
-git clone https://github.com/amebahead/claude-hub.git
-cd claude-hub
-
-# Build frontend
-bash scripts/build.sh
-
-# Run
-uv run claude-hub
-```
-
-Opens at **http://localhost:3847**
-
-### macOS App (optional)
-
-```bash
-# Create .app bundle in /Applications
-bash scripts/macos/create-app.sh
-
-# Launch from Spotlight or Finder
-# Menu bar tray icon stays active after closing window
-```
-
-### Auto-launch on Login
-
-Enabled by default on first run. Toggle in **Labs > Hub Settings**.
+- **Claude Code** installed and authenticated
 
 ---
 
@@ -149,59 +202,16 @@ Enabled by default on first run. Toggle in **Labs > Hub Settings**.
 | Database | SQLite (usage statistics) |
 | Packaging | PyPI (uv build) |
 | macOS App | AppleScript bundle + LaunchAgent |
-| Tests | pytest |
 
 ---
 
-## Architecture
+## Design Principles
 
-```
-claude-hub
-├── src/
-│   ├── claude_hub/              # Python backend
-│   │   ├── main.py              # FastAPI app + CLI entry
-│   │   ├── routers/             # API endpoints (22 routers)
-│   │   ├── services/            # Business logic
-│   │   └── utils/               # Path encoding, CLI wrapper
-│   └── client/                  # React frontend
-│       ├── src/
-│       │   ├── pages/           # 24 page components
-│       │   ├── components/      # Shared UI components
-│       │   └── lib/             # API client, i18n, types
-│       └── dist/                # Built static files
-├── tests/
-├── scripts/
-│   ├── build.sh                 # Frontend build
-│   └── macos/                   # .app creation + icon
-└── pyproject.toml
-```
-
-### Design Principles
-
-- **Local-only**: Binds to `127.0.0.1` — your config never leaves your machine
-- **Non-destructive**: Automatic backup before every write operation
-- **Conflict-safe**: mtime-based optimistic locking (409 on concurrent edits)
-- **Zero config**: Reads `~/.claude/` filesystem directly, no setup required
-- **Env var masking**: MCP server secrets are masked at API level
-
----
-
-## API
-
-All endpoints are under `/api/`. Key routes:
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/dashboard` | Overview stats |
-| GET/PUT | `/skills`, `/plugins`, `/agents` | CRUD operations |
-| GET/PUT | `/mcp` | MCP server configuration |
-| GET/PUT | `/settings` | Global/local settings |
-| GET | `/claude/rate-limits` | Live rate limits (OAuth) |
-| GET | `/claude/usage` | Token usage summary |
-| GET | `/sessions` | Session history |
-| GET | `/skills/duplicates/scan` | Duplicate skill detection |
-| POST | `/marketplace/mcp/install` | Install MCP server |
-| DELETE | `/projects/{encoded}` | Remove project config |
+- **Local-only** — Binds to `127.0.0.1`. Your config never leaves your machine.
+- **Non-destructive** — Automatic backup before every write operation.
+- **Conflict-safe** — mtime-based optimistic locking (409 on concurrent edits).
+- **Zero config** — Reads `~/.claude/` filesystem directly, no setup required.
+- **Bilingual** — KO/EN language support.
 
 ---
 
@@ -216,22 +226,7 @@ cd src/client && npm run dev
 
 # Tests
 uv run pytest tests/ -v
-
-# Build
-bash scripts/build.sh
 ```
-
----
-
-## Roadmap
-
-- [ ] Screenshot gallery
-- [ ] PyPI publish (`pip install claude-hub`)
-- [ ] Plugin/skill usage analytics dashboard
-- [ ] Multi-language support (EN/KO currently)
-- [ ] Session search & filtering
-- [ ] Export config as shareable template
-- [ ] Linux support (LaunchAgent → systemd)
 
 ---
 

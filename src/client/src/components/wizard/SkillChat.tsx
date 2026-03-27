@@ -20,7 +20,7 @@ interface Props {
 
 const INITIAL_MESSAGE: Message = {
   role: 'assistant',
-  content: '어떤 스킬을 만들고 싶으신가요? 스킬이 해결할 문제나 원하는 동작을 설명해주세요.',
+  content: 'What skill would you like to create? Describe the problem or behavior you want.',
 }
 
 export function SkillChat({ onSave, onSwitchToManual }: Props) {
@@ -46,12 +46,12 @@ export function SkillChat({ onSave, onSwitchToManual }: Props) {
       let aiContent = ''
       if (data.skill_md) {
         aiContent = data.questions?.length > 0
-          ? '초안을 생성했습니다. 몇 가지 더 확인하면 더 정확하게 만들 수 있어요.'
-          : '스킬을 생성했습니다. 아래에서 확인하고 저장하세요.'
+          ? 'Draft generated. A few more details would help refine it.'
+          : 'Skill generated. Review below and save.'
       } else if (data.questions?.length > 0) {
-        aiContent = '조금 더 알려주시면 더 잘 만들 수 있어요.'
+        aiContent = 'A few more details would help create a better skill.'
       } else {
-        aiContent = '스킬 생성에 실패했습니다. 다시 시도해주세요.'
+        aiContent = 'Skill generation failed. Please try again.'
       }
 
       const aiMessage: Message = {

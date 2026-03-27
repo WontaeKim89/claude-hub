@@ -164,8 +164,8 @@ class ScannerService:
             results.append(entry)
         return results
 
-    def list_projects(self) -> list[dict]:
-        projects = self._paths.list_projects()
+    def list_projects(self, include_sessions: bool = False) -> list[dict]:
+        projects = self._paths.list_projects(include_sessions=include_sessions)
         return [
             {
                 "encoded": p.encoded,
@@ -427,21 +427,27 @@ class ScannerService:
         tree["nodes"].append(claude_node)
 
         # docs/
-        docs_dir = project_dir / "docs"
-        if docs_dir.exists():
-            docs_node: dict = {"name": "docs/", "type": "dir", "children": []}
-            for f in sorted(docs_dir.rglob("*.md"))[:15]:
-                rel = str(f.relative_to(docs_dir))
-                docs_node["children"].append(_file_node(rel, f))
-            tree["nodes"].append(docs_node)
+        try:
+            docs_dir = project_dir / "docs"
+            if docs_dir.exists():
+                docs_node: dict = {"name": "docs/", "type": "dir", "children": []}
+                for f in sorted(docs_dir.rglob("*.md"))[:15]:
+                    rel = str(f.relative_to(docs_dir))
+                    docs_node["children"].append(_file_node(rel, f))
+                tree["nodes"].append(docs_node)
+        except PermissionError:
+            pass
 
         # tests/
-        tests_dir = project_dir / "tests"
-        if not tests_dir.exists():
-            tests_dir = project_dir / "test"
-        if tests_dir.exists():
-            test_count = len(list(tests_dir.rglob("test_*")))
-            tree["nodes"].append({"name": "tests/", "type": "dir", "count": test_count, "children": []})
+        try:
+            tests_dir = project_dir / "tests"
+            if not tests_dir.exists():
+                tests_dir = project_dir / "test"
+            if tests_dir.exists():
+                test_count = len(list(tests_dir.rglob("test_*")))
+                tree["nodes"].append({"name": "tests/", "type": "dir", "count": test_count, "children": []})
+        except PermissionError:
+            pass
 
         return tree
 
@@ -464,19 +470,22 @@ def _file_node(name: str, path: object, warn_lines: int = 0) -> dict:
     """파일 노드 생성. warn_lines 초과 시 compact 경고 플래그 설정."""
     from pathlib import Path
     p = Path(str(path))
-    if not p.exists():
+    try:
+        if not p.exists():
+            return {"name": name, "type": "file", "exists": False, "path": str(p)}
+
+        content = p.read_text(errors="ignore")
+        lines = len(content.splitlines())
+        size = p.stat().st_size
+
+        return {
+            "name": name,
+            "type": "file",
+            "exists": True,
+            "path": str(p),
+            "lines": lines,
+            "size": size,
+            "needs_compact": warn_lines > 0 and lines > warn_lines,
+        }
+    except (PermissionError, OSError):
         return {"name": name, "type": "file", "exists": False, "path": str(p)}
-
-    content = p.read_text(errors="ignore")
-    lines = len(content.splitlines())
-    size = p.stat().st_size
-
-    return {
-        "name": name,
-        "type": "file",
-        "exists": True,
-        "path": str(p),
-        "lines": lines,
-        "size": size,
-        "needs_compact": warn_lines > 0 and lines > warn_lines,
-    }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { MessageSquare, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import { api } from '../lib/api-client'
@@ -235,6 +235,13 @@ export default function Sessions() {
     staleTime: 10_000,
   })
 
+  // 첫 번째 세션 자동 선택
+  useEffect(() => {
+    if (sessions.length > 0 && !selectedSession) {
+      setSelectedSession(sessions[0])
+    }
+  }, [sessions])
+
   // 선택된 세션의 메시지 조회
   const { data: messagesData, isLoading: messagesLoading } = useQuery({
     queryKey: ['session-messages', selectedSession?.id, selectedSession?.project],
@@ -304,7 +311,8 @@ export default function Sessions() {
         />
       </PageHeader>
 
-      {/* 프로젝트 필터 */}
+      {/* 프로젝트 기준 설명 + 필터 */}
+      <p className="text-[10px] text-zinc-600 mb-2">{t('criteria.sessions')}</p>
       <div className="mb-4 relative inline-block">
         <select
           value={selectedProject ?? 'all'}

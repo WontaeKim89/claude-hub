@@ -8,6 +8,7 @@ import { TableSkeleton } from '../components/shared/Skeleton'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
 import { SaveConfirmDialog } from '../components/shared/SaveConfirmDialog'
 import { useLang } from '../hooks/useLang'
+import { useEscClose } from '../hooks/useEscClose'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
 import { AnalysisPanel } from '../components/analysis/AnalysisPanel'
@@ -24,17 +25,17 @@ description: ${description}
 
 # ${name}
 
-## 목적
-<이 스킬이 해결하는 문제를 설명하세요>
+## Purpose
+<Describe the problem this skill solves>
 
-## 트리거 조건
-<이 스킬이 언제 사용되어야 하는지 명시하세요>
+## Trigger
+<When should this skill be used>
 
-## 동작
-<스킬이 수행할 구체적인 작업 단계를 기술하세요>
+## Action
+<Specific steps the skill performs>
 
-## 제약 조건
-<하지 말아야 할 것, 주의사항을 명시하세요>
+## Constraints
+<What to avoid, caveats>
 `
 }
 
@@ -102,7 +103,7 @@ function ManualSkillForm({
           <label className="font-mono text-xs text-zinc-500">content (SKILL.md)</label>
           {!contentEdited && (
             <span className="text-[10px] text-fuchsia-500/70 font-mono">
-              Claude 공식 스킬 포맷 기반 템플릿이 적용되었습니다
+              Claude official skill format template applied
             </span>
           )}
         </div>
@@ -125,6 +126,7 @@ function ManualSkillForm({
 }
 
 function NewSkillModal({ onClose }: { onClose: () => void }) {
+  useEscClose(onClose)
   const { t } = useLang()
   const qc = useQueryClient()
   const [activeTab, setActiveTab] = useState<NewSkillTab>('manual')
@@ -203,6 +205,7 @@ function NewSkillModal({ onClose }: { onClose: () => void }) {
 }
 
 function EditSkillModal({ skill, onClose }: { skill: SkillSummary; onClose: () => void }) {
+  useEscClose(onClose)
   const qc = useQueryClient()
   const { data } = useQuery<SkillDetail>({
     queryKey: ['skill', skill.name],
@@ -292,8 +295,9 @@ function EditSkillModal({ skill, onClose }: { skill: SkillSummary; onClose: () =
 }
 
 
-// 중복 스킬 비교 팝업
+// Skill Comparison 팝업
 function SkillCompareModal({ skillA, skillB, onClose }: { skillA: string; skillB: string; onClose: () => void }) {
+  useEscClose(onClose)
   const { data, isLoading } = useQuery({
     queryKey: ['skill-compare', skillA, skillB],
     queryFn: () => api.skills.compare(skillA, skillB),
@@ -304,12 +308,12 @@ function SkillCompareModal({ skillA, skillB, onClose }: { skillA: string; skillB
       <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[90vw] max-w-5xl max-h-[85vh] flex flex-col">
         <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-zinc-100">중복 스킬 비교</span>
+            <span className="text-sm font-medium text-zinc-100">Skill Comparison</span>
             {data && (
               <span className={`font-mono text-xs px-2 py-0.5 rounded ${
                 data.similarity >= 90 ? 'bg-red-500/15 text-red-400' : 'bg-amber-500/15 text-amber-400'
               }`}>
-                {data.similarity}% 유사
+                {data.similarity}% similar
               </span>
             )}
           </div>
@@ -353,7 +357,7 @@ function SkillCompareModal({ skillA, skillB, onClose }: { skillA: string; skillB
   )
 }
 
-// 유사 부분 하이라이트 표시
+// similar 부분 하이라이트 표시
 function HighlightedContent({ content, matchingBlocks }: {
   content: string
   matchingBlocks: Array<{ start: number; size: number }>
@@ -383,6 +387,8 @@ function HighlightedContent({ content, matchingBlocks }: {
 
 // 중복 검색 결과 패널
 function DuplicateScanPanel({ onClose }: { onClose: () => void }) {
+  useEscClose(onClose)
+  const { t } = useLang()
   const qc = useQueryClient()
   const [compareTarget, setCompareTarget] = useState<{ a: string; b: string } | null>(null)
 
@@ -405,19 +411,18 @@ function DuplicateScanPanel({ onClose }: { onClose: () => void }) {
         <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[700px] max-h-[80vh] flex flex-col">
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800 shrink-0">
             <div>
-              <span className="text-sm font-medium text-zinc-100">중복 스킬 검색 결과</span>
-              {pairs && <span className="ml-2 font-mono text-[10px] text-zinc-500">{pairs.length}건 발견</span>}
+              <span className="text-sm font-medium text-zinc-100">Duplicate Scan Results</span>
+              {pairs && <span className="ml-2 font-mono text-[10px] text-zinc-500">{pairs.length} found</span>}
             </div>
             <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300"><X size={16} /></button>
           </div>
 
-          {/* 검사 기준 안내 */}
+          {/* Scan criteria description */}
           <div className="px-5 py-3 border-b border-zinc-800/50 bg-zinc-800/20">
             <p className="text-[11px] text-zinc-500 leading-relaxed">
-              설치된 모든 스킬(custom + installed)의 SKILL.md 파일 내용을 1:1 쌍으로 비교합니다.
-              텍스트 시퀀스 매칭(SequenceMatcher)으로 유사도를 산출하며,
-              <span className="text-amber-400"> 70% 이상</span>이면 주의(yellow),
-              <span className="text-red-400"> 90% 이상</span>이면 중복 의심(red)으로 표시합니다.
+              {t('dupScan.desc')}{' '}
+              <span className="text-amber-400">{t('dupScan.yellow')}</span>,{' '}
+              <span className="text-red-400">{t('dupScan.red')}</span>
             </p>
           </div>
 
@@ -425,11 +430,11 @@ function DuplicateScanPanel({ onClose }: { onClose: () => void }) {
             {isLoading ? (
               <div className="py-16 flex flex-col items-center gap-3">
                 <Loader2 size={24} className="animate-spin text-fuchsia-500" />
-                <p className="text-xs text-zinc-500 font-mono">전체 스킬 쌍 유사도 분석 중...</p>
+                <p className="text-xs text-zinc-500 font-mono">Analyzing skill similarity...</p>
               </div>
             ) : !pairs || pairs.length === 0 ? (
               <div className="py-12 text-center">
-                <p className="text-xs text-zinc-500">중복 스킬이 없습니다.</p>
+                <p className="text-xs text-zinc-500">No duplicate skills found.</p>
               </div>
             ) : (
               <div className="divide-y divide-zinc-800/50">
@@ -456,14 +461,14 @@ function DuplicateScanPanel({ onClose }: { onClose: () => void }) {
                         onClick={() => setCompareTarget({ a: pair.skill_a, b: pair.skill_b })}
                         className="px-2.5 py-1 text-[10px] font-mono border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500 rounded transition-colors"
                       >
-                        비교하기
+                        Compare
                       </button>
                       {pair.source_a === 'custom' && (
                         <button
                           onClick={() => deleteMutation.mutate(pair.skill_a)}
                           className="px-2.5 py-1 text-[10px] font-mono border border-red-900/40 text-red-500 hover:text-red-400 hover:border-red-700/60 rounded transition-colors"
                         >
-                          {pair.skill_a} 삭제
+                          {pair.skill_a} Delete
                         </button>
                       )}
                       {pair.source_b === 'custom' && (
@@ -471,7 +476,7 @@ function DuplicateScanPanel({ onClose }: { onClose: () => void }) {
                           onClick={() => deleteMutation.mutate(pair.skill_b)}
                           className="px-2.5 py-1 text-[10px] font-mono border border-red-900/40 text-red-500 hover:text-red-400 hover:border-red-700/60 rounded transition-colors"
                         >
-                          {pair.skill_b} 삭제
+                          {pair.skill_b} Delete
                         </button>
                       )}
                     </div>
@@ -494,10 +499,12 @@ function DuplicateScanPanel({ onClose }: { onClose: () => void }) {
   )
 }
 
-export default function Skills({ embedded }: { embedded?: boolean }) {
+export default function Skills({ embedded, initialFilter }: { embedded?: boolean; initialFilter?: string }) {
   const qc = useQueryClient()
   const { t } = useLang()
-  const [filter, setFilter] = useState<FilterTab>('all')
+  const [filter, setFilter] = useState<FilterTab>(
+    initialFilter === 'installed' ? 'installed' : initialFilter === 'custom' ? 'custom' : 'all'
+  )
   const [search, setSearch] = useState('')
   const [showNew, setShowNew] = useState(false)
   const [editSkill, setEditSkill] = useState<SkillSummary | null>(null)
@@ -555,14 +562,14 @@ export default function Skills({ embedded }: { embedded?: boolean }) {
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 hover:border-zinc-600 rounded transition-colors duration-150"
             >
               <ScanSearch size={13} strokeWidth={2} />
-              중복 스킬 검색
+              Duplicate Scan
             </button>
             <button
               onClick={() => setShowAnalysis(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors duration-150"
             >
               <BarChart2 size={13} strokeWidth={2} />
-              사용량 분석
+              Usage Analysis
             </button>
             <button
               onClick={() => setShowNew(true)}
@@ -574,33 +581,7 @@ export default function Skills({ embedded }: { embedded?: boolean }) {
           </div>
         </div>
       )}
-      {embedded && (
-        <div className="flex items-center justify-end gap-2 mb-6">
-          <button
-            onClick={() => setShowDuplicates(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 hover:border-zinc-600 rounded transition-colors duration-150"
-          >
-            <ScanSearch size={13} strokeWidth={2} />
-            중복 스킬 검색
-          </button>
-          <button
-            onClick={() => setShowAnalysis(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors duration-150"
-          >
-            <BarChart2 size={13} strokeWidth={2} />
-            사용량 분석
-          </button>
-          <button
-            onClick={() => setShowNew(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors duration-150"
-          >
-            <Plus size={13} strokeWidth={2} />
-            {t('skills.newSkill')}
-          </button>
-        </div>
-      )}
-
-      {/* Filter + Search */}
+      {/* Filter + Search + Actions — 같은 줄 */}
       <div className="flex items-center gap-3 mb-4">
         <div className="flex gap-0.5 bg-zinc-900 border border-zinc-800 rounded p-0.5">
           {filterTabs.map((tab) => (
@@ -623,8 +604,19 @@ export default function Skills({ embedded }: { embedded?: boolean }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('skills.search')}
-            className="bg-zinc-900 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-fuchsia-500/60 focus:ring-1 focus:ring-fuchsia-500/20 w-52 transition-colors duration-150"
+            className="bg-zinc-900 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-fuchsia-500/60 focus:ring-1 focus:ring-fuchsia-500/20 w-44 transition-colors duration-150"
           />
+        </div>
+        <div className="flex items-center gap-1.5 ml-auto">
+          <button onClick={() => setShowDuplicates(true)} className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 rounded transition-colors">
+            <ScanSearch size={12} /> Duplicate Scan
+          </button>
+          <button onClick={() => setShowAnalysis(true)} className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors">
+            <BarChart2 size={12} /> Usage Analysis
+          </button>
+          <button onClick={() => setShowNew(true)} className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors">
+            <Plus size={12} /> {t('skills.newSkill')}
+          </button>
         </div>
       </div>
 
@@ -704,7 +696,7 @@ export default function Skills({ embedded }: { embedded?: boolean }) {
       {showDuplicates && <DuplicateScanPanel onClose={() => setShowDuplicates(false)} />}
       {deleteTarget && (
         <DangerDeleteDialog
-          title={`'${deleteTarget.name}' 스킬을 삭제하시겠습니까?`}
+          title={`'${deleteTarget.name}' 스킬을 Delete하시겠습니까?`}
           confirmText={deleteTarget.name}
           onConfirm={() => deleteMutation.mutate(deleteTarget.name)}
           onCancel={() => setDeleteTarget(null)}

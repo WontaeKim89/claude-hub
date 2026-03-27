@@ -7,9 +7,11 @@ import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
 import { TableSkeleton } from '../components/shared/Skeleton'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
+import { useEscClose } from '../hooks/useEscClose'
 import type { CommandSummary, CommandDetail } from '../lib/types'
 
 function NewCommandModal({ onClose }: { onClose: () => void }) {
+  useEscClose(onClose)
   const qc = useQueryClient()
   const [name, setName] = useState('')
   const [content, setContent] = useState('')
@@ -70,6 +72,7 @@ function NewCommandModal({ onClose }: { onClose: () => void }) {
 }
 
 function EditCommandModal({ command, onClose }: { command: CommandSummary; onClose: () => void }) {
+  useEscClose(onClose)
   const qc = useQueryClient()
   const { data } = useQuery<CommandDetail>({
     queryKey: ['command', command.name],
@@ -227,7 +230,7 @@ export default function Commands() {
 
       {deleteTarget && (
         <DangerDeleteDialog
-          title={`'/${deleteTarget.name}' 커맨드를 삭제하시겠습니까?`}
+          title={`'/${deleteTarget.name}' Delete this command?`}
           confirmText={deleteTarget.name}
           onConfirm={() => deleteMutation.mutate(deleteTarget.name)}
           onCancel={() => setDeleteTarget(null)}
