@@ -1,6 +1,6 @@
 [project]
 name = "claude-hub"
-version = "0.1.0"
+version = "0.2.0"
 description = "Visual dashboard for managing Claude Code harness configuration"
 requires-python = ">=3.13"
 license = {text = "MIT"}
