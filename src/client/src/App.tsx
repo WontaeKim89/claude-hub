@@ -11,6 +11,7 @@ import Cost from './pages/Cost'
 import Templates from './pages/Templates'
 import ProjectOverview from './pages/ProjectOverview'
 import Sessions from './pages/Sessions'
+import Monitor from './pages/Monitor'
 import ClaudeSettings from './pages/ClaudeSettings'
 import Extensions from './pages/Extensions'
 import HubSettings from './pages/HubSettings'
@@ -48,7 +49,7 @@ function AnimatedRoutes() {
         <Route path="/claude-md" element={<Navigate to="/context" replace />} />
         <Route path="/memory" element={<Navigate to="/context" replace />} />
         <Route path="/config-diff" element={<Navigate to="/context" replace />} />
-        <Route path="/monitor" element={<Navigate to="/sessions" replace />} />
+        <Route path="/monitor" element={<Monitor />} />
       </Routes>
     </div>
   )

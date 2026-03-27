@@ -9,6 +9,7 @@ import {
   FileStack,
   FolderKanban,
   MessageSquare,
+  Radio,
   FlaskConical,
   Cpu,
   Settings,
@@ -46,6 +47,7 @@ const navGroups: NavGroup[] = [
     titleKey: 'nav.monitor',
     items: [
       { label: 'Sessions', labelKey: 'nav.sessions', to: '/sessions', icon: MessageSquare },
+      { label: 'Live Monitor', labelKey: 'nav.liveMonitor', to: '/monitor', icon: Radio },
     ],
   },
   {

@@ -15,6 +15,7 @@ from claude_hub.services.marketplace import MarketplaceService
 from claude_hub.services.scanner import ScannerService
 from claude_hub.services.usage_db import UsageDB
 from claude_hub.services.validator import ValidatorService
+from claude_hub.services.session_watcher import SessionWatcher
 
 
 def create_app(config: AppConfig | None = None) -> FastAPI:
@@ -29,6 +30,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     validator = ValidatorService()
     marketplace = MarketplaceService(paths=config.paths)
     usage_db = UsageDB(db_path=config.backup_dir / "usage.db")
+    session_watcher = SessionWatcher(paths=config.paths)
 
     app.state.config = config
     app.state.scanner = scanner
@@ -37,8 +39,9 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.state.backup = backup
     app.state.marketplace = marketplace
     app.state.usage_db = usage_db
+    app.state.session_watcher = session_watcher
 
-    from claude_hub.routers import dashboard, skills, settings, claude_md, plugins, agents, commands, hooks, mcp, keybindings, marketplace as marketplace_router, memory, teams, backups, stats, analysis, wizard, cost, templates as templates_router, sessions, claude_settings
+    from claude_hub.routers import dashboard, skills, settings, claude_md, plugins, agents, commands, hooks, mcp, keybindings, marketplace as marketplace_router, memory, teams, backups, stats, analysis, wizard, cost, templates as templates_router, sessions, claude_settings, monitor
     app.include_router(dashboard.router, prefix="/api")
     app.include_router(skills.router, prefix="/api")
     app.include_router(settings.router, prefix="/api")
@@ -60,6 +63,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.include_router(templates_router.router, prefix="/api")
     app.include_router(sessions.router, prefix="/api")
     app.include_router(claude_settings.router, prefix="/api")
+    app.include_router(monitor.router, prefix="/api")
 
     from claude_hub.routers import hub_settings, update
     app.include_router(hub_settings.router, prefix="/api")
@@ -98,7 +102,33 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
 
             return await call_next(request)
 
+    # 백그라운드 폴링: SSE 연결 없이도 알림이 작동하도록
+    from contextlib import asynccontextmanager
+    import asyncio
+
+    original_lifespan = app.router.lifespan_context
+
+    @asynccontextmanager
+    async def _lifespan(a):
+        poll_task = asyncio.create_task(_monitor_poll_loop(session_watcher))
+        try:
+            yield
+        finally:
+            poll_task.cancel()
+
+    app.router.lifespan_context = _lifespan
+
     return app
+
+
+async def _monitor_poll_loop(watcher):
+    import asyncio
+    while True:
+        try:
+            await watcher.poll_new_lines()
+        except Exception:
+            pass
+        await asyncio.sleep(2)
 
 
 def cli():
