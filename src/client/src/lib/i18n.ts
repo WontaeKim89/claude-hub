@@ -344,6 +344,8 @@ const translations: Record<string, Record<Lang, string>> = {
   'update.done': { ko: '업데이트 완료', en: 'Updated' },
   'update.restart': { ko: '재시작', en: 'Restart' },
   'update.install': { ko: '업데이트', en: 'Update' },
+  'update.failed': { ko: '업데이트 실패', en: 'Update failed' },
+  'update.retry': { ko: '재시도', en: 'Retry' },
   // Common
   'common.saved': { ko: '저장됨', en: 'Saved' },
   'common.close': { ko: '닫기', en: 'Close' },

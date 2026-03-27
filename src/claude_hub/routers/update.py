@@ -53,9 +53,34 @@ async def apply_update():
     return result
 
 
+def _find_venv_pip() -> str | None:
+    """현재 실행 중인 Python의 venv pip을 찾는다."""
+    import sys
+    from pathlib import Path
+    # 현재 Python 실행 경로에서 pip 찾기
+    venv_pip = Path(sys.executable).parent / "pip"
+    if venv_pip.exists():
+        return str(venv_pip)
+    venv_pip3 = Path(sys.executable).parent / "pip3"
+    if venv_pip3.exists():
+        return str(venv_pip3)
+    return None
+
+
 def _run_upgrade() -> dict:
     """동기 업그레이드 실행."""
-    # pip 시도
+    # 1. 현재 venv의 pip으로 업그레이드 (brew 설치 경로 포함)
+    venv_pip = _find_venv_pip()
+    if venv_pip:
+        result = subprocess.run(
+            [venv_pip, "install", "--upgrade", "claude-hub"],
+            capture_output=True, text=True, timeout=120,
+        )
+        if result.returncode == 0:
+            new_ver = _get_installed_version(venv_pip)
+            return {"ok": True, "method": "pip", "version": new_ver, "restart_required": True}
+
+    # 2. 시스템 pip fallback
     pip = shutil.which("pip3") or shutil.which("pip")
     if pip:
         result = subprocess.run(
@@ -63,10 +88,10 @@ def _run_upgrade() -> dict:
             capture_output=True, text=True, timeout=120,
         )
         if result.returncode == 0:
-            new_ver = _get_installed_version()
+            new_ver = _get_installed_version(pip)
             return {"ok": True, "method": "pip", "version": new_ver, "restart_required": True}
 
-    # brew 시도
+    # 3. brew fallback
     brew = shutil.which("brew")
     if brew:
         result = subprocess.run(
@@ -74,15 +99,14 @@ def _run_upgrade() -> dict:
             capture_output=True, text=True, timeout=180,
         )
         if result.returncode == 0:
-            new_ver = _get_installed_version()
-            return {"ok": True, "method": "brew", "version": new_ver, "restart_required": True}
+            return {"ok": True, "method": "brew", "version": "latest", "restart_required": True}
 
     return {"ok": False, "error": "Upgrade failed. Run manually: pip install --upgrade claude-hub"}
 
 
-def _get_installed_version() -> str:
-    """pip show로 설치된 버전 확인 (importlib 캐시 우회)."""
-    pip = shutil.which("pip3") or shutil.which("pip")
+def _get_installed_version(pip_path: str | None = None) -> str:
+    """pip show로 설치된 버전 확인."""
+    pip = pip_path or _find_venv_pip() or shutil.which("pip3") or shutil.which("pip")
     if pip:
         result = subprocess.run([pip, "show", "claude-hub"], capture_output=True, text=True, timeout=10)
         for line in result.stdout.splitlines():

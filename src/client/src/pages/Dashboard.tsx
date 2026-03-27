@@ -525,6 +525,16 @@ export default function Dashboard() {
                 {t('update.restart')}
               </button>
             </div>
+          ) : updateMutation.isError || (updateMutation.isSuccess && !updateMutation.data?.ok) ? (
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-red-400">{t('update.failed')}</span>
+              <button
+                onClick={() => updateMutation.mutate()}
+                className="px-2.5 py-1 text-[10px] font-mono border border-fuchsia-600 text-fuchsia-400 hover:bg-fuchsia-600 hover:text-white rounded transition-colors"
+              >
+                {t('update.retry')}
+              </button>
+            </div>
           ) : (
             <button
               onClick={() => updateMutation.mutate()}
