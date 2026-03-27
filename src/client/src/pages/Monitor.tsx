@@ -178,7 +178,7 @@ interface ActiveSession {
 }
 
 export default function Monitor() {
-  useLang()
+  const { t } = useLang()
   const { events, connected, clear, notificationsEnabled, toggleNotifications } = useMonitorStream()
   const [paused, setPaused] = useState(false)
   const [filter, setFilter] = useState<string | null>(null)
@@ -226,12 +226,12 @@ export default function Monitor() {
           </h1>
           <p className="text-xs text-zinc-500 mt-0.5">
             {connected ? (
-              <span className="text-emerald-400">Connected</span>
+              <span className="text-emerald-400">{t('monitor.connected')}</span>
             ) : (
-              <span className="text-amber-400">Reconnecting...</span>
+              <span className="text-amber-400">{t('monitor.reconnecting')}</span>
             )}
-            {' '}&middot; {activeSessions.length} active session{activeSessions.length !== 1 ? 's' : ''}
-            {' '}&middot; {events.length} events
+            {' '}&middot; {activeSessions.length} {t('monitor.activeSessions')}
+            {' '}&middot; {events.length} {t('monitor.events')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -242,10 +242,10 @@ export default function Monitor() {
                 ? 'bg-sky-500/10 text-sky-400 hover:bg-sky-500/20'
                 : 'bg-zinc-800 text-zinc-500 hover:bg-zinc-700'
             }`}
-            title={notificationsEnabled ? 'Notifications ON' : 'Notifications OFF'}
+            title={notificationsEnabled ? t('monitor.notifyOn') : t('monitor.notifyOff')}
           >
             {notificationsEnabled ? <Bell size={12} /> : <BellOff size={12} />}
-            {notificationsEnabled ? 'Notify ON' : 'Notify OFF'}
+            {notificationsEnabled ? t('monitor.notifyOn') : t('monitor.notifyOff')}
           </button>
           <button
             onClick={() => setPaused(!paused)}
@@ -256,16 +256,30 @@ export default function Monitor() {
             }`}
           >
             {paused ? <Play size={12} /> : <Pause size={12} />}
-            {paused ? 'Resume' : 'Pause'}
+            {paused ? t('monitor.resume') : t('monitor.pause')}
           </button>
           <button
             onClick={clear}
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded text-xs bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200 transition-colors"
           >
             <Trash2 size={12} />
-            Clear
+            {t('monitor.clear')}
           </button>
         </div>
+      </div>
+
+      {/* Description */}
+      <div className="mb-4 px-3.5 py-2.5 rounded-lg bg-zinc-900/60 border border-zinc-800/60">
+        <ul className="space-y-1 text-[11px] leading-relaxed text-zinc-400">
+          <li className="flex items-start gap-1.5">
+            <span className="text-zinc-600 mt-px shrink-0">&bull;</span>
+            {t('monitor.desc.1')}
+          </li>
+          <li className="flex items-start gap-1.5">
+            <span className="text-zinc-600 mt-px shrink-0">&bull;</span>
+            {t('monitor.desc.2')}
+          </li>
+        </ul>
       </div>
 
       {/* Main content */}
@@ -273,14 +287,14 @@ export default function Monitor() {
         {/* Left: Active sessions */}
         <div className="w-56 shrink-0 bg-zinc-900 rounded-lg border border-zinc-800 flex flex-col">
           <div className="px-3 py-2 border-b border-zinc-800">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600">Active Sessions</p>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600">{t('monitor.activeSessions.title')}</p>
           </div>
           <div className="flex-1 overflow-y-auto">
             {activeSessions.length === 0 ? (
               <div className="px-3 py-6 text-center">
                 <Circle size={20} className="text-zinc-700 mx-auto mb-2" />
-                <p className="text-xs text-zinc-600">No active sessions</p>
-                <p className="text-[10px] text-zinc-700 mt-1">Sessions will appear here when Claude Code is running</p>
+                <p className="text-xs text-zinc-600">{t('monitor.activeSessions.empty')}</p>
+                <p className="text-[10px] text-zinc-700 mt-1">{t('monitor.activeSessions.emptyDesc')}</p>
               </div>
             ) : (
               <div className="py-1">
@@ -329,7 +343,7 @@ export default function Monitor() {
         <div className="flex-1 bg-zinc-900 rounded-lg border border-zinc-800 flex flex-col min-w-0">
           <div className="px-3 py-2 border-b border-zinc-800 flex items-center justify-between">
             <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600">
-              Event Feed
+              {t('monitor.eventFeed')}
               {filter && (
                 <span className="ml-2 text-fuchsia-400 normal-case tracking-normal">
                   filtered: {filter.split('-').pop()}
