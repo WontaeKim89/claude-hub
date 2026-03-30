@@ -111,6 +111,10 @@ export interface MarketplacePlugin {
   category: string
   marketplace: string
   installed: boolean
+  homepage?: string
+  source_url?: string
+  author?: string
+  tags?: string[]
 }
 
 export type HookEventType =

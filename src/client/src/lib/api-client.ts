@@ -147,7 +147,7 @@ export const api = {
       const query = qs.toString()
       return request<MarketplacePlugin[]>(`/marketplace/browse${query ? `?${query}` : ''}`)
     },
-    mcp: () => request<Array<{ name: string; description: string; package: string; category: string; source: string; installed: boolean }>>('/marketplace/mcp'),
+    mcp: () => request<Array<{ name: string; description: string; package: string; category: string; source: string; installed: boolean; homepage?: string }>>('/marketplace/mcp'),
     installMcp: (name: string, pkg: string) =>
       request<{ ok: boolean; name: string }>('/marketplace/mcp/install', {
         method: 'POST',

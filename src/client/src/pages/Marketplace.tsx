@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Package, Server, Trash2, Download, X } from 'lucide-react'
+import { Search, Package, Server, Trash2, Download, X, ExternalLink } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useLang } from '../hooks/useLang'
 import { useEscClose } from '../hooks/useEscClose'
@@ -124,6 +124,7 @@ type McpServer = {
   category: string
   source: string
   installed: boolean
+  homepage?: string
 }
 
 function McpCard({
@@ -228,6 +229,24 @@ function DetailModal({ target, t, onClose, onInstall, onUninstall, isInstalling 
             <p className="text-xs text-zinc-400 leading-relaxed">{d.description}</p>
           )}
 
+          {/* GitHub 링크 */}
+          {(() => {
+            const link = isPlugin
+              ? (target.data as MarketplacePlugin).homepage || (target.data as MarketplacePlugin).source_url
+              : (target.data as McpServer).homepage
+            return link ? (
+              <a
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-fuchsia-400 hover:text-fuchsia-300 transition-colors"
+              >
+                <ExternalLink size={12} />
+                GitHub에서 보기
+              </a>
+            ) : null
+          })()}
+
           <div className="grid grid-cols-2 gap-3">
             {isPlugin && (target.data as MarketplacePlugin).version && (
               <div>
@@ -251,6 +270,12 @@ function DetailModal({ target, t, onClose, onInstall, onUninstall, isInstalling 
                 {isPlugin ? (target.data as MarketplacePlugin).marketplace : (target.data as McpServer).source}
               </span>
             </div>
+            {isPlugin && (target.data as MarketplacePlugin).author && (
+              <div>
+                <p className="text-[10px] font-mono text-zinc-600 mb-1">Author</p>
+                <p className="text-xs text-zinc-300 font-mono">{(target.data as MarketplacePlugin).author}</p>
+              </div>
+            )}
             {!isPlugin && (target.data as McpServer).package && (
               <div>
                 <p className="text-[10px] font-mono text-zinc-600 mb-1">{t('marketplace.package')}</p>
@@ -260,6 +285,16 @@ function DetailModal({ target, t, onClose, onInstall, onUninstall, isInstalling 
               </div>
             )}
           </div>
+
+          {isPlugin && (target.data as MarketplacePlugin).tags && (target.data as MarketplacePlugin).tags!.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {(target.data as MarketplacePlugin).tags!.map((tag) => (
+                <span key={tag} className="px-1.5 py-0.5 text-[10px] font-mono bg-zinc-800 text-zinc-500 rounded">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
 
           {/* Install / Uninstall action */}
           <div className="flex items-center justify-between pt-3 border-t border-zinc-800">
