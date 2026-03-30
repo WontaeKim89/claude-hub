@@ -118,8 +118,22 @@ def fake_claude_dir(tmp_path: Path) -> Path:
     (mp_dir / "marketplace.json").write_text(json.dumps({
         "name": "test-marketplace",
         "plugins": [
-            {"name": "test-plugin", "description": "A test plugin", "version": "1.0.0", "category": "development"},
-            {"name": "another-plugin", "description": "Another plugin", "version": "2.0.0", "category": "productivity"},
+            {
+                "name": "test-plugin",
+                "description": "A test plugin",
+                "version": "1.0.0",
+                "category": "development",
+                "homepage": "https://github.com/test/test-plugin",
+                "source": {"source": "url", "url": "https://github.com/test/test-plugin.git"},
+                "author": {"name": "Test Author"},
+                "tags": ["testing", "development"],
+            },
+            {
+                "name": "another-plugin",
+                "description": "Another plugin",
+                "version": "2.0.0",
+                "category": "productivity",
+            },
         ]
     }))
 
