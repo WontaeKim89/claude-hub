@@ -67,6 +67,14 @@ class ClaudePaths:
     def backup_dir(self) -> Path:
         return Path.home() / ".claude-hub"
 
+    @property
+    def hub_dir(self) -> Path:
+        return Path.home() / ".claude" / "hub"
+
+    @property
+    def mcp_registry_cache_path(self) -> Path:
+        return self.hub_dir / "mcp_registry_cache.json"
+
     def list_projects(self, include_sessions: bool = False) -> list[ProjectInfo]:
         """프로젝트 목록. include_sessions=True면 JSONL만 있는 프로젝트도 포함."""
         projects = []
