@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from claude_hub.services.editor import ConflictError
+from claude_hub.services.mcp_registry import McpRegistryService
 from claude_hub.services.scanner import invalidate_settings_cache
 
 router = APIRouter(tags=["marketplace"])
@@ -37,6 +38,42 @@ async def marketplace_mcp(request: Request):
     """MCP 서버 마켓플레이스."""
     marketplace = request.app.state.marketplace
     return marketplace.browse_mcp()
+
+
+@router.get("/marketplace/mcp/search")
+async def search_mcp(q: str, request: Request):
+    """MCP Registry 실시간 검색."""
+    registry: McpRegistryService = request.app.state.mcp_registry
+
+    servers = await registry.search_registry(q)
+
+    # 설치 상태 체크
+    paths = request.app.state.config.paths
+    installed: set[str] = set()
+    if paths.settings_path.exists():
+        settings = json.loads(paths.settings_path.read_text())
+        installed = set(settings.get("mcpServers", {}).keys())
+
+    for s in servers:
+        s["installed"] = s["name"] in installed
+
+    return {
+        "servers": servers,
+        "source": "registry_search",
+        "updated_at": None,
+        "error_message": None,
+    }
+
+
+@router.post("/marketplace/mcp/sync")
+async def sync_mcp(request: Request):
+    """MCP Registry 수동 동기화."""
+    registry: McpRegistryService = request.app.state.mcp_registry
+    try:
+        cache = await registry.sync_from_registry()
+        return {"ok": True, "count": len(cache["servers"]), "source": "registry"}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 @router.post("/marketplace/mcp/install")
