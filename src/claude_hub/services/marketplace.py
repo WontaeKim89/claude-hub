@@ -82,15 +82,32 @@ class MarketplaceService:
 
         return results
 
-    def browse_mcp(self) -> list[dict]:
-        """MCP 서버 마켓플레이스 (JSON 파일에서 동적 로드)."""
-        data_file = Path(__file__).parent.parent / "data" / "mcp_servers.json"
-        if not data_file.exists():
-            return []
+    def browse_mcp(self) -> dict:
+        """MCP 서버 마켓플레이스. 캐시 → 폴백 체인."""
+        # 1순위: Registry 캐시
+        cache_path = self.paths.mcp_registry_cache_path
+        if cache_path.exists():
+            try:
+                cache = json.loads(cache_path.read_text(encoding="utf-8"))
+                servers = cache.get("servers", [])
+                updated_at = cache.get("updated_at")
+                source = "registry_cache"
+            except (json.JSONDecodeError, OSError):
+                servers, updated_at, source = [], None, "error"
+        else:
+            servers, updated_at, source = None, None, None
 
-        servers = json.loads(data_file.read_text(encoding="utf-8"))
+        # 2순위: 기존 mcp_servers.json 폴백
+        if not servers:
+            data_file = Path(__file__).parent.parent / "data" / "mcp_servers.json"
+            if data_file.exists():
+                servers = json.loads(data_file.read_text(encoding="utf-8"))
+                source = "fallback"
+            else:
+                servers = []
+                source = "error"
 
-        # 현재 설치된 MCP 서버 확인
+        # 설치 상태 체크
         installed: set[str] = set()
         if self.paths.settings_path.exists():
             settings = json.loads(self.paths.settings_path.read_text())
@@ -99,7 +116,12 @@ class MarketplaceService:
         for server in servers:
             server["installed"] = server["name"] in installed
 
-        return servers
+        return {
+            "servers": servers,
+            "source": source,
+            "updated_at": updated_at,
+            "error_message": None if source != "error" else "캐시 로드 실패",
+        }
 
     def _is_installed(self, plugin_name: str, marketplace: str) -> bool:
         installed_path = self.paths.installed_plugins_path

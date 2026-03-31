@@ -137,4 +137,21 @@ def fake_claude_dir(tmp_path: Path) -> Path:
         ]
     }))
 
+    # MCP Registry cache
+    hub_dir = claude_dir / "hub"
+    hub_dir.mkdir()
+    (hub_dir / "mcp_registry_cache.json").write_text(json.dumps({
+        "updated_at": "2026-03-31T00:00:00+00:00",
+        "servers": [
+            {
+                "name": "test-registry-server",
+                "description": "A server from registry",
+                "package": "@test/registry-server",
+                "category": "",
+                "source": "MCP Registry",
+                "homepage": "https://github.com/test/registry-server",
+            }
+        ]
+    }))
+
     return claude_dir

@@ -62,15 +62,28 @@ async def test_browse_with_query(client):
 
 
 @pytest.mark.asyncio
-async def test_browse_mcp_returns_homepage(client):
-    """MCP 서버 목록이 JSON 파일에서 로드되고 homepage 필드를 포함하는지 검증."""
+async def test_browse_mcp_returns_wrapped_response(client):
+    """browse_mcp()가 서버 리스트 + 메타데이터를 포함한 객체를 반환하는지 검증."""
     resp = await client.get("/api/marketplace/mcp")
     assert resp.status_code == 200
     data = resp.json()
-    assert isinstance(data, list)
-    assert len(data) >= 10
 
-    github_server = next(s for s in data if s["name"] == "github")
-    assert github_server["homepage"] != ""
-    assert github_server["package"] == "@modelcontextprotocol/server-github"
-    assert "installed" in github_server
+    assert "servers" in data
+    assert "source" in data
+    assert "updated_at" in data
+    assert isinstance(data["servers"], list)
+    assert data["source"] in ("registry_cache", "fallback", "error")
+
+
+@pytest.mark.asyncio
+async def test_browse_mcp_fallback_when_no_cache(client, fake_claude_dir):
+    """캐시 파일 없을 때 기존 mcp_servers.json 폴백."""
+    cache_path = fake_claude_dir / "hub" / "mcp_registry_cache.json"
+    if cache_path.exists():
+        cache_path.unlink()
+
+    resp = await client.get("/api/marketplace/mcp")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["source"] == "fallback"
+    assert len(data["servers"]) >= 10
