@@ -1,13 +1,13 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Package, Server, Trash2, Download, X, ExternalLink } from 'lucide-react'
+import { Search, Package, Server, Trash2, Download, X, ExternalLink, RefreshCw, AlertTriangle } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { useLang } from '../hooks/useLang'
 import { useEscClose } from '../hooks/useEscClose'
 import { InfoTooltip } from '../components/shared/InfoTooltip'
 import { CATEGORY_INFO } from '../lib/category-info'
 import { DangerDeleteDialog } from '../components/shared/DangerDeleteDialog'
-import type { MarketplacePlugin } from '../lib/types'
+import type { MarketplacePlugin, McpBrowseResponse } from '../lib/types'
 
 function getSourceStyle(marketplace: string): string {
   if (marketplace.includes('official')) return 'text-fuchsia-400 bg-fuchsia-500/10'
@@ -182,7 +182,7 @@ function McpCard({
               <Trash2 size={12} />
             </button>
           </div>
-        ) : (
+        ) : server.package ? (
           <button
             onClick={(e) => { e.stopPropagation(); onInstall() }}
             disabled={isInstalling}
@@ -191,6 +191,10 @@ function McpCard({
             <Download size={10} />
             {isInstalling ? '...' : t('marketplace.install')}
           </button>
+        ) : (
+          <span className="px-2 py-0.5 text-[10px] font-mono text-zinc-600">
+            설치 불가
+          </span>
         )}
       </div>
     </div>
@@ -318,6 +322,10 @@ function DetailModal({ target, t, onClose, onInstall, onUninstall, isInstalling 
                 <Trash2 size={12} />
                 {t('delete.remove')}
               </button>
+            ) : !isPlugin && !(target.data as McpServer).package ? (
+              <span className="px-2 py-0.5 text-[10px] font-mono text-zinc-600">
+                설치 불가
+              </span>
             ) : (
               <button
                 onClick={onInstall}
@@ -348,15 +356,36 @@ export default function Marketplace() {
   const [query, setQuery] = useState('')
   const [deleteTarget, setDeleteTarget] = useState<{ type: 'plugin' | 'mcp'; name: string } | null>(null)
   const [detailTarget, setDetailTarget] = useState<DetailTarget | null>(null)
+  const [debouncedQuery, setDebouncedQuery] = useState('')
+
+  // query 변경 시 300ms debounce
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(query), 300)
+    return () => clearTimeout(timer)
+  }, [query])
 
   const { data: allPlugins = [], isLoading: pluginsLoading } = useQuery<MarketplacePlugin[]>({
     queryKey: ['marketplace', 'browse'],
     queryFn: () => api.marketplace.browse({}),
   })
 
-  const { data: mcpServers = [], isLoading: mcpLoading } = useQuery<McpServer[]>({
+  const { data: mcpData, isLoading: mcpLoading } = useQuery<McpBrowseResponse>({
     queryKey: ['marketplace', 'mcp'],
     queryFn: () => api.marketplace.mcp(),
+  })
+  const mcpServers = mcpData?.servers ?? []
+  const mcpSource = mcpData?.source ?? 'error'
+
+  const { data: mcpSearchData, isFetching: mcpSearching } = useQuery<McpBrowseResponse>({
+    queryKey: ['marketplace', 'mcp', 'search', debouncedQuery],
+    queryFn: () => api.marketplace.mcpSearch(debouncedQuery),
+    enabled: mainTab === 'mcp' && debouncedQuery.length >= 2,
+    staleTime: 30_000,
+  })
+
+  const mcpSyncMutation = useMutation({
+    mutationFn: () => api.marketplace.mcpSync(),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['marketplace', 'mcp'] }),
   })
 
   const mcpInstallMutation = useMutation({
@@ -409,7 +438,12 @@ export default function Marketplace() {
 
   // 필터 적용 (MCP)
   const filteredMcp = useMemo(() => {
-    let list = mcpServers
+    if (mainTab === 'mcp' && debouncedQuery.length >= 2 && mcpSearchData?.servers) {
+      let list = mcpSearchData.servers as McpServer[]
+      if (filterMode === 'installed') list = list.filter((s) => s.installed)
+      return list
+    }
+    let list = mcpServers as McpServer[]
     if (filterMode === 'installed') list = list.filter((s) => s.installed)
     if (query) {
       list = list.filter((s) =>
@@ -418,7 +452,7 @@ export default function Marketplace() {
       )
     }
     return list
-  }, [mcpServers, filterMode, query])
+  }, [mcpServers, mcpSearchData, filterMode, query, debouncedQuery, mainTab])
 
   function handleSourceChange(name: string) {
     setActiveSource(name)
@@ -437,7 +471,7 @@ export default function Marketplace() {
 
   const installedPluginCount = allPlugins.filter((p) => p.installed).length
   const installedMcpCount = mcpServers.filter((s) => s.installed).length
-  const isLoading = mainTab === 'plugins' ? pluginsLoading : mcpLoading
+  const isLoading = mainTab === 'plugins' ? pluginsLoading : (mcpLoading || mcpSearching)
 
   return (
     <div>
@@ -571,6 +605,26 @@ export default function Marketplace() {
           className="w-full bg-zinc-900 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-fuchsia-500/50"
         />
       </div>
+
+      {/* MCP 레지스트리 상태 배너 */}
+      {mainTab === 'mcp' && (mcpSource === 'fallback' || mcpSource === 'error') && (
+        <div className="flex items-center gap-2 mb-4 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded text-xs text-amber-400">
+          <AlertTriangle size={14} className="shrink-0" />
+          <span className="flex-1">
+            {mcpSource === 'fallback'
+              ? '레지스트리 캐시가 없습니다. 기본 MCP 서버만 표시됩니다.'
+              : 'MCP 레지스트리 로드에 실패했습니다.'}
+          </span>
+          <button
+            onClick={() => mcpSyncMutation.mutate()}
+            disabled={mcpSyncMutation.isPending}
+            className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono border border-amber-500/30 rounded hover:bg-amber-500/20 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={10} className={mcpSyncMutation.isPending ? 'animate-spin' : ''} />
+            {mcpSyncMutation.isPending ? '동기화 중...' : '재시도'}
+          </button>
+        </div>
+      )}
 
       {/* 결과 그리드 */}
       {isLoading ? (

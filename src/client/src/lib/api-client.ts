@@ -1,4 +1,4 @@
-import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary, BackupHistory, DiffResult, DiffRequest, AnalysisResult, ClaudeStatus, WizardResult, SkillGenResult, CostSummary, ProjectCost, MonitorEvent, HarnessTemplate, ConfigDiffItem } from './types'
+import type { DashboardData, HealthResult, SkillSummary, SkillDetail, SettingsData, ClaudeMdEntry, PluginSummary, AgentSummary, AgentDetail, CommandSummary, CommandDetail, HooksData, McpData, KeybindingsData, MarketplaceSource, MarketplacePlugin, MemoryProject, MemoryFileList, MemoryFileDetail, TeamSummary, BackupHistory, DiffResult, DiffRequest, AnalysisResult, ClaudeStatus, WizardResult, SkillGenResult, CostSummary, ProjectCost, MonitorEvent, HarnessTemplate, ConfigDiffItem, McpBrowseResponse } from './types'
 
 const BASE = '/api'
 
@@ -147,7 +147,9 @@ export const api = {
       const query = qs.toString()
       return request<MarketplacePlugin[]>(`/marketplace/browse${query ? `?${query}` : ''}`)
     },
-    mcp: () => request<Array<{ name: string; description: string; package: string; category: string; source: string; installed: boolean; homepage?: string }>>('/marketplace/mcp'),
+    mcp: () => request<McpBrowseResponse>('/marketplace/mcp'),
+    mcpSearch: (q: string) => request<McpBrowseResponse>(`/marketplace/mcp/search?q=${encodeURIComponent(q)}`),
+    mcpSync: () => request<{ ok: boolean; count: number; source: string }>('/marketplace/mcp/sync', { method: 'POST' }),
     installMcp: (name: string, pkg: string) =>
       request<{ ok: boolean; name: string }>('/marketplace/mcp/install', {
         method: 'POST',

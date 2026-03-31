@@ -282,3 +282,18 @@ export interface ConfigDiffItem {
   status: 'identical' | 'different' | 'missing' | 'both_missing'
   diff: string | null
 }
+
+export interface McpBrowseResponse {
+  servers: Array<{
+    name: string
+    description: string
+    package: string
+    category: string
+    source: string
+    installed: boolean
+    homepage?: string
+  }>
+  source: 'registry_cache' | 'fallback' | 'error' | 'registry_search'
+  updated_at: string | null
+  error_message: string | null
+}
