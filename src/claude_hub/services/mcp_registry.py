@@ -13,6 +13,19 @@ SYNC_LIMIT = 100
 SYNC_PAGES = 5
 REQUEST_TIMEOUT = 5.0
 CACHE_TTL_HOURS = 24
+_META_KEY = "io.modelcontextprotocol.registry/official"
+
+
+def _is_latest(item: dict) -> bool:
+    """Registry 응답 항목이 최신 버전인지 확인."""
+    meta = item.get("_meta", {})
+    # 실제 구조: _meta["io.modelcontextprotocol.registry/official"]["isLatest"]
+    if _META_KEY in meta:
+        official = meta[_META_KEY]
+        if isinstance(official, dict):
+            return official.get("isLatest", False)
+    # 테스트용 간소화 구조 폴백: _meta.isLatest
+    return meta.get("isLatest", False)
 
 
 def normalize_server(raw: dict) -> dict:
@@ -90,8 +103,7 @@ class McpRegistryService:
                 data = resp.json()
 
                 for item in data.get("servers", []):
-                    meta = item.get("_meta", {})
-                    if not meta.get("isLatest", False):
+                    if not _is_latest(item):
                         continue
                     normalized = normalize_server(item)
                     servers[normalized["name"]] = normalized
@@ -128,8 +140,7 @@ class McpRegistryService:
 
                 servers: dict[str, dict] = {}
                 for item in data.get("servers", []):
-                    meta = item.get("_meta", {})
-                    if not meta.get("isLatest", False):
+                    if not _is_latest(item):
                         continue
                     normalized = normalize_server(item)
                     servers[normalized["name"]] = normalized

@@ -1,7 +1,7 @@
 """MCP Registry 서비스 테스트."""
 import json
 import pytest
-from claude_hub.services.mcp_registry import normalize_server
+from claude_hub.services.mcp_registry import normalize_server, _is_latest
 
 
 class TestNormalizeServer:
@@ -88,3 +88,38 @@ class TestNormalizeServer:
         }
         result = normalize_server(raw)
         assert result["name"] == "server-name"
+
+
+class TestIsLatest:
+    def test_real_registry_meta_structure(self):
+        """실제 Registry API 응답의 _meta 구조."""
+        item = {
+            "server": {"name": "test"},
+            "_meta": {
+                "io.modelcontextprotocol.registry/official": {
+                    "isLatest": True,
+                    "status": "active",
+                }
+            },
+        }
+        assert _is_latest(item) is True
+
+    def test_real_registry_not_latest(self):
+        item = {
+            "server": {"name": "test"},
+            "_meta": {
+                "io.modelcontextprotocol.registry/official": {
+                    "isLatest": False,
+                }
+            },
+        }
+        assert _is_latest(item) is False
+
+    def test_flat_meta_fallback(self):
+        """테스트용 간소화된 _meta 구조도 지원."""
+        item = {"server": {"name": "test"}, "_meta": {"isLatest": True}}
+        assert _is_latest(item) is True
+
+    def test_no_meta(self):
+        item = {"server": {"name": "test"}}
+        assert _is_latest(item) is False
