@@ -120,12 +120,26 @@ Manage Skills, Plugins, Agents, Hooks, and MCP Servers from a single unified vie
   <img src="docs/screenshots/extensions.png" alt="Extensions" width="800" />
 </p>
 
-- **Skills** — Browse all installed skills with descriptions and invoke commands. Create custom skills, detect duplicates with similarity scoring.
+- **Skills** — Browse all installed skills with descriptions and invoke commands. Create custom skills with AI-powered similarity check on creation.
 - **Plugins** — Toggle, install, and remove plugins.
 - **Agents** — View and edit agent definitions.
 - **Hooks** — Visual editor for all 11 event types.
 - **MCP Servers** — Configure servers with masked environment variables.
 - **Usage Analysis** — AI-powered ranking of extension usefulness based on actual usage patterns.
+
+#### Duplicate Scan & Merge
+
+Detect and resolve duplicate skills using Claude AI-powered 4-dimension analysis.
+
+<p align="center">
+  <img src="docs/images/duplicate-scan.png" alt="Duplicate Scan" width="800" />
+</p>
+
+- **4-Dimension AI Analysis** — Claude evaluates every skill pair across Purpose, Trigger, Process, and Output similarity. Goes beyond text matching to understand semantic overlap.
+- **Visual Scoring** — Each dimension shown as a color-coded progress bar (red: 90%+, yellow: 70%+) with inline reasoning.
+- **Smart Merge** — Select a target name (Skill A, Skill B, or new), preview the merged result with source highlighting, edit in Monaco Editor, then confirm.
+- **Auto-Skip** — After merging or deleting a skill, all remaining pairs involving that skill are automatically filtered out.
+- **Similarity Check on Create** — When creating a new skill, the system warns if similar skills already exist and offers to merge instead.
 
 ---
 

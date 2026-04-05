@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, Edit2, Trash2, Eye, X, Sparkles, BarChart2, ScanSearch, Loader2 } from 'lucide-react'
+import { Search, Plus, Edit2, Trash2, Eye, X, Sparkles, BarChart2, ScanSearch, Loader2, GitMerge } from 'lucide-react'
 import { api } from '../lib/api-client'
 import { Badge } from '../components/shared/Badge'
 import { MonacoWrapper } from '../components/editors/MonacoWrapper'
@@ -14,6 +14,7 @@ import { CATEGORY_INFO } from '../lib/category-info'
 import { AnalysisPanel } from '../components/analysis/AnalysisPanel'
 import { SkillChat } from '../components/wizard/SkillChat'
 import type { SkillSummary, SkillDetail } from '../lib/types'
+import { SkillMergeModal } from '../components/skills/SkillMergeModal'
 
 type FilterTab = 'all' | 'custom' | 'installed'
 
@@ -41,6 +42,18 @@ description: ${description}
 
 type NewSkillTab = 'manual' | 'ai'
 
+type SimilarSkill = {
+  name: string; source: string; description: string
+  similarity: number; grade: 'red' | 'yellow' | 'low'
+  dimensions?: {
+    purpose?: { score: number; reason: string }
+    trigger?: { score: number; reason: string }
+    process?: { score: number; reason: string }
+    output?: { score: number; reason: string }
+  }
+  recommendation?: string
+}
+
 function ManualSkillForm({
   initialContent,
   onSuccess,
@@ -51,11 +64,17 @@ function ManualSkillForm({
   onClose: () => void
 }) {
   const qc = useQueryClient()
+  const { t } = useLang()
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [content, setContent] = useState(() => initialContent || buildSkillTemplate('', ''))
   const [contentEdited, setContentEdited] = useState(!!initialContent)
   const [error, setError] = useState('')
+
+  // 유사성 체크 관련 상태
+  const [similarSkills, setSimilarSkills] = useState<SimilarSkill[] | null>(null)
+  const [checking, setChecking] = useState(false)
+  const [mergeTarget, setMergeTarget] = useState<SimilarSkill | null>(null)
 
   useEffect(() => {
     if (!contentEdited) {
@@ -77,9 +96,49 @@ function ManualSkillForm({
     onError: (e: Error) => setError(e.message),
   })
 
+  // Create 클릭 → 유사성 체크 먼저 수행
+  const handleCreate = async () => {
+    setError('')
+    setSimilarSkills(null)
+    setChecking(true)
+    try {
+      const result = await api.skills.checkSimilarity(name, content)
+      if (result.similar_skills.length > 0) {
+        // 유사 스킬 발견 → 경고 표시
+        setSimilarSkills(result.similar_skills)
+        setChecking(false)
+      } else {
+        // 유사 스킬 없음 → 바로 생성
+        setChecking(false)
+        mutation.mutate()
+      }
+    } catch {
+      setChecking(false)
+      mutation.mutate()
+    }
+  }
+
+  // "그래도 추가" → 경고 무시하고 생성
+  const handleForceCreate = () => {
+    setSimilarSkills(null)
+    mutation.mutate()
+  }
+
   return (
     <div className="p-5 space-y-4 overflow-y-auto flex-1">
       {error && <p className="text-xs text-red-400 bg-red-400/10 rounded px-3 py-2">{error}</p>}
+
+      {/* 유사 스킬 경고 */}
+      {similarSkills && similarSkills.length > 0 && (
+        <SimilarSkillWarning
+          skills={similarSkills}
+          onForceCreate={handleForceCreate}
+          onMerge={(skill) => { setSimilarSkills(null); setMergeTarget(skill) }}
+          creating={mutation.isPending}
+          t={t}
+        />
+      )}
+
       <div>
         <label className="block font-mono text-xs text-zinc-500 mb-1.5">name</label>
         <input
@@ -114,11 +173,106 @@ function ManualSkillForm({
           Cancel
         </button>
         <button
-          onClick={() => mutation.mutate()}
-          disabled={mutation.isPending || !name.trim()}
+          onClick={handleCreate}
+          disabled={checking || mutation.isPending || !name.trim()}
           className="px-3 py-1.5 text-xs bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded disabled:opacity-50"
         >
-          {mutation.isPending ? 'Creating...' : 'Create'}
+          {checking ? t('similarity.checking') : mutation.isPending ? t('similarity.creating') : t('similarity.create')}
+        </button>
+      </div>
+
+      {/* 병합: 파일 생성 없이 content를 직접 전달 */}
+      {mergeTarget && (
+        <SkillMergeModal
+          skillA={mergeTarget.name}
+          skillB={name}
+          sourceA={mergeTarget.source}
+          sourceB="new"
+          contentB={content}
+          onClose={() => setMergeTarget(null)}
+          onMerged={() => {
+            qc.invalidateQueries({ queryKey: ['skills'] })
+            onSuccess()
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+
+// 유사 스킬 경고 패널
+function SimilarSkillWarning({
+  skills,
+  onForceCreate,
+  onMerge,
+  creating,
+  t,
+}: {
+  skills: SimilarSkill[]
+  onForceCreate: () => void
+  onMerge: (skill: SimilarSkill) => void
+  creating: boolean
+  t: (key: string) => string
+}) {
+  const topSimilarity = skills[0].similarity
+
+  return (
+    <div className="border border-amber-600/40 bg-amber-900/10 rounded-md p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <span className="w-2 h-2 rounded-full bg-amber-500" />
+        <span className="text-xs font-medium text-amber-400">{t('similarity.warning')}</span>
+      </div>
+
+      <p className="text-[11px] text-zinc-400">
+        {topSimilarity}%{t('similarity.desc')}
+      </p>
+
+      {/* 유사 스킬 목록 */}
+      <div className="space-y-2">
+        {skills.map((s) => (
+          <div key={s.name} className="p-2.5 rounded bg-zinc-800/50 border border-zinc-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className={`inline-block w-2 h-2 rounded-full ${s.grade === 'red' ? 'bg-red-500' : 'bg-amber-500'}`} />
+                <span className="font-mono text-xs text-zinc-200">{s.name}</span>
+                <span className={`font-mono text-[10px] font-semibold ${s.grade === 'red' ? 'text-red-400' : 'text-amber-400'}`}>
+                  {s.similarity}% {t('similarity.similarTo')}
+                </span>
+                <span className="text-[10px] text-zinc-600">{s.source}</span>
+              </div>
+              <button
+                onClick={() => onMerge(s)}
+                className="flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono border border-fuchsia-900/40 text-fuchsia-400 hover:text-fuchsia-300 hover:border-fuchsia-700/60 rounded transition-colors"
+              >
+                <GitMerge size={10} />
+                {t('similarity.mergeInstead')}
+              </button>
+            </div>
+            {/* 4차원 점수 */}
+            {s.dimensions && (
+              <div className="space-y-0.5 ml-4">
+                <DimensionBar label="Purpose" score={s.dimensions.purpose?.score ?? 0} reason={s.dimensions.purpose?.reason ?? ''} />
+                <DimensionBar label="Trigger" score={s.dimensions.trigger?.score ?? 0} reason={s.dimensions.trigger?.reason ?? ''} />
+                <DimensionBar label="Process" score={s.dimensions.process?.score ?? 0} reason={s.dimensions.process?.reason ?? ''} />
+                <DimensionBar label="Output" score={s.dimensions.output?.score ?? 0} reason={s.dimensions.output?.reason ?? ''} />
+              </div>
+            )}
+            {s.recommendation && (
+              <p className="text-[10px] text-zinc-500 ml-4 italic">{s.recommendation}</p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* 하단 액션 */}
+      <div className="flex justify-end gap-2 pt-1">
+        <button
+          onClick={onForceCreate}
+          disabled={creating}
+          className="px-3 py-1.5 text-[11px] font-mono text-zinc-400 hover:text-zinc-200 border border-zinc-700 hover:border-zinc-500 rounded transition-colors disabled:opacity-50"
+        >
+          {creating ? t('similarity.creating') : t('similarity.addAnyway')}
         </button>
       </div>
     </div>
@@ -296,8 +450,9 @@ function EditSkillModal({ skill, onClose }: { skill: SkillSummary; onClose: () =
 
 
 // Skill Comparison 팝업
-function SkillCompareModal({ skillA, skillB, onClose }: { skillA: string; skillB: string; onClose: () => void }) {
+function SkillCompareModal({ skillA, skillB, onClose, onMerge }: { skillA: string; skillB: string; onClose: () => void; onMerge?: () => void }) {
   useEscClose(onClose)
+  const { t } = useLang()
   const { data, isLoading } = useQuery({
     queryKey: ['skill-compare', skillA, skillB],
     queryFn: () => api.skills.compare(skillA, skillB),
@@ -352,6 +507,19 @@ function SkillCompareModal({ skillA, skillB, onClose }: { skillA: string; skillB
             </div>
           </div>
         ) : null}
+
+        {/* Merge 버튼 — 하단 */}
+        {onMerge && (
+          <div className="px-5 py-3 border-t border-zinc-800 flex justify-end shrink-0">
+            <button
+              onClick={onMerge}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded transition-colors"
+            >
+              <GitMerge size={14} />
+              {t('merge.btnInCompare')}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -385,39 +553,58 @@ function HighlightedContent({ content, matchingBlocks }: {
   )
 }
 
+// 4차원 점수 바
+function DimensionBar({ label, score, reason }: { label: string; score: number; reason: string }) {
+  const color = score >= 90 ? 'bg-red-500' : score >= 70 ? 'bg-amber-500' : 'bg-zinc-600'
+  const textColor = score >= 90 ? 'text-red-400' : score >= 70 ? 'text-amber-400' : 'text-zinc-500'
+  return (
+    <div className="flex items-center gap-2 text-[10px]">
+      <span className="w-14 text-zinc-500 font-mono shrink-0">{label}</span>
+      <span className={`w-8 text-right font-mono font-semibold ${textColor}`}>{score}%</span>
+      <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${score}%` }} />
+      </div>
+      <span className="text-zinc-600 truncate max-w-[180px]">{reason}</span>
+    </div>
+  )
+}
+
 // 중복 검색 결과 패널
 function DuplicateScanPanel({ onClose }: { onClose: () => void }) {
   useEscClose(onClose)
   const { t } = useLang()
   const qc = useQueryClient()
   const [compareTarget, setCompareTarget] = useState<{ a: string; b: string } | null>(null)
+  const [mergeTarget, setMergeTarget] = useState<{ a: string; b: string; srcA: string; srcB: string } | null>(null)
+  // Auto-Skip: 삭제/병합된 스킬 추적
+  const [removedSkills, setRemovedSkills] = useState<Set<string>>(new Set())
 
   const { data: pairs, isLoading } = useQuery({
     queryKey: ['skill-duplicates'],
     queryFn: () => api.skills.duplicates(),
   })
 
-  const deleteMutation = useMutation({
-    mutationFn: (name: string) => api.skills.delete(name),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['skills'] })
-      qc.invalidateQueries({ queryKey: ['skill-duplicates'] })
-    },
-  })
+  // Auto-Skip: removedSkills에 포함된 스킬이 있는 쌍 필터링
+  const activePairs = pairs?.filter(p =>
+    !removedSkills.has(p.skill_a) && !removedSkills.has(p.skill_b)
+  ) ?? []
+  const skippedCount = (pairs?.length ?? 0) - activePairs.length
 
   return (
     <>
       <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[700px] max-h-[80vh] flex flex-col">
+        <div className="bg-zinc-900 border border-zinc-800 rounded-md w-[780px] max-h-[80vh] flex flex-col">
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800 shrink-0">
-            <div>
+            <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-zinc-100">Duplicate Scan Results</span>
-              {pairs && <span className="ml-2 font-mono text-[10px] text-zinc-500">{pairs.length} found</span>}
+              {pairs && <span className="font-mono text-[10px] text-zinc-500">{activePairs.length} found</span>}
+              {skippedCount > 0 && (
+                <span className="font-mono text-[10px] text-zinc-600">{skippedCount} {t('dupScan.autoSkipped')}</span>
+              )}
             </div>
             <button onClick={onClose} className="text-zinc-500 hover:text-zinc-300"><X size={16} /></button>
           </div>
 
-          {/* Scan criteria description */}
           <div className="px-5 py-3 border-b border-zinc-800/50 bg-zinc-800/20">
             <p className="text-[11px] text-zinc-500 leading-relaxed">
               {t('dupScan.desc')}{' '}
@@ -430,16 +617,17 @@ function DuplicateScanPanel({ onClose }: { onClose: () => void }) {
             {isLoading ? (
               <div className="py-16 flex flex-col items-center gap-3">
                 <Loader2 size={24} className="animate-spin text-fuchsia-500" />
-                <p className="text-xs text-zinc-500 font-mono">Analyzing skill similarity...</p>
+                <p className="text-xs text-zinc-500 font-mono">{t('dupScan.analyzing')}</p>
               </div>
-            ) : !pairs || pairs.length === 0 ? (
+            ) : activePairs.length === 0 ? (
               <div className="py-12 text-center">
                 <p className="text-xs text-zinc-500">No duplicate skills found.</p>
               </div>
             ) : (
               <div className="divide-y divide-zinc-800/50">
-                {pairs.map((pair, i) => (
+                {activePairs.map((pair, i) => (
                   <div key={i} className="px-5 py-3 hover:bg-zinc-800/20 transition-colors">
+                    {/* 헤더: 스킬 이름 + 총점 */}
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className={`inline-block w-2 h-2 rounded-full ${pair.grade === 'red' ? 'bg-red-500' : 'bg-amber-500'}`} />
@@ -451,34 +639,38 @@ function DuplicateScanPanel({ onClose }: { onClose: () => void }) {
                         {pair.similarity}%
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] text-zinc-600 mb-2">
-                      <span>{pair.source_a}</span>
-                      <span>·</span>
-                      <span className="truncate max-w-[200px]">{pair.description_a}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
+
+                    {/* 4차원 점수 바 */}
+                    {pair.dimensions && (
+                      <div className="space-y-1 mb-2 ml-4">
+                        <DimensionBar label={t('dupScan.purpose')} score={pair.dimensions.purpose?.score ?? 0} reason={pair.dimensions.purpose?.reason ?? ''} />
+                        <DimensionBar label={t('dupScan.trigger')} score={pair.dimensions.trigger?.score ?? 0} reason={pair.dimensions.trigger?.reason ?? ''} />
+                        <DimensionBar label={t('dupScan.process')} score={pair.dimensions.process?.score ?? 0} reason={pair.dimensions.process?.reason ?? ''} />
+                        <DimensionBar label={t('dupScan.output')} score={pair.dimensions.output?.score ?? 0} reason={pair.dimensions.output?.reason ?? ''} />
+                      </div>
+                    )}
+
+                    {/* 권장사항 */}
+                    {pair.recommendation && (
+                      <p className="text-[10px] text-zinc-500 mb-2 ml-4 italic">{pair.recommendation}</p>
+                    )}
+
+                    {/* 액션 버튼 — 중앙 정렬 */}
+                    <div className="flex items-center justify-center gap-3 mt-3 pt-2 border-t border-zinc-800/30">
                       <button
                         onClick={() => setCompareTarget({ a: pair.skill_a, b: pair.skill_b })}
-                        className="px-2.5 py-1 text-[10px] font-mono border border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:border-zinc-500 rounded transition-colors"
+                        className="flex items-center gap-1.5 px-4 py-1.5 text-[11px] font-mono font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-zinc-100 border border-zinc-700 hover:border-zinc-500 rounded-md transition-all"
                       >
+                        <Eye size={12} />
                         Compare
                       </button>
-                      {pair.source_a === 'custom' && (
-                        <button
-                          onClick={() => deleteMutation.mutate(pair.skill_a)}
-                          className="px-2.5 py-1 text-[10px] font-mono border border-red-900/40 text-red-500 hover:text-red-400 hover:border-red-700/60 rounded transition-colors"
-                        >
-                          {pair.skill_a} Delete
-                        </button>
-                      )}
-                      {pair.source_b === 'custom' && (
-                        <button
-                          onClick={() => deleteMutation.mutate(pair.skill_b)}
-                          className="px-2.5 py-1 text-[10px] font-mono border border-red-900/40 text-red-500 hover:text-red-400 hover:border-red-700/60 rounded transition-colors"
-                        >
-                          {pair.skill_b} Delete
-                        </button>
-                      )}
+                      <button
+                        onClick={() => setMergeTarget({ a: pair.skill_a, b: pair.skill_b, srcA: pair.source_a, srcB: pair.source_b })}
+                        className="flex items-center gap-1.5 px-4 py-1.5 text-[11px] font-mono font-medium bg-fuchsia-600/20 hover:bg-fuchsia-600/30 text-fuchsia-400 hover:text-fuchsia-300 border border-fuchsia-600/40 hover:border-fuchsia-500/60 rounded-md transition-all"
+                      >
+                        <GitMerge size={12} />
+                        {t('merge.btn')}
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -493,6 +685,36 @@ function DuplicateScanPanel({ onClose }: { onClose: () => void }) {
           skillA={compareTarget.a}
           skillB={compareTarget.b}
           onClose={() => setCompareTarget(null)}
+          onMerge={() => {
+            // Compare 모달 닫고 Merge 모달 열기
+            const a = compareTarget.a
+            const b = compareTarget.b
+            setCompareTarget(null)
+            // source 정보는 pairs에서 찾기
+            const pair = pairs?.find(p => (p.skill_a === a && p.skill_b === b) || (p.skill_a === b && p.skill_b === a))
+            setMergeTarget({ a, b, srcA: pair?.source_a ?? 'custom', srcB: pair?.source_b ?? 'custom' })
+          }}
+        />
+      )}
+
+      {mergeTarget && (
+        <SkillMergeModal
+          skillA={mergeTarget.a}
+          skillB={mergeTarget.b}
+          sourceA={mergeTarget.srcA}
+          sourceB={mergeTarget.srcB}
+          onClose={() => setMergeTarget(null)}
+          onMerged={() => {
+            // Auto-Skip: 병합된 스킬 추적
+            setRemovedSkills(prev => {
+              const next = new Set(prev)
+              next.add(mergeTarget.a)
+              next.add(mergeTarget.b)
+              return next
+            })
+            qc.invalidateQueries({ queryKey: ['skills'] })
+            qc.invalidateQueries({ queryKey: ['skill-duplicates'] })
+          }}
         />
       )}
     </>
@@ -559,7 +781,7 @@ export default function Skills({ embedded, initialFilter }: { embedded?: boolean
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowDuplicates(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 hover:border-zinc-600 rounded transition-colors duration-150"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-amber-600 hover:bg-amber-500 text-white font-medium rounded transition-colors duration-150"
             >
               <ScanSearch size={13} strokeWidth={2} />
               Duplicate Scan
@@ -608,7 +830,7 @@ export default function Skills({ embedded, initialFilter }: { embedded?: boolean
           />
         </div>
         <div className="flex items-center gap-1.5 ml-auto">
-          <button onClick={() => setShowDuplicates(true)} className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 rounded transition-colors">
+          <button onClick={() => setShowDuplicates(true)} className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] bg-amber-600 hover:bg-amber-500 text-white font-medium rounded transition-colors">
             <ScanSearch size={12} /> Duplicate Scan
           </button>
           <button onClick={() => setShowAnalysis(true)} className="flex items-center gap-1 px-2.5 py-1.5 text-[11px] bg-purple-700 hover:bg-purple-600 text-white rounded transition-colors">

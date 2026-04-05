@@ -45,7 +45,16 @@ export const api = {
         skill_a: string; skill_b: string
         source_a: string; source_b: string
         description_a: string; description_b: string
-        similarity: number; grade: 'red' | 'yellow'
+        similarity: number; grade: 'red' | 'yellow' | 'low'
+        dimensions?: {
+          purpose?: { score: number; reason: string }
+          trigger?: { score: number; reason: string }
+          process?: { score: number; reason: string }
+          output?: { score: number; reason: string }
+        }
+        overlapping_features?: string[]
+        differences?: string[]
+        recommendation?: string
       }>>('/skills/duplicates/scan'),
     compare: (skillA: string, skillB: string) =>
       request<{
@@ -55,6 +64,50 @@ export const api = {
         diff: string[]
         matching_blocks: Array<{ a_start: number; b_start: number; size: number }>
       }>(`/skills/duplicates/compare?skill_a=${encodeURIComponent(skillA)}&skill_b=${encodeURIComponent(skillB)}`),
+    checkSimilarity: (name: string, content: string) =>
+      request<{
+        similar_skills: Array<{
+          name: string; source: string; description: string
+          similarity: number; grade: 'red' | 'yellow' | 'low'
+          dimensions?: {
+            purpose?: { score: number; reason: string }
+            trigger?: { score: number; reason: string }
+            process?: { score: number; reason: string }
+            output?: { score: number; reason: string }
+          }
+          overlapping_features?: string[]
+          differences?: string[]
+          recommendation?: string
+        }>
+      }>('/skills/check-similarity', {
+        method: 'POST',
+        body: JSON.stringify({ name, content }),
+      }),
+    mergePreview: (skillA: string, skillB: string, opts?: { content_b?: string; name_b?: string }) =>
+      request<{
+        merged_content: string
+        merged_name: string
+        merged_description: string
+        source_map: Array<{ line: number; source: 'a' | 'b' | 'common' }>
+        skill_a: { name: string; source: string; content: string }
+        skill_b: { name: string; source: string; content: string }
+      }>('/skills/duplicates/merge-preview', {
+        method: 'POST',
+        body: JSON.stringify({
+          skill_a: skillA,
+          skill_b: skillB,
+          ...(opts?.content_b ? { content_b: opts.content_b, name_b: opts.name_b } : {}),
+        }),
+      }),
+    merge: (data: {
+      skill_a: string; skill_b: string
+      target_name: string; content: string
+      delete_sources?: boolean
+    }) =>
+      request<{ ok: boolean; created: string; deleted: string[] }>(
+        '/skills/duplicates/merge',
+        { method: 'POST', body: JSON.stringify(data) },
+      ),
   },
 
   settings: {
