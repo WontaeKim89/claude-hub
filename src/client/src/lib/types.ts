@@ -292,6 +292,7 @@ export interface McpBrowseResponse {
     source: string
     installed: boolean
     homepage?: string
+    remote_url?: string
   }>
   source: 'registry_cache' | 'fallback' | 'error' | 'registry_search'
   updated_at: string | null

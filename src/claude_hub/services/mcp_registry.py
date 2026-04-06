@@ -52,6 +52,15 @@ def normalize_server(raw: dict) -> dict:
     elif server.get("websiteUrl"):
         homepage = server["websiteUrl"]
 
+    # remote URL 추출 (streamable-http 타입의 첫 번째 URL)
+    remote_url = ""
+    for remote in server.get("remotes", []):
+        url = remote.get("url", "")
+        # 변수 substitution이 필요한 URL은 제외 (사용자 입력 필요)
+        if url and "{" not in url:
+            remote_url = url
+            break
+
     return {
         "name": name,
         "description": server.get("description", ""),
@@ -59,6 +68,7 @@ def normalize_server(raw: dict) -> dict:
         "category": "",
         "source": "MCP Registry",
         "homepage": homepage,
+        "remote_url": remote_url,
     }
 
 

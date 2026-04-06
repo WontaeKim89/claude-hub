@@ -13,7 +13,8 @@ router = APIRouter(tags=["marketplace"])
 
 class McpInstallRequest(BaseModel):
     name: str
-    package: str
+    package: str = ""
+    remote_url: str = ""
 
 
 @router.get("/marketplace/sources")
@@ -94,10 +95,12 @@ async def install_mcp(body: McpInstallRequest, request: Request):
     if body.name in mcp_servers:
         raise HTTPException(status_code=409, detail=f"'{body.name}' is already installed")
 
-    mcp_servers[body.name] = {
-        "command": "npx",
-        "args": ["-y", body.package],
-    }
+    if body.remote_url:
+        mcp_servers[body.name] = {"url": body.remote_url}
+    elif body.package:
+        mcp_servers[body.name] = {"command": "npx", "args": ["-y", body.package]}
+    else:
+        raise HTTPException(status_code=400, detail="package 또는 remote_url이 필요합니다")
 
     try:
         editor.write_json(path=paths.settings_path, data=settings, last_mtime=last_mtime)

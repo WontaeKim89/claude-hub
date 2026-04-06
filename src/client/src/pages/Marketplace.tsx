@@ -125,6 +125,7 @@ type McpServer = {
   source: string
   installed: boolean
   homepage?: string
+  remote_url?: string
 }
 
 function McpCard({
@@ -182,7 +183,7 @@ function McpCard({
               <Trash2 size={12} />
             </button>
           </div>
-        ) : server.package ? (
+        ) : (server.package || server.remote_url) ? (
           <button
             onClick={(e) => { e.stopPropagation(); onInstall() }}
             disabled={isInstalling}
@@ -288,6 +289,14 @@ function DetailModal({ target, t, onClose, onInstall, onUninstall, isInstalling 
                 </p>
               </div>
             )}
+            {!isPlugin && !(target.data as McpServer).package && (target.data as McpServer).remote_url && (
+              <div>
+                <p className="text-[10px] font-mono text-zinc-600 mb-1">Remote</p>
+                <p className="text-xs text-zinc-300 font-mono truncate" title={(target.data as McpServer).remote_url}>
+                  {(target.data as McpServer).remote_url}
+                </p>
+              </div>
+            )}
           </div>
 
           {isPlugin && (target.data as MarketplacePlugin).tags && (target.data as MarketplacePlugin).tags!.length > 0 && (
@@ -322,7 +331,7 @@ function DetailModal({ target, t, onClose, onInstall, onUninstall, isInstalling 
                 <Trash2 size={12} />
                 {t('delete.remove')}
               </button>
-            ) : !isPlugin && !(target.data as McpServer).package ? (
+            ) : !isPlugin && !(target.data as McpServer).package && !(target.data as McpServer).remote_url ? (
               <span className="px-2 py-0.5 text-[10px] font-mono text-zinc-600">
                 설치 불가
               </span>
@@ -389,7 +398,8 @@ export default function Marketplace() {
   })
 
   const mcpInstallMutation = useMutation({
-    mutationFn: ({ name, pkg }: { name: string; pkg: string }) => api.marketplace.installMcp(name, pkg),
+    mutationFn: ({ name, pkg, remoteUrl }: { name: string; pkg: string; remoteUrl?: string }) =>
+      api.marketplace.installMcp(name, pkg, remoteUrl),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['marketplace', 'mcp'] }),
   })
 
@@ -663,7 +673,7 @@ export default function Marketplace() {
                 key={server.name}
                 server={server}
                 t={t}
-                onInstall={() => mcpInstallMutation.mutate({ name: server.name, pkg: server.package })}
+                onInstall={() => mcpInstallMutation.mutate({ name: server.name, pkg: server.package, remoteUrl: server.remote_url })}
                 onUninstall={() => setDeleteTarget({ type: 'mcp', name: server.name })}
                 isInstalling={mcpInstallMutation.isPending}
                 onClick={() => setDetailTarget({ type: 'mcp', data: server })}
@@ -688,7 +698,7 @@ export default function Marketplace() {
               })
             } else {
               const s = detailTarget.data as McpServer
-              mcpInstallMutation.mutate({ name: s.name, pkg: s.package }, { onSuccess: () => setDetailTarget(null) })
+              mcpInstallMutation.mutate({ name: s.name, pkg: s.package, remoteUrl: s.remote_url }, { onSuccess: () => setDetailTarget(null) })
             }
           }}
           onUninstall={() => {

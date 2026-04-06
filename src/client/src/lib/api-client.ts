@@ -150,10 +150,10 @@ export const api = {
     mcp: () => request<McpBrowseResponse>('/marketplace/mcp'),
     mcpSearch: (q: string) => request<McpBrowseResponse>(`/marketplace/mcp/search?q=${encodeURIComponent(q)}`),
     mcpSync: () => request<{ ok: boolean; count: number; source: string }>('/marketplace/mcp/sync', { method: 'POST' }),
-    installMcp: (name: string, pkg: string) =>
+    installMcp: (name: string, pkg: string, remoteUrl?: string) =>
       request<{ ok: boolean; name: string }>('/marketplace/mcp/install', {
         method: 'POST',
-        body: JSON.stringify({ name, package: pkg }),
+        body: JSON.stringify({ name, package: pkg, remote_url: remoteUrl ?? '' }),
       }),
     uninstallMcp: (name: string) =>
       request<{ ok: boolean; name: string }>(`/marketplace/mcp/${encodeURIComponent(name)}`, {

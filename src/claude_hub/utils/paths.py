@@ -69,7 +69,7 @@ class ClaudePaths:
 
     @property
     def hub_dir(self) -> Path:
-        return Path.home() / ".claude" / "hub"
+        return self.claude_dir / "hub"
 
     @property
     def mcp_registry_cache_path(self) -> Path:
