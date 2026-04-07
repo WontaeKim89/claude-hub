@@ -53,6 +53,20 @@ class MarketplaceService:
                 # Check if installed
                 installed = self._is_installed(name, mp_name)
 
+                # source 필드에서 URL 추출 (source 구조가 마켓플레이스마다 다름)
+                source_info = plugin_info.get("source", {})
+                if isinstance(source_info, dict):
+                    source_url = source_info.get("url", "")
+                else:
+                    source_url = ""
+
+                # author 필드 추출
+                author_info = plugin_info.get("author", {})
+                if isinstance(author_info, dict):
+                    author_name = author_info.get("name", "")
+                else:
+                    author_name = ""
+
                 results.append({
                     "name": name,
                     "description": desc,
@@ -60,35 +74,54 @@ class MarketplaceService:
                     "category": plugin_info.get("category", ""),
                     "marketplace": mp_name,
                     "installed": installed,
+                    "homepage": plugin_info.get("homepage", ""),
+                    "source_url": source_url,
+                    "author": author_name,
+                    "tags": plugin_info.get("tags", []),
                 })
 
         return results
 
-    def browse_mcp(self) -> list[dict]:
-        """MCP 서버 마켓플레이스 (공식 MCP 서버 목록)."""
-        MCP_SERVERS = [
-            {"name": "github", "description": "GitHub API 연동 (이슈, PR, 코드 검색)", "package": "@modelcontextprotocol/server-github", "category": "development", "source": "MCP Official"},
-            {"name": "filesystem", "description": "로컬 파일시스템 접근", "package": "@modelcontextprotocol/server-filesystem", "category": "system", "source": "MCP Official"},
-            {"name": "postgres", "description": "PostgreSQL 데이터베이스 쿼리", "package": "@modelcontextprotocol/server-postgres", "category": "database", "source": "MCP Official"},
-            {"name": "sqlite", "description": "SQLite 데이터베이스 관리", "package": "@modelcontextprotocol/server-sqlite", "category": "database", "source": "MCP Official"},
-            {"name": "slack", "description": "Slack 메시지 및 채널 접근", "package": "@modelcontextprotocol/server-slack", "category": "communication", "source": "MCP Official"},
-            {"name": "google-drive", "description": "Google Drive 파일 접근", "package": "@anthropic/mcp-server-google-drive", "category": "storage", "source": "Anthropic"},
-            {"name": "memory", "description": "지식 그래프 기반 메모리", "package": "@modelcontextprotocol/server-memory", "category": "AI", "source": "MCP Official"},
-            {"name": "puppeteer", "description": "브라우저 자동화 (Puppeteer)", "package": "@modelcontextprotocol/server-puppeteer", "category": "automation", "source": "MCP Official"},
-            {"name": "brave-search", "description": "Brave 웹 검색", "package": "@anthropic/mcp-server-brave-search", "category": "search", "source": "Anthropic"},
-            {"name": "fetch", "description": "HTTP 요청 (웹 페이지 가져오기)", "package": "@anthropic/mcp-server-fetch", "category": "network", "source": "Anthropic"},
-        ]
+    def browse_mcp(self) -> dict:
+        """MCP 서버 마켓플레이스. 캐시 → 폴백 체인."""
+        # 1순위: Registry 캐시
+        cache_path = self.paths.mcp_registry_cache_path
+        if cache_path.exists():
+            try:
+                cache = json.loads(cache_path.read_text(encoding="utf-8"))
+                servers = cache.get("servers", [])
+                updated_at = cache.get("updated_at")
+                source = "registry_cache"
+            except (json.JSONDecodeError, OSError):
+                servers, updated_at, source = [], None, "error"
+        else:
+            servers, updated_at, source = None, None, None
 
-        # 현재 설치된 MCP 서버 확인
+        # 2순위: 기존 mcp_servers.json 폴백
+        if not servers:
+            data_file = Path(__file__).parent.parent / "data" / "mcp_servers.json"
+            if data_file.exists():
+                servers = json.loads(data_file.read_text(encoding="utf-8"))
+                source = "fallback"
+            else:
+                servers = []
+                source = "error"
+
+        # 설치 상태 체크
         installed: set[str] = set()
         if self.paths.settings_path.exists():
             settings = json.loads(self.paths.settings_path.read_text())
             installed = set(settings.get("mcpServers", {}).keys())
 
-        for server in MCP_SERVERS:
+        for server in servers:
             server["installed"] = server["name"] in installed
 
-        return MCP_SERVERS
+        return {
+            "servers": servers,
+            "source": source,
+            "updated_at": updated_at,
+            "error_message": None if source != "error" else "캐시 로드 실패",
+        }
 
     def _is_installed(self, plugin_name: str, marketplace: str) -> bool:
         installed_path = self.paths.installed_plugins_path

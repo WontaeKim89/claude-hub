@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from claude_hub.services.editor import ConflictError
+from claude_hub.services.mcp_registry import McpRegistryService
 from claude_hub.services.scanner import invalidate_settings_cache
 
 router = APIRouter(tags=["marketplace"])
@@ -12,7 +13,8 @@ router = APIRouter(tags=["marketplace"])
 
 class McpInstallRequest(BaseModel):
     name: str
-    package: str
+    package: str = ""
+    remote_url: str = ""
 
 
 @router.get("/marketplace/sources")
@@ -39,6 +41,42 @@ async def marketplace_mcp(request: Request):
     return marketplace.browse_mcp()
 
 
+@router.get("/marketplace/mcp/search")
+async def search_mcp(q: str, request: Request):
+    """MCP Registry 실시간 검색."""
+    registry: McpRegistryService = request.app.state.mcp_registry
+
+    servers = await registry.search_registry(q)
+
+    # 설치 상태 체크
+    paths = request.app.state.config.paths
+    installed: set[str] = set()
+    if paths.settings_path.exists():
+        settings = json.loads(paths.settings_path.read_text())
+        installed = set(settings.get("mcpServers", {}).keys())
+
+    for s in servers:
+        s["installed"] = s["name"] in installed
+
+    return {
+        "servers": servers,
+        "source": "registry_search",
+        "updated_at": None,
+        "error_message": None,
+    }
+
+
+@router.post("/marketplace/mcp/sync")
+async def sync_mcp(request: Request):
+    """MCP Registry 수동 동기화."""
+    registry: McpRegistryService = request.app.state.mcp_registry
+    try:
+        cache = await registry.sync_from_registry()
+        return {"ok": True, "count": len(cache["servers"]), "source": "registry"}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @router.post("/marketplace/mcp/install")
 async def install_mcp(body: McpInstallRequest, request: Request):
     """MCP 서버를 settings.json의 mcpServers에 추가."""
@@ -57,10 +95,12 @@ async def install_mcp(body: McpInstallRequest, request: Request):
     if body.name in mcp_servers:
         raise HTTPException(status_code=409, detail=f"'{body.name}' is already installed")
 
-    mcp_servers[body.name] = {
-        "command": "npx",
-        "args": ["-y", body.package],
-    }
+    if body.remote_url:
+        mcp_servers[body.name] = {"url": body.remote_url}
+    elif body.package:
+        mcp_servers[body.name] = {"command": "npx", "args": ["-y", body.package]}
+    else:
+        raise HTTPException(status_code=400, detail="package 또는 remote_url이 필요합니다")
 
     try:
         editor.write_json(path=paths.settings_path, data=settings, last_mtime=last_mtime)

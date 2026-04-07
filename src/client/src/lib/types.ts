@@ -111,6 +111,10 @@ export interface MarketplacePlugin {
   category: string
   marketplace: string
   installed: boolean
+  homepage?: string
+  source_url?: string
+  author?: string
+  tags?: string[]
 }
 
 export type HookEventType =
@@ -277,4 +281,20 @@ export interface ConfigDiffItem {
   b_value: string
   status: 'identical' | 'different' | 'missing' | 'both_missing'
   diff: string | null
+}
+
+export interface McpBrowseResponse {
+  servers: Array<{
+    name: string
+    description: string
+    package: string
+    category: string
+    source: string
+    installed: boolean
+    homepage?: string
+    remote_url?: string
+  }>
+  source: 'registry_cache' | 'fallback' | 'error' | 'registry_search'
+  updated_at: string | null
+  error_message: string | null
 }

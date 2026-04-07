@@ -1,5 +1,6 @@
 """FastAPI 앱 + CLI 엔트리포인트."""
 import argparse
+import logging
 import os
 import webbrowser
 from pathlib import Path
@@ -12,10 +13,13 @@ from claude_hub.config import AppConfig
 from claude_hub.services.backup import BackupService
 from claude_hub.services.editor import EditorService
 from claude_hub.services.marketplace import MarketplaceService
+from claude_hub.services.mcp_registry import McpRegistryService
 from claude_hub.services.scanner import ScannerService
 from claude_hub.services.usage_db import UsageDB
 from claude_hub.services.validator import ValidatorService
 from claude_hub.services.session_watcher import SessionWatcher
+
+logger = logging.getLogger(__name__)
 
 
 def create_app(config: AppConfig | None = None) -> FastAPI:
@@ -31,6 +35,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     marketplace = MarketplaceService(paths=config.paths)
     usage_db = UsageDB(db_path=config.backup_dir / "usage.db")
     session_watcher = SessionWatcher(paths=config.paths)
+    mcp_registry = McpRegistryService(cache_path=config.paths.mcp_registry_cache_path)
 
     app.state.config = config
     app.state.scanner = scanner
@@ -40,6 +45,7 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     app.state.marketplace = marketplace
     app.state.usage_db = usage_db
     app.state.session_watcher = session_watcher
+    app.state.mcp_registry = mcp_registry
 
     from claude_hub.routers import dashboard, skills, settings, claude_md, plugins, agents, commands, hooks, mcp, keybindings, marketplace as marketplace_router, memory, teams, backups, stats, analysis, wizard, cost, templates as templates_router, sessions, claude_settings, monitor
     app.include_router(dashboard.router, prefix="/api")
@@ -111,10 +117,12 @@ def create_app(config: AppConfig | None = None) -> FastAPI:
     @asynccontextmanager
     async def _lifespan(a):
         poll_task = asyncio.create_task(_monitor_poll_loop(session_watcher))
+        sync_task = asyncio.create_task(_mcp_registry_sync(mcp_registry))
         try:
             yield
         finally:
             poll_task.cancel()
+            sync_task.cancel()
 
     app.router.lifespan_context = _lifespan
 
@@ -129,6 +137,19 @@ async def _monitor_poll_loop(watcher):
         except Exception:
             pass
         await asyncio.sleep(2)
+
+
+async def _mcp_registry_sync(registry):
+    """앱 시작 시 MCP Registry 백그라운드 동기화."""
+    import asyncio
+    await asyncio.sleep(2)
+    try:
+        if registry.is_cache_fresh():
+            logger.info("MCP Registry 캐시가 최신 상태, 동기화 skip")
+            return
+        await registry.sync_from_registry()
+    except Exception as e:
+        logger.warning("MCP Registry 백그라운드 동기화 실패: %s", e)
 
 
 def cli():

@@ -1,0 +1,82 @@
+[
+  {
+    "name": "github",
+    "description": "GitHub API 연동 (이슈, PR, 코드 검색)",
+    "package": "@modelcontextprotocol/server-github",
+    "category": "development",
+    "source": "MCP Official",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/github"
+  },
+  {
+    "name": "filesystem",
+    "description": "로컬 파일시스템 접근",
+    "package": "@modelcontextprotocol/server-filesystem",
+    "category": "system",
+    "source": "MCP Official",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem"
+  },
+  {
+    "name": "postgres",
+    "description": "PostgreSQL 데이터베이스 쿼리",
+    "package": "@modelcontextprotocol/server-postgres",
+    "category": "database",
+    "source": "MCP Official",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/postgres"
+  },
+  {
+    "name": "sqlite",
+    "description": "SQLite 데이터베이스 관리",
+    "package": "@modelcontextprotocol/server-sqlite",
+    "category": "database",
+    "source": "MCP Official",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/sqlite"
+  },
+  {
+    "name": "slack",
+    "description": "Slack 메시지 및 채널 접근",
+    "package": "@modelcontextprotocol/server-slack",
+    "category": "communication",
+    "source": "MCP Official",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/slack"
+  },
+  {
+    "name": "google-drive",
+    "description": "Google Drive 파일 접근",
+    "package": "@anthropic/mcp-server-google-drive",
+    "category": "storage",
+    "source": "Anthropic",
+    "homepage": "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-google-drive"
+  },
+  {
+    "name": "memory",
+    "description": "지식 그래프 기반 메모리",
+    "package": "@modelcontextprotocol/server-memory",
+    "category": "AI",
+    "source": "MCP Official",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/memory"
+  },
+  {
+    "name": "puppeteer",
+    "description": "브라우저 자동화 (Puppeteer)",
+    "package": "@modelcontextprotocol/server-puppeteer",
+    "category": "automation",
+    "source": "MCP Official",
+    "homepage": "https://github.com/modelcontextprotocol/servers/tree/main/src/puppeteer"
+  },
+  {
+    "name": "brave-search",
+    "description": "Brave 웹 검색",
+    "package": "@anthropic/mcp-server-brave-search",
+    "category": "search",
+    "source": "Anthropic",
+    "homepage": "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-brave-search"
+  },
+  {
+    "name": "fetch",
+    "description": "HTTP 요청 (웹 페이지 가져오기)",
+    "package": "@anthropic/mcp-server-fetch",
+    "category": "network",
+    "source": "Anthropic",
+    "homepage": "https://github.com/anthropics/anthropic-quickstarts/tree/main/mcp-server-fetch"
+  }
+]
