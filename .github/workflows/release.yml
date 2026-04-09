@@ -45,7 +45,13 @@ jobs:
           UV_PUBLISH_TOKEN: ${{ secrets.UV_PUBLISH_TOKEN }}
         run: |
           uv build
-          uv publish
+          uv publish 2>&1 | tee /tmp/pypi_output.txt || {
+            if grep -q "already exists" /tmp/pypi_output.txt || grep -q "409" /tmp/pypi_output.txt; then
+              echo "::warning::이 버전은 이미 PyPI에 존재합니다. 건너뜁니다."
+            else
+              exit 1
+            fi
+          }
 
       - name: Create GitHub Release
         env:
