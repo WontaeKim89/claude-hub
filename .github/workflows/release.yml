@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build frontend
+        run: |
+          cd src/client
+          npm ci
+          npm run build
+          cd ../..
+          rm -rf src/claude_hub/static
+          cp -r src/client/dist src/claude_hub/static
+
+      - name: Build and publish to PyPI
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.UV_PUBLISH_TOKEN }}
+        run: |
+          uv build
+          uv publish
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --generate-notes
+
+      - name: Update Homebrew tap
+        env:
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${{ steps.version.outputs.VERSION }}"
+
+          # PyPI 배포 후 tarball SHA256 계산
+          SHA256=$(curl -sL "https://github.com/WontaeKim89/claude-hub/archive/refs/tags/${TAG}.tar.gz" | shasum -a 256 | awk '{print $1}')
+          echo "SHA256: ${SHA256}"
+
+          # Homebrew tap 저장소 clone
+          git clone "https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/WontaeKim89/homebrew-tap.git" /tmp/homebrew-tap
+          cd /tmp/homebrew-tap
+
+          # Formula 업데이트
+          sed -i "s|url\"https://github.com/WontaeKim89/claude-hub/archive/refs/tags/.*\.tar\.gz\"|url\"https://github.com/WontaeKim89/claude-hub/archive/refs/tags/${TAG}.tar.gz\"|" Formula/claude-hub.rb
+          sed -i "s|sha256 \".*\"|sha256 \"${SHA256}\"|" Formula/claude-hub.rb
+
+          # Commit + Push
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/claude-hub.rb
+          git commit -m "claude-hub ${VERSION}"
+          git push origin main
